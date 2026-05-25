@@ -1,0 +1,62 @@
+name: Build Desktop App
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            platform: darwin/arm64
+            artifact_name: CodexDeepSeekBridge-darwin-arm64
+            artifact_path: build/bin/codex-deepseek-bridge.app
+          - os: windows-latest
+            platform: windows/amd64
+            artifact_name: CodexDeepSeekBridge-windows-amd64
+            artifact_path: build/bin/CodexDeepSeekBridge.exe
+          - os: windows-latest
+            platform: windows/arm64
+            artifact_name: CodexDeepSeekBridge-windows-arm64
+            artifact_path: build/bin/CodexDeepSeekBridge.exe
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Wails CLI
+        shell: bash
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
+
+      - name: Build desktop package
+        shell: bash
+        run: |
+          export PATH="$(go env GOPATH)/bin:$PATH"
+          wails build -platform "${{ matrix.platform }}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error

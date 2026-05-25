@@ -1,0 +1,167 @@
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { useMessage } from 'naive-ui'
+import { ClipboardSetText } from '../../wailsjs/runtime/runtime'
+import ConfigPanel from '../components/ConfigPanel.vue'
+import ConsolePanel from '../components/ConsolePanel.vue'
+import QuickGuideCard from '../components/QuickGuideCard.vue'
+import { useBridgeEvents } from '../composables/useBridgeEvents'
+import { useAppStore } from '../stores/app'
+import type { AppConfig } from '../types'
+
+const store = useAppStore()
+const message = useMessage()
+const busy = ref(false)
+
+async function wrapAction<T>(
+  task: () => Promise<T>,
+  successMessage?: string,
+  options?: { timeoutMs?: number; onTimeout?: () => Promise<void> },
+) {
+  busy.value = true
+  try {
+    const timeoutMs = options?.timeoutMs ?? 5000
+    const timeoutError = new Error('操作超时：5 秒内未完成，已停止桥接启动')
+    timeoutError.name = 'TimeoutError'
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      window.setTimeout(() => reject(timeoutError), timeoutMs)
+    })
+
+    const result = await Promise.race([task(), timeoutPromise])
+    await store.refreshLogs()
+    if (successMessage) {
+      message.success(successMessage)
+    }
+    return result
+  } catch (error) {
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      if (options?.onTimeout) {
+        await options.onTimeout()
+      }
+      await store.refreshLogs()
+      message.error(error.message)
+      return null as T
+    }
+
+    message.error(error instanceof Error ? error.message : String(error))
+    throw error
+  } finally {
+    busy.value = false
+  }
+}
+
+async function handleSave(config: AppConfig) {
+  await wrapAction(async () => {
+    await store.saveConfig(config)
+    return store.refreshStatus()
+  }, '配置已保存')
+}
+
+async function handleStart() {
+  await wrapAction(async () => store.startBridge(), '桥接服务已启动', {
+    timeoutMs: 5000,
+    onTimeout: async () => {
+      try {
+        await store.stopBridge()
+      } finally {
+        await store.refreshStatus()
+      }
+    },
+  })
+}
+
+async function handleStop() {
+  await wrapAction(async () => store.stopBridge(), '桥接服务已停止')
+}
+
+async function handleRestart() {
+  await wrapAction(async () => store.restartBridge(), '桥接服务已重启')
+}
+
+async function handleHealth() {
+  const result = await wrapAction(async () => store.runHealthCheck())
+  if (result) {
+    message[result.ok ? 'success' : 'warning'](result.ok ? '健康检查通过' : '健康检查存在异常，请查看控制台详情')
+  }
+}
+
+async function copyText(value: string) {
+  await ClipboardSetText(value)
+  message.success('已复制到剪贴板')
+}
+
+useBridgeEvents({
+  onStatus(payload) {
+    store.applyStatus(payload)
+  },
+  onLog(entry) {
+    store.pushLog(entry)
+  },
+})
+
+onMounted(async () => {
+  if (!store.lastLoadedAt) {
+    await wrapAction(async () => store.initialize())
+  }
+})
+</script>
+
+<template>
+  <div class="overview-page">
+    <div class="page-grid">
+      <div class="main-column">
+        <ConfigPanel
+          :config="store.config"
+          :status="store.status"
+          :loading="busy"
+          @save="handleSave"
+          @start="handleStart"
+          @stop="handleStop"
+          @restart="handleRestart"
+          @copy="copyText"
+        />
+      </div>
+
+      <div class="side-column">
+        <QuickGuideCard
+          :listen-address="store.status.listenAddress"
+          :loading="busy"
+          @copy="copyText"
+          @health="handleHealth"
+        />
+        <ConsolePanel
+          :status="store.status"
+          :health="store.healthCheck"
+          :loading="busy"
+          @health="handleHealth"
+          @refresh="wrapAction(async () => { await store.refreshStatus(); await store.refreshLogs() })"
+        />
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.overview-page {
+  display: grid;
+  gap: 24px;
+}
+
+.page-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
+  gap: 20px;
+}
+
+.main-column,
+.side-column {
+  display: grid;
+  gap: 20px;
+}
+
+@media (max-width: 1120px) {
+  .page-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
