@@ -946,11 +946,36 @@ func translateChatCompletions(body []byte, cfg AppConfig) ([]byte, error) {
 	}
 	payload["model"] = model
 
+	if messagesAny, ok := payload["messages"].([]any); ok {
+		for _, item := range messagesAny {
+			msg, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+			if role, ok := msg["role"].(string); ok {
+				msg["role"] = normalizeChatRole(role)
+			}
+		}
+		payload["messages"] = messagesAny
+	}
+
 	translatedBody, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
 	return translatedBody, nil
+}
+
+func normalizeChatRole(role string) string {
+	role = strings.TrimSpace(strings.ToLower(role))
+	switch role {
+	case "system", "user", "assistant", "tool", "latest_reminder":
+		return role
+	case "developer":
+		return "system"
+	default:
+		return "user"
+	}
 }
 
 func translateResponsesToChatCompletions(body []byte, cfg AppConfig) ([]byte, bool, string, error) {
@@ -987,6 +1012,9 @@ func translateResponsesToChatCompletions(body []byte, cfg AppConfig) ([]byte, bo
 	messages, err := responsesInputToMessages(payload)
 	if err != nil {
 		return nil, false, "", err
+	}
+	if len(messages) == 0 {
+		return nil, false, "", errors.New("无法从 input/messages 提取有效文本内容")
 	}
 
 	chatPayload := map[string]any{
@@ -1062,10 +1090,7 @@ func responsesInputToMessages(payload map[string]any) ([]any, error) {
 			}
 
 			role, _ := msg["role"].(string)
-			role = strings.TrimSpace(role)
-			if role == "" {
-				role = "user"
-			}
+			role = normalizeChatRole(role)
 
 			content := flattenResponsesContent(msg["content"])
 			if strings.TrimSpace(content) == "" {
@@ -1078,10 +1103,7 @@ func responsesInputToMessages(payload map[string]any) ([]any, error) {
 		}
 	case map[string]any:
 		role, _ := typed["role"].(string)
-		role = strings.TrimSpace(role)
-		if role == "" {
-			role = "user"
-		}
+		role = normalizeChatRole(role)
 		content := flattenResponsesContent(typed["content"])
 		if strings.TrimSpace(content) == "" {
 			content = flattenResponsesContent(typed)
@@ -1109,31 +1131,35 @@ func flattenResponsesContent(value any) string {
 					parts = append(parts, p)
 				}
 			case map[string]any:
-				if t, ok := p["text"].(string); ok && strings.TrimSpace(t) != "" {
+				if t := strings.TrimSpace(flattenAnyText(p["text"])); t != "" {
 					parts = append(parts, t)
 					continue
 				}
-				if t, ok := p["input_text"].(string); ok && strings.TrimSpace(t) != "" {
+				if t := strings.TrimSpace(flattenAnyText(p["input_text"])); t != "" {
 					parts = append(parts, t)
 					continue
 				}
-				if t, ok := p["content"].(string); ok && strings.TrimSpace(t) != "" {
+				if t := strings.TrimSpace(flattenAnyText(p["content"])); t != "" {
 					parts = append(parts, t)
 					continue
 				}
 				if t, ok := p["type"].(string); ok && t == "input_text" {
-					if t2, ok := p["text"].(string); ok && strings.TrimSpace(t2) != "" {
+					if t2 := strings.TrimSpace(flattenAnyText(p["text"])); t2 != "" {
 						parts = append(parts, t2)
 					}
+					continue
 				}
 			}
 		}
 		return strings.Join(parts, "")
 	case map[string]any:
-		if t, ok := typed["text"].(string); ok {
+		if t := strings.TrimSpace(flattenAnyText(typed["text"])); t != "" {
 			return t
 		}
-		if t, ok := typed["content"].(string); ok {
+		if t := strings.TrimSpace(flattenAnyText(typed["input_text"])); t != "" {
+			return t
+		}
+		if t := strings.TrimSpace(flattenAnyText(typed["content"])); t != "" {
 			return t
 		}
 	}
