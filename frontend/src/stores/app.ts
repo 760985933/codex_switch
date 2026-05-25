@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import {
+  ClearCodexConfigBackups,
+  DeleteCodexConfigBackup,
   ExportConfig,
   GenerateCodexConfigToml,
   GetAppConfig,
@@ -8,9 +10,11 @@ import {
   GetLogHistory,
   GetOverviewSnapshot,
   ImportConfig,
+  ListCodexConfigBackups,
   RestartBridge,
   ReadCodexConfigToml,
   RunHealthCheck,
+  RestoreCodexConfigTomlFromBackup,
   RestoreCodexConfigToml,
   SaveAppConfig,
   StartBridge,
@@ -113,6 +117,18 @@ export const useAppStore = defineStore('app', {
     },
     async restoreCodexConfigToml() {
       return RestoreCodexConfigToml()
+    },
+    async listCodexConfigBackups() {
+      return ListCodexConfigBackups()
+    },
+    async deleteCodexConfigBackup(backupPath: string) {
+      return DeleteCodexConfigBackup(backupPath)
+    },
+    async clearCodexConfigBackups() {
+      return ClearCodexConfigBackups()
+    },
+    async restoreCodexConfigTomlFromBackup(backupPath: string) {
+      return RestoreCodexConfigTomlFromBackup(backupPath)
     },
     async readCodexConfigToml() {
       return ReadCodexConfigToml()

@@ -25,6 +25,15 @@ const dialog = useDialog()
 const codexPath = ref('')
 const codexRaw = ref('')
 const codexBusy = ref(false)
+const codexBackups = ref<string[]>([])
+const selectedBackup = ref<string>('')
+
+const backupOptions = computed(() => {
+  return codexBackups.value.map((p) => ({
+    label: p.split('/').slice(-1)[0] || p,
+    value: p,
+  }))
+})
 
 const needsWireApiFix = computed(() => {
   if (!codexRaw.value) return false
@@ -64,10 +73,18 @@ async function loadCodexRaw() {
   try {
     codexPath.value = await store.getCodexConfigPath()
     codexRaw.value = await store.readCodexConfigToml()
+    await refreshCodexBackups()
   } catch (error) {
     message.error(error instanceof Error ? error.message : String(error))
   } finally {
     codexBusy.value = false
+  }
+}
+
+async function refreshCodexBackups() {
+  codexBackups.value = await store.listCodexConfigBackups()
+  if (selectedBackup.value && !codexBackups.value.includes(selectedBackup.value)) {
+    selectedBackup.value = ''
   }
 }
 
@@ -111,7 +128,7 @@ async function mergeWriteCodex() {
 async function restoreCodex() {
   dialog.warning({
     title: '恢复 Codex 配置',
-    content: '将使用备份文件（config.toml.bak）覆盖恢复；若无备份则尝试移除 local-bridge 配置。',
+    content: '将使用最新备份覆盖恢复；若无备份则尝试移除 local-bridge 配置。',
     positiveText: '恢复',
     negativeText: '取消',
     onPositiveClick: async () => {
@@ -120,6 +137,71 @@ async function restoreCodex() {
         const path = await store.restoreCodexConfigToml()
         message.success(`已恢复: ${path || codexPath.value}`)
         await loadCodexRaw()
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : String(error))
+      } finally {
+        codexBusy.value = false
+      }
+    },
+  })
+}
+
+async function restoreSelectedBackup() {
+  if (!selectedBackup.value) {
+    message.warning('请选择一个备份')
+    return
+  }
+  codexBusy.value = true
+  try {
+    const path = await store.restoreCodexConfigTomlFromBackup(selectedBackup.value)
+    message.success(`已恢复: ${path || codexPath.value}`)
+    await loadCodexRaw()
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  } finally {
+    codexBusy.value = false
+  }
+}
+
+async function deleteSelectedBackup() {
+  if (!selectedBackup.value) {
+    message.warning('请选择一个备份')
+    return
+  }
+  dialog.warning({
+    title: '删除备份',
+    content: `确认删除备份：${selectedBackup.value.split('/').slice(-1)[0]}？`,
+    positiveText: '删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      codexBusy.value = true
+      try {
+        await store.deleteCodexConfigBackup(selectedBackup.value)
+        selectedBackup.value = ''
+        await refreshCodexBackups()
+        message.success('已删除备份')
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : String(error))
+      } finally {
+        codexBusy.value = false
+      }
+    },
+  })
+}
+
+async function clearAllBackups() {
+  dialog.warning({
+    title: '清理备份',
+    content: '将删除所有备份文件（不影响当前 config.toml）。',
+    positiveText: '清理',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      codexBusy.value = true
+      try {
+        const removed = await store.clearCodexConfigBackups()
+        selectedBackup.value = ''
+        await refreshCodexBackups()
+        message.success(`已清理 ${removed} 份备份`)
       } catch (error) {
         message.error(error instanceof Error ? error.message : String(error))
       } finally {
@@ -171,7 +253,9 @@ async function restoreCodex() {
           <n-space vertical size="small">
             <div>
               <n-text style="font-weight: 600">Codex config.toml</n-text>
-            
+              <n-text depth="3" style="display: block; margin-top: 6px; line-height: 1.6">
+                用于让 Codex 走本地桥接。支持直接编辑、保存，并自动生成历史备份用于回滚。
+              </n-text>
             </div>
             <n-space>
               <n-button secondary @click="emit('codexCopy')">复制 TOML</n-button>
@@ -195,12 +279,28 @@ async function restoreCodex() {
               检测到 local-bridge 的 wire_api 仍为 "chat"。点击“合并写入”可自动修复为 "responses" 并保留其它配置项。
             </div>
 
+            <n-form label-placement="top">
+              <n-form-item label="历史备份">
+                <n-select
+                  v-model:value="selectedBackup"
+                  :options="backupOptions"
+                  placeholder="选择一个备份用于恢复"
+                  :disabled="codexBusy"
+                  filterable
+                />
+              </n-form-item>
+            </n-form>
+
             <n-space>
               <n-button tertiary :loading="codexBusy" @click="loadCodexRaw">读取文件</n-button>
               <n-button tertiary :loading="codexBusy" @click="generateCodexRaw">生成模板</n-button>
               <n-button secondary :loading="codexBusy" @click="saveCodexRaw">保存覆盖</n-button>
               <n-button type="primary" :loading="codexBusy" @click="mergeWriteCodex">合并写入</n-button>
-              <n-button tertiary :loading="codexBusy" @click="restoreCodex">恢复默认</n-button>
+              <n-button tertiary :loading="codexBusy" @click="refreshCodexBackups">刷新备份</n-button>
+              <n-button secondary :loading="codexBusy" @click="restoreSelectedBackup">恢复所选</n-button>
+              <n-button tertiary :loading="codexBusy" @click="deleteSelectedBackup">删除所选</n-button>
+              <n-button tertiary :loading="codexBusy" @click="clearAllBackups">清理备份</n-button>
+              <n-button tertiary :loading="codexBusy" @click="restoreCodex">恢复最新</n-button>
             </n-space>
           </n-space>
         </n-card>
