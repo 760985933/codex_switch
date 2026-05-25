@@ -1,5 +1,7 @@
 # Nettopo Switch (Codex ↔ DeepSeek 本地桥接)
 
+[English](README.en.md)
+
 ---
 
 ## 功能
@@ -78,5 +80,4 @@ wails dev
 export PATH="$(go env GOPATH)/bin:$PATH"
 wails build -platform darwin/arm64
 ```
-
 
