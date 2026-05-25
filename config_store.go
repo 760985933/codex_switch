@@ -79,6 +79,10 @@ func defaultConfig() AppConfig {
 		LogRetentionDays: 7,
 		CompactMode:      true,
 		Mappings: map[string]string{
+			"gpt-5.5":      "deepseek-v4-pro",
+			"gpt-5.4":      "deepseek-v4-pro",
+			"gpt-5.4-mini": "deepseek-v4-flash",
+			"gpt-5.3-codex": "deepseek-v4-pro",
 			"gpt-4.1":     "deepseek-chat",
 			"gpt-4o":      "deepseek-chat",
 			"gpt-4o-mini": "deepseek-chat",
