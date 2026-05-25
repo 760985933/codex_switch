@@ -1,6 +1,6 @@
 # Nettopo Switch (Codex ↔ DeepSeek 本地桥接)
 
-[English](README.en.md)
+[English](README.md)
 
 ---
 
