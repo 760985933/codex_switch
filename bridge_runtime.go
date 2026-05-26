@@ -230,6 +230,9 @@ func (b *BridgeRuntime) CheckUpstream(cfg AppConfig) error {
 	req.Header.Set("Authorization", "Bearer "+cfg.APIKey)
 
 	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy: nil,
+		},
 		Timeout: time.Duration(cfg.RequestTimeoutMs) * time.Millisecond,
 	}
 
@@ -947,6 +950,9 @@ func (b *BridgeRuntime) doUpstream(req *http.Request, cfg AppConfig, streaming b
 	}
 
 	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy: nil,
+		},
 		Timeout: time.Duration(cfg.RequestTimeoutMs) * time.Millisecond,
 	}
 	if streaming {
