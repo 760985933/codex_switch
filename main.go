@@ -17,9 +17,9 @@ func main() {
 	err := wails.Run(&options.App{
 		Title:     "NetTopo Switch",
 		Width:     1280,
-		Height:    860,
-		MinWidth:  1080,
-		MinHeight: 720,
+		Height:    820,
+		MinWidth:  720,
+		MinHeight: 520,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

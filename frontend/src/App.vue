@@ -10,7 +10,7 @@ import {
 } from 'naive-ui'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ClipboardSetText } from '../wailsjs/runtime/runtime'
+import { ClipboardSetText, Quit, WindowMinimise } from '../wailsjs/runtime/runtime'
 import SettingsDrawer from './components/SettingsDrawer.vue'
 import { useAppStore } from './stores/app'
 import { useUiStore } from './stores/ui'
@@ -19,7 +19,7 @@ const route = useRoute()
 const store = useAppStore()
 const ui = useUiStore()
 const { t, locale } = useI18n()
-const appVersion = 'v0.0.2'
+const appVersion = 'v0.0.3'
 
 watch(
   () => ui.locale,
@@ -122,6 +122,14 @@ async function handleCodexWrite() {
     })
   }
 }
+
+function handleMinimise() {
+  WindowMinimise()
+}
+
+function handleClose() {
+  Quit()
+}
 </script>
 
 <template>
@@ -139,6 +147,11 @@ async function handleCodexWrite() {
                   <span class="app-version">{{ appVersion }}</span>
                 </div>
               </div>
+            </div>
+
+            <div class="window-actions">
+              <n-button tertiary size="small" @click="handleMinimise">—</n-button>
+              <n-button tertiary type="error" size="small" @click="handleClose">×</n-button>
             </div>
 
             <nav class="nav">
@@ -189,11 +202,12 @@ async function handleCodexWrite() {
 }
 
 .topbar {
+  position: relative;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 18px;
-  padding: 16px 18px;
+  padding: 16px 92px 16px 18px;
   border-radius: 24px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
@@ -273,6 +287,16 @@ async function handleCodexWrite() {
   gap: 12px;
 }
 
+.window-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .status-chip {
   display: inline-flex;
   align-items: center;
@@ -320,6 +344,28 @@ async function handleCodexWrite() {
 
   .topbar-actions {
     justify-content: space-between;
+  }
+}
+
+@media (max-width: 720px) {
+  .shell {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .topbar {
+    padding: 12px 76px 12px 12px;
+    gap: 12px;
+    border-radius: 18px;
+  }
+
+  .status-chip {
+    padding: 8px 10px;
+  }
+
+  .window-actions {
+    top: 10px;
+    right: 10px;
   }
 }
 </style>
