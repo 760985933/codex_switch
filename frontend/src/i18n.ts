@@ -1,0 +1,1160 @@
+import { createI18n } from 'vue-i18n'
+
+export const SUPPORTED_LOCALES = [
+  'zh-CN',
+  'en-US',
+  'ja-JP',
+  'ko-KR',
+  'fr-FR',
+  'de-DE',
+  'es-ES',
+] as const
+
+export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
+
+const STORAGE_KEY = 'ui.locale'
+
+export function normalizeLocale(value: string): SupportedLocale {
+  if (!value) return 'zh-CN'
+  const lowered = value.toLowerCase()
+
+  if (lowered.startsWith('zh')) return 'zh-CN'
+  if (lowered.startsWith('en')) return 'en-US'
+  if (lowered.startsWith('ja')) return 'ja-JP'
+  if (lowered.startsWith('ko')) return 'ko-KR'
+  if (lowered.startsWith('fr')) return 'fr-FR'
+  if (lowered.startsWith('de')) return 'de-DE'
+  if (lowered.startsWith('es')) return 'es-ES'
+
+  return 'en-US'
+}
+
+export function detectInitialLocale(): SupportedLocale {
+  if (typeof window === 'undefined') return 'zh-CN'
+  const stored = window.localStorage.getItem(STORAGE_KEY)
+  if (stored) return normalizeLocale(stored)
+  return normalizeLocale(window.navigator.language)
+}
+
+export const messages = {
+  'zh-CN': {
+    app: {
+      nav: { overview: '主工作台', logs: '最近日志' },
+      status: { running: '运行中', starting: '启动中', error: '异常', stopped: '未启动' },
+      actions: { preferences: '偏好设置' },
+      toast: {
+        settingsSaved: '设置已保存',
+        configJsonCopied: '配置 JSON 已复制到剪贴板',
+        codexTomlCopied: 'Codex config.toml 已复制到剪贴板',
+        codexTomlWritten: '已写入 Codex config.toml: {path}',
+      },
+      dialog: {
+        exportConfig: { title: '导出配置', ok: '知道了' },
+        codexCopy: { title: '生成 Codex config.toml', ok: '知道了' },
+        codexWrite: { title: '写入 Codex config.toml', ok: '知道了' },
+      },
+      errors: {
+        timeoutStopped: '操作超时：{seconds} 秒内未完成，已停止桥接启动',
+      },
+    },
+    overview: {
+      toast: {
+        configSaved: '配置已保存',
+        bridgeStarted: '桥接服务已启动',
+        bridgeStopped: '桥接服务已停止',
+        bridgeRestarted: '桥接服务已重启',
+        clipboardCopied: '已复制到剪贴板',
+      },
+      health: {
+        ok: '健康检查通过',
+        bad: '健康检查存在异常，请查看控制台详情',
+      },
+    },
+    logs: {
+      title: '最近日志',
+      desc: '用于快速定位“启动/请求/健康检查”等关键事件。',
+      actions: { refresh: '刷新', copyAll: '复制全部' },
+      empty: { noLogs: '暂无日志' },
+      toast: { refreshed: '已刷新', copiedAll: '已复制全部日志' },
+    },
+    settings: {
+      title: '偏好设置',
+      language: '语言',
+      switches: {
+        autoStart: '自动启动桥接',
+        minimizeToTray: '关闭时隐藏窗口',
+        compactMode: '紧凑布局',
+      },
+      form: { logRetentionDays: '日志保留天数' },
+      actions: {
+        save: '保存设置',
+        exportConfig: '导出配置',
+        copyToml: '复制 TOML',
+        writeFile: '写入文件',
+      },
+      codex: {
+        title: 'Codex config.toml',
+        desc: '用于让 Codex 走本地桥接。支持直接编辑、保存，并自动生成历史备份用于回滚。',
+        filePath: '文件路径',
+        content: '内容（可直接编辑）',
+        wireApiFix:
+          '检测到 local-bridge 的 wire_api 仍为 "chat"。点击“合并写入”可自动修复为 "responses" 并保留其它配置项。',
+        backups: '历史备份',
+        backupPlaceholder: '选择一个备份用于恢复',
+      },
+      codexActions: {
+        readFile: '读取文件',
+        generateTemplate: '生成模板',
+        saveOverwrite: '保存覆盖',
+        mergeWrite: '合并写入',
+        refreshBackups: '刷新备份',
+        restoreSelected: '恢复所选',
+        deleteSelected: '删除所选',
+        clearBackups: '清理备份',
+        restoreLatest: '恢复最新',
+      },
+      dialog: {
+        restoreCodex: {
+          title: '恢复 Codex 配置',
+          content: '将使用最新备份覆盖恢复；若无备份则尝试移除 local-bridge 配置。',
+          ok: '恢复',
+          cancel: '取消',
+        },
+        deleteBackup: {
+          title: '删除备份',
+          content: '确认删除备份：{name}？',
+          ok: '删除',
+          cancel: '取消',
+        },
+        clearBackups: {
+          title: '清理备份',
+          content: '将删除所有备份文件（不影响当前 config.toml）。',
+          ok: '清理',
+          cancel: '取消',
+        },
+      },
+      toast: {
+        generatedToml: '已生成 TOML（可直接保存）',
+        saved: '已保存: {path}',
+        mergedWritten: '已合并写入: {path}',
+        restored: '已恢复: {path}',
+        needSelectBackup: '请选择一个备份',
+        deletedBackup: '已删除备份',
+        clearedBackups: '已清理 {count} 份备份',
+      },
+    },
+    config: {
+      title: '连接配置',
+      desc: '主界面只保留高频字段，高级映射通过折叠区收纳。',
+      actions: {
+        save: '保存配置',
+        start: '启动桥接',
+        restart: '重启',
+        stop: '停止',
+        copyLocal: '复制本地地址',
+        expandAdvanced: '展开高级配置',
+        collapseAdvanced: '收起高级配置',
+      },
+      fields: {
+        defaultModel: '默认模型',
+        listenHost: '监听地址',
+        listenPort: '监听端口',
+        requestTimeout: '请求超时 (ms)',
+        maxRetries: '最大重试次数',
+        apiKeyHint: '当前展示: {masked}',
+        apiKeyMissing: '未配置',
+      },
+      advanced: {
+        modelMapping: {
+          title: '模型映射',
+          desc: '当 Codex 请求中的模型名与 DeepSeek 模型不一致时，在此做静态映射。',
+          keyPlaceholder: '如 gpt-4.1',
+          valuePlaceholder: '如 deepseek-chat',
+        },
+        headers: {
+          title: '附加请求头',
+          desc: '只有在接入网关或代理平台时再填写，未设置时保持为空。',
+          keyPlaceholder: '如 X-Source',
+          valuePlaceholder: '如 codex-desktop',
+        },
+      },
+    },
+    console: {
+      title: '控制台',
+      actions: { refresh: '刷新', healthCheck: '健康检查' },
+      meta: { listenAddress: '监听地址', requestCount: '请求次数', lastError: '最近错误', notRunning: '未启动' },
+      health: { ok: '健康检查通过', failed: '健康检查失败：{count} 项异常' },
+    },
+    guide: {
+      title: '接入指引',
+      actions: { copyBaseUrl: '复制 Base URL', openPreferences: '打开偏好设置', restoreDefault: '恢复默认' },
+      step: {
+        one: {
+          title: '启动桥接服务',
+          notRunning: '未启动（先在左侧点击“启动桥接”）',
+          hint: '启动成功后会在本机监听一个地址，Codex 会通过它访问 /v1 接口。',
+        },
+        two: {
+          title: '配置 Codex 指向本地',
+          baseUrl: 'Base URL',
+          apiKey: 'API Key',
+          apiKeyNone: '无需配置',
+          baseUrlAuto: '启动后自动生成',
+          hint: '推荐用“偏好设置 → Codex config.toml → 写入文件”，自动合并并保留原有 MCP/approvals 配置。',
+        },
+        three: {
+          title: '验证与排障',
+          healthCheck: '健康检查',
+          hint: '点击右侧“健康检查”，并观察控制台最近日志；异常时优先确认端口占用、Key、上游可达性。',
+          quickVerify: '快速验证',
+        },
+      },
+    },
+    common: { delete: '删除' },
+  },
+  'en-US': {
+    app: {
+      nav: { overview: 'Dashboard', logs: 'Recent Logs' },
+      status: { running: 'Running', starting: 'Starting', error: 'Error', stopped: 'Stopped' },
+      actions: { preferences: 'Preferences' },
+      toast: {
+        settingsSaved: 'Settings saved',
+        configJsonCopied: 'Config JSON copied to clipboard',
+        codexTomlCopied: 'Codex config.toml copied to clipboard',
+        codexTomlWritten: 'Wrote Codex config.toml: {path}',
+      },
+      dialog: {
+        exportConfig: { title: 'Export Config', ok: 'OK' },
+        codexCopy: { title: 'Generate Codex config.toml', ok: 'OK' },
+        codexWrite: { title: 'Write Codex config.toml', ok: 'OK' },
+      },
+      errors: { timeoutStopped: 'Timed out: not finished in {seconds}s; bridge start stopped' },
+    },
+    overview: {
+      toast: {
+        configSaved: 'Config saved',
+        bridgeStarted: 'Bridge started',
+        bridgeStopped: 'Bridge stopped',
+        bridgeRestarted: 'Bridge restarted',
+        clipboardCopied: 'Copied to clipboard',
+      },
+      health: {
+        ok: 'Health check passed',
+        bad: 'Health check reported issues. See console for details.',
+      },
+    },
+    logs: {
+      title: 'Recent Logs',
+      desc: 'Quickly locate key events like start/requests/health checks.',
+      actions: { refresh: 'Refresh', copyAll: 'Copy All' },
+      empty: { noLogs: 'No logs' },
+      toast: { refreshed: 'Refreshed', copiedAll: 'Copied all logs' },
+    },
+    settings: {
+      title: 'Preferences',
+      language: 'Language',
+      switches: { autoStart: 'Auto-start bridge', minimizeToTray: 'Hide window on close', compactMode: 'Compact layout' },
+      form: { logRetentionDays: 'Log retention (days)' },
+      actions: { save: 'Save', exportConfig: 'Export', copyToml: 'Copy TOML', writeFile: 'Write File' },
+      codex: {
+        title: 'Codex config.toml',
+        desc: 'Make Codex use the local bridge. Supports editing, saving, and auto backup for rollback.',
+        filePath: 'File path',
+        content: 'Content (editable)',
+        wireApiFix:
+          'Detected local-bridge wire_api is still "chat". Click "Merge write" to fix to "responses" while keeping other settings.',
+        backups: 'Backups',
+        backupPlaceholder: 'Select a backup to restore',
+      },
+      codexActions: {
+        readFile: 'Read',
+        generateTemplate: 'Generate',
+        saveOverwrite: 'Save',
+        mergeWrite: 'Merge write',
+        refreshBackups: 'Refresh backups',
+        restoreSelected: 'Restore selected',
+        deleteSelected: 'Delete selected',
+        clearBackups: 'Clear backups',
+        restoreLatest: 'Restore latest',
+      },
+      dialog: {
+        restoreCodex: {
+          title: 'Restore Codex config',
+          content: 'Restores from the latest backup. If none exists, tries to remove local-bridge config.',
+          ok: 'Restore',
+          cancel: 'Cancel',
+        },
+        deleteBackup: {
+          title: 'Delete backup',
+          content: 'Delete backup: {name}?',
+          ok: 'Delete',
+          cancel: 'Cancel',
+        },
+        clearBackups: {
+          title: 'Clear backups',
+          content: 'Deletes all backup files (does not affect current config.toml).',
+          ok: 'Clear',
+          cancel: 'Cancel',
+        },
+      },
+      toast: {
+        generatedToml: 'TOML generated (ready to save)',
+        saved: 'Saved: {path}',
+        mergedWritten: 'Merged write: {path}',
+        restored: 'Restored: {path}',
+        needSelectBackup: 'Select a backup',
+        deletedBackup: 'Backup deleted',
+        clearedBackups: 'Cleared {count} backups',
+      },
+    },
+    config: {
+      title: 'Connection',
+      desc: 'Keep high-frequency fields here; advanced mappings are in the collapsible section.',
+      actions: {
+        save: 'Save',
+        start: 'Start bridge',
+        restart: 'Restart',
+        stop: 'Stop',
+        copyLocal: 'Copy local URL',
+        expandAdvanced: 'Show advanced',
+        collapseAdvanced: 'Hide advanced',
+      },
+      fields: {
+        defaultModel: 'Default model',
+        listenHost: 'Listen host',
+        listenPort: 'Listen port',
+        requestTimeout: 'Request timeout (ms)',
+        maxRetries: 'Max retries',
+        apiKeyHint: 'Shown: {masked}',
+        apiKeyMissing: 'Not set',
+      },
+      advanced: {
+        modelMapping: {
+          title: 'Model mapping',
+          desc: 'Static mapping when Codex model names differ from DeepSeek model names.',
+          keyPlaceholder: 'e.g. gpt-4.1',
+          valuePlaceholder: 'e.g. deepseek-chat',
+        },
+        headers: {
+          title: 'Extra headers',
+          desc: 'Only set when using a gateway/proxy. Leave empty otherwise.',
+          keyPlaceholder: 'e.g. X-Source',
+          valuePlaceholder: 'e.g. codex-desktop',
+        },
+      },
+    },
+    console: {
+      title: 'Console',
+      actions: { refresh: 'Refresh', healthCheck: 'Health check' },
+      meta: { listenAddress: 'Listen address', requestCount: 'Requests', lastError: 'Last error', notRunning: 'Stopped' },
+      health: { ok: 'Health check passed', failed: 'Health check failed: {count} issues' },
+    },
+    guide: {
+      title: 'Quick Start',
+      actions: { copyBaseUrl: 'Copy Base URL', openPreferences: 'Open preferences', restoreDefault: 'Restore default' },
+      step: {
+        one: {
+          title: 'Start the bridge',
+          notRunning: 'Not running (click "Start bridge" on the left first)',
+          hint: 'After start, it listens on a local address and exposes the /v1 API for Codex.',
+        },
+        two: {
+          title: 'Point Codex to local',
+          baseUrl: 'Base URL',
+          apiKey: 'API Key',
+          apiKeyNone: 'Not required',
+          baseUrlAuto: 'Auto-generated after start',
+          hint: 'Recommended: Preferences → Codex config.toml → Write File, to merge and keep existing MCP/approvals.',
+        },
+        three: {
+          title: 'Verify & troubleshoot',
+          healthCheck: 'Health check',
+          hint: 'Run a health check and review recent logs. Check port conflicts, keys, and upstream connectivity first.',
+          quickVerify: 'Quick verify',
+        },
+      },
+    },
+    common: { delete: 'Delete' },
+  },
+  'ja-JP': {
+    app: {
+      nav: { overview: 'ダッシュボード', logs: '最近のログ' },
+      status: { running: '稼働中', starting: '起動中', error: 'エラー', stopped: '停止中' },
+      actions: { preferences: '設定' },
+      toast: {
+        settingsSaved: '設定を保存しました',
+        configJsonCopied: '設定 JSON をクリップボードにコピーしました',
+        codexTomlCopied: 'Codex config.toml をクリップボードにコピーしました',
+        codexTomlWritten: 'Codex config.toml を書き込みました: {path}',
+      },
+      dialog: {
+        exportConfig: { title: '設定のエクスポート', ok: 'OK' },
+        codexCopy: { title: 'Codex config.toml を生成', ok: 'OK' },
+        codexWrite: { title: 'Codex config.toml を書き込み', ok: 'OK' },
+      },
+      errors: { timeoutStopped: 'タイムアウト: {seconds} 秒以内に完了せず、起動を停止しました' },
+    },
+    overview: {
+      toast: {
+        configSaved: '設定を保存しました',
+        bridgeStarted: 'ブリッジを起動しました',
+        bridgeStopped: 'ブリッジを停止しました',
+        bridgeRestarted: 'ブリッジを再起動しました',
+        clipboardCopied: 'クリップボードにコピーしました',
+      },
+      health: { ok: 'ヘルスチェック成功', bad: 'ヘルスチェックに問題があります。詳細はコンソールを確認してください。' },
+    },
+    logs: {
+      title: '最近のログ',
+      desc: '起動/リクエスト/ヘルスチェックなどの重要イベントを素早く確認できます。',
+      actions: { refresh: '更新', copyAll: 'すべてコピー' },
+      empty: { noLogs: 'ログなし' },
+      toast: { refreshed: '更新しました', copiedAll: 'ログをすべてコピーしました' },
+    },
+    settings: {
+      title: '設定',
+      language: '言語',
+      switches: { autoStart: '自動起動', minimizeToTray: '閉じると非表示', compactMode: 'コンパクト表示' },
+      form: { logRetentionDays: 'ログ保持日数' },
+      actions: { save: '保存', exportConfig: 'エクスポート', copyToml: 'TOML をコピー', writeFile: 'ファイルに書き込み' },
+      codex: {
+        title: 'Codex config.toml',
+        desc: 'Codex をローカルブリッジ経由にします。編集/保存/自動バックアップに対応します。',
+        filePath: 'ファイルパス',
+        content: '内容（編集可）',
+        wireApiFix:
+          'local-bridge の wire_api が "chat" のままです。「マージして書き込み」で "responses" に修正し、他の設定は保持します。',
+        backups: 'バックアップ',
+        backupPlaceholder: '復元するバックアップを選択',
+      },
+      codexActions: {
+        readFile: '読み込み',
+        generateTemplate: '生成',
+        saveOverwrite: '保存',
+        mergeWrite: 'マージして書き込み',
+        refreshBackups: 'バックアップ更新',
+        restoreSelected: '選択を復元',
+        deleteSelected: '選択を削除',
+        clearBackups: 'バックアップ削除',
+        restoreLatest: '最新を復元',
+      },
+      dialog: {
+        restoreCodex: {
+          title: 'Codex 設定を復元',
+          content: '最新バックアップで復元します。バックアップが無い場合は local-bridge 設定の削除を試みます。',
+          ok: '復元',
+          cancel: 'キャンセル',
+        },
+        deleteBackup: { title: 'バックアップ削除', content: 'バックアップを削除します: {name}？', ok: '削除', cancel: 'キャンセル' },
+        clearBackups: {
+          title: 'バックアップ一括削除',
+          content: 'すべてのバックアップを削除します（現在の config.toml は影響しません）。',
+          ok: '削除',
+          cancel: 'キャンセル',
+        },
+      },
+      toast: {
+        generatedToml: 'TOML を生成しました（保存できます）',
+        saved: '保存しました: {path}',
+        mergedWritten: 'マージして書き込みました: {path}',
+        restored: '復元しました: {path}',
+        needSelectBackup: 'バックアップを選択してください',
+        deletedBackup: 'バックアップを削除しました',
+        clearedBackups: '{count} 件のバックアップを削除しました',
+      },
+    },
+    config: {
+      title: '接続設定',
+      desc: 'よく使う項目のみ表示し、詳細は折りたたみにまとめます。',
+      actions: {
+        save: '保存',
+        start: '起動',
+        restart: '再起動',
+        stop: '停止',
+        copyLocal: 'ローカル URL をコピー',
+        expandAdvanced: '詳細を表示',
+        collapseAdvanced: '詳細を隠す',
+      },
+      fields: {
+        defaultModel: '既定モデル',
+        listenHost: '待受ホスト',
+        listenPort: '待受ポート',
+        requestTimeout: 'タイムアウト (ms)',
+        maxRetries: '最大リトライ',
+        apiKeyHint: '表示: {masked}',
+        apiKeyMissing: '未設定',
+      },
+      advanced: {
+        modelMapping: {
+          title: 'モデルマッピング',
+          desc: 'Codex と DeepSeek のモデル名が異なる場合の静的マッピングです。',
+          keyPlaceholder: '例: gpt-4.1',
+          valuePlaceholder: '例: deepseek-chat',
+        },
+        headers: {
+          title: '追加ヘッダー',
+          desc: 'ゲートウェイ/プロキシ利用時のみ設定してください。通常は空のままです。',
+          keyPlaceholder: '例: X-Source',
+          valuePlaceholder: '例: codex-desktop',
+        },
+      },
+    },
+    console: {
+      title: 'コンソール',
+      actions: { refresh: '更新', healthCheck: 'ヘルスチェック' },
+      meta: { listenAddress: '待受アドレス', requestCount: 'リクエスト数', lastError: '直近のエラー', notRunning: '停止中' },
+      health: { ok: 'ヘルスチェック成功', failed: 'ヘルスチェック失敗: {count} 件' },
+    },
+    guide: {
+      title: '接続ガイド',
+      actions: { copyBaseUrl: 'Base URL をコピー', openPreferences: '設定を開く', restoreDefault: '既定に戻す' },
+      step: {
+        one: {
+          title: 'ブリッジを起動',
+          notRunning: '停止中（左側の「起動」を先に実行してください）',
+          hint: '起動後、ローカルで待受し、Codex は /v1 API にアクセスします。',
+        },
+        two: {
+          title: 'Codex をローカルに向ける',
+          baseUrl: 'Base URL',
+          apiKey: 'API Key',
+          apiKeyNone: '不要',
+          baseUrlAuto: '起動後に自動生成',
+          hint: '推奨: 設定 → Codex config.toml → ファイルに書き込み（既存 MCP/approvals を保持してマージ）。',
+        },
+        three: {
+          title: '検証とトラブルシュート',
+          healthCheck: 'ヘルスチェック',
+          hint: 'ヘルスチェックと最近のログを確認してください。まずポート競合、キー、上流到達性を確認します。',
+          quickVerify: '簡易検証',
+        },
+      },
+    },
+    common: { delete: '削除' },
+  },
+  'ko-KR': {
+    app: {
+      nav: { overview: '대시보드', logs: '최근 로그' },
+      status: { running: '실행 중', starting: '시작 중', error: '오류', stopped: '중지됨' },
+      actions: { preferences: '설정' },
+      toast: {
+        settingsSaved: '설정이 저장되었습니다',
+        configJsonCopied: '설정 JSON을 클립보드에 복사했습니다',
+        codexTomlCopied: 'Codex config.toml을 클립보드에 복사했습니다',
+        codexTomlWritten: 'Codex config.toml에 기록했습니다: {path}',
+      },
+      dialog: {
+        exportConfig: { title: '설정 내보내기', ok: '확인' },
+        codexCopy: { title: 'Codex config.toml 생성', ok: '확인' },
+        codexWrite: { title: 'Codex config.toml 쓰기', ok: '확인' },
+      },
+      errors: { timeoutStopped: '시간 초과: {seconds}초 내 완료되지 않아 시작을 중지했습니다' },
+    },
+    overview: {
+      toast: {
+        configSaved: '설정이 저장되었습니다',
+        bridgeStarted: '브리지가 시작되었습니다',
+        bridgeStopped: '브리지가 중지되었습니다',
+        bridgeRestarted: '브리지가 재시작되었습니다',
+        clipboardCopied: '클립보드에 복사했습니다',
+      },
+      health: { ok: '헬스 체크 통과', bad: '헬스 체크에 문제가 있습니다. 콘솔에서 확인하세요.' },
+    },
+    logs: {
+      title: '최근 로그',
+      desc: '시작/요청/헬스 체크 등 핵심 이벤트를 빠르게 확인합니다.',
+      actions: { refresh: '새로고침', copyAll: '전체 복사' },
+      empty: { noLogs: '로그 없음' },
+      toast: { refreshed: '새로고침 완료', copiedAll: '전체 로그를 복사했습니다' },
+    },
+    settings: {
+      title: '설정',
+      language: '언어',
+      switches: { autoStart: '자동 시작', minimizeToTray: '닫을 때 창 숨김', compactMode: '컴팩트 레이아웃' },
+      form: { logRetentionDays: '로그 보관 일수' },
+      actions: { save: '저장', exportConfig: '내보내기', copyToml: 'TOML 복사', writeFile: '파일에 쓰기' },
+      codex: {
+        title: 'Codex config.toml',
+        desc: 'Codex가 로컬 브리지를 사용하도록 합니다. 편집/저장/자동 백업을 지원합니다.',
+        filePath: '파일 경로',
+        content: '내용(편집 가능)',
+        wireApiFix:
+          'local-bridge의 wire_api가 아직 "chat"입니다. "병합 쓰기"를 눌러 "responses"로 수정하고 다른 설정은 유지합니다.',
+        backups: '백업',
+        backupPlaceholder: '복원할 백업 선택',
+      },
+      codexActions: {
+        readFile: '읽기',
+        generateTemplate: '생성',
+        saveOverwrite: '저장',
+        mergeWrite: '병합 쓰기',
+        refreshBackups: '백업 새로고침',
+        restoreSelected: '선택 복원',
+        deleteSelected: '선택 삭제',
+        clearBackups: '백업 정리',
+        restoreLatest: '최신 복원',
+      },
+      dialog: {
+        restoreCodex: {
+          title: 'Codex 설정 복원',
+          content: '최신 백업으로 복원합니다. 백업이 없으면 local-bridge 설정 제거를 시도합니다.',
+          ok: '복원',
+          cancel: '취소',
+        },
+        deleteBackup: { title: '백업 삭제', content: '백업을 삭제할까요: {name}?', ok: '삭제', cancel: '취소' },
+        clearBackups: {
+          title: '백업 정리',
+          content: '모든 백업 파일을 삭제합니다(현재 config.toml에는 영향 없음).',
+          ok: '정리',
+          cancel: '취소',
+        },
+      },
+      toast: {
+        generatedToml: 'TOML을 생성했습니다(저장 가능)',
+        saved: '저장됨: {path}',
+        mergedWritten: '병합됨: {path}',
+        restored: '복원됨: {path}',
+        needSelectBackup: '백업을 선택하세요',
+        deletedBackup: '백업을 삭제했습니다',
+        clearedBackups: '백업 {count}개를 정리했습니다',
+      },
+    },
+    config: {
+      title: '연결 설정',
+      desc: '자주 쓰는 항목만 표시하고, 고급 매핑은 접기 영역에 둡니다.',
+      actions: {
+        save: '저장',
+        start: '시작',
+        restart: '재시작',
+        stop: '중지',
+        copyLocal: '로컬 URL 복사',
+        expandAdvanced: '고급 열기',
+        collapseAdvanced: '고급 닫기',
+      },
+      fields: {
+        defaultModel: '기본 모델',
+        listenHost: '리스닝 호스트',
+        listenPort: '리스닝 포트',
+        requestTimeout: '요청 타임아웃(ms)',
+        maxRetries: '최대 재시도',
+        apiKeyHint: '표시: {masked}',
+        apiKeyMissing: '미설정',
+      },
+      advanced: {
+        modelMapping: {
+          title: '모델 매핑',
+          desc: 'Codex 모델명과 DeepSeek 모델명이 다를 때 정적 매핑을 설정합니다.',
+          keyPlaceholder: '예: gpt-4.1',
+          valuePlaceholder: '예: deepseek-chat',
+        },
+        headers: {
+          title: '추가 헤더',
+          desc: '게이트웨이/프록시 사용 시에만 설정하세요. 기본은 비워두세요.',
+          keyPlaceholder: '예: X-Source',
+          valuePlaceholder: '예: codex-desktop',
+        },
+      },
+    },
+    console: {
+      title: '콘솔',
+      actions: { refresh: '새로고침', healthCheck: '헬스 체크' },
+      meta: { listenAddress: '리스닝 주소', requestCount: '요청 수', lastError: '최근 오류', notRunning: '중지됨' },
+      health: { ok: '헬스 체크 통과', failed: '헬스 체크 실패: {count}건' },
+    },
+    guide: {
+      title: '빠른 시작',
+      actions: { copyBaseUrl: 'Base URL 복사', openPreferences: '설정 열기', restoreDefault: '기본 복원' },
+      step: {
+        one: {
+          title: '브리지 시작',
+          notRunning: '중지됨(왼쪽에서 "시작"을 먼저 누르세요)',
+          hint: '시작되면 로컬 주소에서 /v1 API를 제공합니다.',
+        },
+        two: {
+          title: 'Codex를 로컬로',
+          baseUrl: 'Base URL',
+          apiKey: 'API Key',
+          apiKeyNone: '불필요',
+          baseUrlAuto: '시작 후 자동 생성',
+          hint: '권장: 설정 → Codex config.toml → 파일에 쓰기(기존 MCP/approvals 유지하며 병합).',
+        },
+        three: {
+          title: '검증 및 문제 해결',
+          healthCheck: '헬스 체크',
+          hint: '헬스 체크 실행 후 최근 로그를 확인하세요. 포트 충돌/키/상위 연결을 먼저 점검합니다.',
+          quickVerify: '빠른 검증',
+        },
+      },
+    },
+    common: { delete: '삭제' },
+  },
+  'fr-FR': {
+    app: {
+      nav: { overview: 'Tableau', logs: 'Journaux' },
+      status: { running: 'En cours', starting: 'Démarrage', error: 'Erreur', stopped: 'Arrêté' },
+      actions: { preferences: 'Préférences' },
+      toast: {
+        settingsSaved: 'Préférences enregistrées',
+        configJsonCopied: 'JSON de configuration copié',
+        codexTomlCopied: 'Codex config.toml copié',
+        codexTomlWritten: 'Codex config.toml écrit : {path}',
+      },
+      dialog: {
+        exportConfig: { title: 'Exporter la configuration', ok: 'OK' },
+        codexCopy: { title: 'Générer Codex config.toml', ok: 'OK' },
+        codexWrite: { title: 'Écrire Codex config.toml', ok: 'OK' },
+      },
+      errors: { timeoutStopped: 'Délai dépassé : non terminé en {seconds}s ; démarrage arrêté' },
+    },
+    overview: {
+      toast: {
+        configSaved: 'Configuration enregistrée',
+        bridgeStarted: 'Bridge démarré',
+        bridgeStopped: 'Bridge arrêté',
+        bridgeRestarted: 'Bridge redémarré',
+        clipboardCopied: 'Copié dans le presse-papiers',
+      },
+      health: { ok: 'Contrôle OK', bad: 'Problèmes détectés. Voir la console.' },
+    },
+    logs: {
+      title: 'Journaux récents',
+      desc: 'Repérez rapidement les événements clés (démarrage/requêtes/santé).',
+      actions: { refresh: 'Rafraîchir', copyAll: 'Tout copier' },
+      empty: { noLogs: 'Aucun journal' },
+      toast: { refreshed: 'Rafraîchi', copiedAll: 'Journaux copiés' },
+    },
+    settings: {
+      title: 'Préférences',
+      language: 'Langue',
+      switches: { autoStart: 'Démarrage auto', minimizeToTray: 'Masquer à la fermeture', compactMode: 'Mode compact' },
+      form: { logRetentionDays: 'Rétention (jours)' },
+      actions: { save: 'Enregistrer', exportConfig: 'Exporter', copyToml: 'Copier TOML', writeFile: 'Écrire le fichier' },
+      codex: {
+        title: 'Codex config.toml',
+        desc: 'Fait passer Codex par le bridge local. Édition, sauvegarde et sauvegardes automatiques.',
+        filePath: 'Chemin du fichier',
+        content: 'Contenu (modifiable)',
+        wireApiFix:
+          'wire_api est encore "chat". Cliquez "Écriture fusionnée" pour passer à "responses" en gardant le reste.',
+        backups: 'Sauvegardes',
+        backupPlaceholder: 'Sélectionnez une sauvegarde à restaurer',
+      },
+      codexActions: {
+        readFile: 'Lire',
+        generateTemplate: 'Générer',
+        saveOverwrite: 'Enregistrer',
+        mergeWrite: 'Écriture fusionnée',
+        refreshBackups: 'Rafraîchir',
+        restoreSelected: 'Restaurer',
+        deleteSelected: 'Supprimer',
+        clearBackups: 'Nettoyer',
+        restoreLatest: 'Restaurer (dernier)',
+      },
+      dialog: {
+        restoreCodex: {
+          title: 'Restaurer la config Codex',
+          content: 'Restaure depuis la dernière sauvegarde. Sinon, tente de retirer local-bridge.',
+          ok: 'Restaurer',
+          cancel: 'Annuler',
+        },
+        deleteBackup: { title: 'Supprimer la sauvegarde', content: 'Supprimer : {name} ?', ok: 'Supprimer', cancel: 'Annuler' },
+        clearBackups: {
+          title: 'Nettoyer les sauvegardes',
+          content: 'Supprime toutes les sauvegardes (n’affecte pas config.toml actuel).',
+          ok: 'Nettoyer',
+          cancel: 'Annuler',
+        },
+      },
+      toast: {
+        generatedToml: 'TOML généré',
+        saved: 'Enregistré : {path}',
+        mergedWritten: 'Fusionné : {path}',
+        restored: 'Restauré : {path}',
+        needSelectBackup: 'Sélectionnez une sauvegarde',
+        deletedBackup: 'Sauvegarde supprimée',
+        clearedBackups: '{count} sauvegardes supprimées',
+      },
+    },
+    config: {
+      title: 'Connexion',
+      desc: 'Les champs fréquents ici ; les options avancées dans la section repliable.',
+      actions: {
+        save: 'Enregistrer',
+        start: 'Démarrer',
+        restart: 'Redémarrer',
+        stop: 'Arrêter',
+        copyLocal: 'Copier l’URL locale',
+        expandAdvanced: 'Afficher avancé',
+        collapseAdvanced: 'Masquer avancé',
+      },
+      fields: {
+        defaultModel: 'Modèle par défaut',
+        listenHost: 'Hôte',
+        listenPort: 'Port',
+        requestTimeout: 'Délai (ms)',
+        maxRetries: 'Tentatives max',
+        apiKeyHint: 'Affiché : {masked}',
+        apiKeyMissing: 'Non défini',
+      },
+      advanced: {
+        modelMapping: {
+          title: 'Mapping de modèles',
+          desc: 'Mapping statique si les noms de modèles diffèrent.',
+          keyPlaceholder: 'ex: gpt-4.1',
+          valuePlaceholder: 'ex: deepseek-chat',
+        },
+        headers: {
+          title: 'En-têtes additionnels',
+          desc: 'À renseigner seulement avec un proxy/passerelle. Sinon laisser vide.',
+          keyPlaceholder: 'ex: X-Source',
+          valuePlaceholder: 'ex: codex-desktop',
+        },
+      },
+    },
+    console: {
+      title: 'Console',
+      actions: { refresh: 'Rafraîchir', healthCheck: 'Contrôle' },
+      meta: { listenAddress: 'Adresse', requestCount: 'Requêtes', lastError: 'Dernière erreur', notRunning: 'Arrêté' },
+      health: { ok: 'OK', failed: 'Échec : {count} problèmes' },
+    },
+    guide: {
+      title: 'Guide',
+      actions: { copyBaseUrl: 'Copier Base URL', openPreferences: 'Ouvrir préférences', restoreDefault: 'Restaurer défaut' },
+      step: {
+        one: {
+          title: 'Démarrer le bridge',
+          notRunning: 'Arrêté (cliquez "Démarrer" à gauche)',
+          hint: 'Après démarrage, un /v1 local est exposé pour Codex.',
+        },
+        two: {
+          title: 'Pointer Codex en local',
+          baseUrl: 'Base URL',
+          apiKey: 'API Key',
+          apiKeyNone: 'Inutile',
+          baseUrlAuto: 'Généré après démarrage',
+          hint: 'Recommandé : Préférences → Codex config.toml → Écrire le fichier (fusion).',
+        },
+        three: {
+          title: 'Vérifier & dépanner',
+          healthCheck: 'Contrôle',
+          hint: 'Lancez un contrôle et consultez les journaux. Vérifiez port/clé/connectivité.',
+          quickVerify: 'Test rapide',
+        },
+      },
+    },
+    common: { delete: 'Supprimer' },
+  },
+  'de-DE': {
+    app: {
+      nav: { overview: 'Übersicht', logs: 'Logs' },
+      status: { running: 'Läuft', starting: 'Startet', error: 'Fehler', stopped: 'Gestoppt' },
+      actions: { preferences: 'Einstellungen' },
+      toast: {
+        settingsSaved: 'Einstellungen gespeichert',
+        configJsonCopied: 'Konfig-JSON kopiert',
+        codexTomlCopied: 'Codex config.toml kopiert',
+        codexTomlWritten: 'Codex config.toml geschrieben: {path}',
+      },
+      dialog: {
+        exportConfig: { title: 'Konfiguration exportieren', ok: 'OK' },
+        codexCopy: { title: 'Codex config.toml erzeugen', ok: 'OK' },
+        codexWrite: { title: 'Codex config.toml schreiben', ok: 'OK' },
+      },
+      errors: { timeoutStopped: 'Zeitüberschreitung: nicht in {seconds}s fertig; Start gestoppt' },
+    },
+    overview: {
+      toast: {
+        configSaved: 'Konfiguration gespeichert',
+        bridgeStarted: 'Bridge gestartet',
+        bridgeStopped: 'Bridge gestoppt',
+        bridgeRestarted: 'Bridge neu gestartet',
+        clipboardCopied: 'In Zwischenablage kopiert',
+      },
+      health: { ok: 'Health-Check ok', bad: 'Probleme erkannt. Details in der Konsole.' },
+    },
+    logs: {
+      title: 'Aktuelle Logs',
+      desc: 'Wichtige Ereignisse wie Start/Requests/Health-Checks schnell finden.',
+      actions: { refresh: 'Aktualisieren', copyAll: 'Alles kopieren' },
+      empty: { noLogs: 'Keine Logs' },
+      toast: { refreshed: 'Aktualisiert', copiedAll: 'Alle Logs kopiert' },
+    },
+    settings: {
+      title: 'Einstellungen',
+      language: 'Sprache',
+      switches: { autoStart: 'Automatisch starten', minimizeToTray: 'Beim Schließen ausblenden', compactMode: 'Kompaktmodus' },
+      form: { logRetentionDays: 'Log-Aufbewahrung (Tage)' },
+      actions: { save: 'Speichern', exportConfig: 'Exportieren', copyToml: 'TOML kopieren', writeFile: 'Datei schreiben' },
+      codex: {
+        title: 'Codex config.toml',
+        desc: 'Codex über die lokale Bridge. Bearbeiten, Speichern und automatische Backups.',
+        filePath: 'Dateipfad',
+        content: 'Inhalt (bearbeitbar)',
+        wireApiFix:
+          'wire_api ist noch "chat". Mit "Merge write" auf "responses" umstellen und Rest beibehalten.',
+        backups: 'Backups',
+        backupPlaceholder: 'Backup zum Wiederherstellen auswählen',
+      },
+      codexActions: {
+        readFile: 'Lesen',
+        generateTemplate: 'Erzeugen',
+        saveOverwrite: 'Speichern',
+        mergeWrite: 'Zusammenführen',
+        refreshBackups: 'Backups aktualisieren',
+        restoreSelected: 'Wiederherstellen',
+        deleteSelected: 'Löschen',
+        clearBackups: 'Aufräumen',
+        restoreLatest: 'Neueste wiederherstellen',
+      },
+      dialog: {
+        restoreCodex: {
+          title: 'Codex-Konfig wiederherstellen',
+          content: 'Stellt aus dem neuesten Backup wieder her; sonst local-bridge entfernen.',
+          ok: 'Wiederherstellen',
+          cancel: 'Abbrechen',
+        },
+        deleteBackup: { title: 'Backup löschen', content: 'Backup löschen: {name}?', ok: 'Löschen', cancel: 'Abbrechen' },
+        clearBackups: {
+          title: 'Backups aufräumen',
+          content: 'Löscht alle Backups (aktuelles config.toml bleibt).',
+          ok: 'Aufräumen',
+          cancel: 'Abbrechen',
+        },
+      },
+      toast: {
+        generatedToml: 'TOML erzeugt',
+        saved: 'Gespeichert: {path}',
+        mergedWritten: 'Zusammengeführt: {path}',
+        restored: 'Wiederhergestellt: {path}',
+        needSelectBackup: 'Backup auswählen',
+        deletedBackup: 'Backup gelöscht',
+        clearedBackups: '{count} Backups gelöscht',
+      },
+    },
+    config: {
+      title: 'Verbindung',
+      desc: 'Häufige Felder hier; erweiterte Mappings im einklappbaren Bereich.',
+      actions: {
+        save: 'Speichern',
+        start: 'Starten',
+        restart: 'Neustart',
+        stop: 'Stoppen',
+        copyLocal: 'Lokale URL kopieren',
+        expandAdvanced: 'Erweitert anzeigen',
+        collapseAdvanced: 'Erweitert ausblenden',
+      },
+      fields: {
+        defaultModel: 'Standardmodell',
+        listenHost: 'Host',
+        listenPort: 'Port',
+        requestTimeout: 'Timeout (ms)',
+        maxRetries: 'Max. Wiederholungen',
+        apiKeyHint: 'Anzeige: {masked}',
+        apiKeyMissing: 'Nicht gesetzt',
+      },
+      advanced: {
+        modelMapping: {
+          title: 'Modell-Mapping',
+          desc: 'Statisches Mapping bei abweichenden Modellnamen.',
+          keyPlaceholder: 'z.B. gpt-4.1',
+          valuePlaceholder: 'z.B. deepseek-chat',
+        },
+        headers: {
+          title: 'Zusätzliche Header',
+          desc: 'Nur bei Gateway/Proxy setzen. Sonst leer lassen.',
+          keyPlaceholder: 'z.B. X-Source',
+          valuePlaceholder: 'z.B. codex-desktop',
+        },
+      },
+    },
+    console: {
+      title: 'Konsole',
+      actions: { refresh: 'Aktualisieren', healthCheck: 'Health-Check' },
+      meta: { listenAddress: 'Adresse', requestCount: 'Requests', lastError: 'Letzter Fehler', notRunning: 'Gestoppt' },
+      health: { ok: 'OK', failed: 'Fehlgeschlagen: {count} Probleme' },
+    },
+    guide: {
+      title: 'Anleitung',
+      actions: { copyBaseUrl: 'Base URL kopieren', openPreferences: 'Einstellungen öffnen', restoreDefault: 'Standard wiederherstellen' },
+      step: {
+        one: { title: 'Bridge starten', notRunning: 'Gestoppt (links "Starten" klicken)', hint: 'Nach dem Start wird lokal /v1 für Codex bereitgestellt.' },
+        two: {
+          title: 'Codex lokal konfigurieren',
+          baseUrl: 'Base URL',
+          apiKey: 'API Key',
+          apiKeyNone: 'Nicht nötig',
+          baseUrlAuto: 'Nach Start automatisch',
+          hint: 'Empfohlen: Einstellungen → Codex config.toml → Datei schreiben (merge).',
+        },
+        three: {
+          title: 'Prüfen & Troubleshooting',
+          healthCheck: 'Health-Check',
+          hint: 'Health-Check ausführen und Logs prüfen. Port/Key/Upstream zuerst checken.',
+          quickVerify: 'Schnelltest',
+        },
+      },
+    },
+    common: { delete: 'Löschen' },
+  },
+  'es-ES': {
+    app: {
+      nav: { overview: 'Panel', logs: 'Registros' },
+      status: { running: 'En ejecución', starting: 'Iniciando', error: 'Error', stopped: 'Detenido' },
+      actions: { preferences: 'Preferencias' },
+      toast: {
+        settingsSaved: 'Preferencias guardadas',
+        configJsonCopied: 'JSON de configuración copiado',
+        codexTomlCopied: 'Codex config.toml copiado',
+        codexTomlWritten: 'Se escribió Codex config.toml: {path}',
+      },
+      dialog: {
+        exportConfig: { title: 'Exportar configuración', ok: 'OK' },
+        codexCopy: { title: 'Generar Codex config.toml', ok: 'OK' },
+        codexWrite: { title: 'Escribir Codex config.toml', ok: 'OK' },
+      },
+      errors: { timeoutStopped: 'Tiempo agotado: no terminó en {seconds}s; inicio detenido' },
+    },
+    overview: {
+      toast: {
+        configSaved: 'Configuración guardada',
+        bridgeStarted: 'Bridge iniciado',
+        bridgeStopped: 'Bridge detenido',
+        bridgeRestarted: 'Bridge reiniciado',
+        clipboardCopied: 'Copiado al portapapeles',
+      },
+      health: { ok: 'Salud OK', bad: 'Se detectaron problemas. Ver consola.' },
+    },
+    logs: {
+      title: 'Registros recientes',
+      desc: 'Localiza rápidamente eventos clave como inicio/solicitudes/salud.',
+      actions: { refresh: 'Actualizar', copyAll: 'Copiar todo' },
+      empty: { noLogs: 'Sin registros' },
+      toast: { refreshed: 'Actualizado', copiedAll: 'Registros copiados' },
+    },
+    settings: {
+      title: 'Preferencias',
+      language: 'Idioma',
+      switches: { autoStart: 'Inicio automático', minimizeToTray: 'Ocultar al cerrar', compactMode: 'Diseño compacto' },
+      form: { logRetentionDays: 'Retención (días)' },
+      actions: { save: 'Guardar', exportConfig: 'Exportar', copyToml: 'Copiar TOML', writeFile: 'Escribir archivo' },
+      codex: {
+        title: 'Codex config.toml',
+        desc: 'Hace que Codex use el bridge local. Permite editar/guardar y backups automáticos.',
+        filePath: 'Ruta del archivo',
+        content: 'Contenido (editable)',
+        wireApiFix:
+          'Se detectó wire_api como "chat". Pulsa "Escritura combinada" para cambiar a "responses" manteniendo el resto.',
+        backups: 'Backups',
+        backupPlaceholder: 'Selecciona un backup para restaurar',
+      },
+      codexActions: {
+        readFile: 'Leer',
+        generateTemplate: 'Generar',
+        saveOverwrite: 'Guardar',
+        mergeWrite: 'Escritura combinada',
+        refreshBackups: 'Actualizar backups',
+        restoreSelected: 'Restaurar',
+        deleteSelected: 'Eliminar',
+        clearBackups: 'Limpiar',
+        restoreLatest: 'Restaurar último',
+      },
+      dialog: {
+        restoreCodex: {
+          title: 'Restaurar configuración de Codex',
+          content: 'Restaura desde el último backup. Si no hay, intenta quitar local-bridge.',
+          ok: 'Restaurar',
+          cancel: 'Cancelar',
+        },
+        deleteBackup: { title: 'Eliminar backup', content: '¿Eliminar: {name}?', ok: 'Eliminar', cancel: 'Cancelar' },
+        clearBackups: {
+          title: 'Limpiar backups',
+          content: 'Elimina todos los backups (no afecta al config.toml actual).',
+          ok: 'Limpiar',
+          cancel: 'Cancelar',
+        },
+      },
+      toast: {
+        generatedToml: 'TOML generado',
+        saved: 'Guardado: {path}',
+        mergedWritten: 'Combinado: {path}',
+        restored: 'Restaurado: {path}',
+        needSelectBackup: 'Selecciona un backup',
+        deletedBackup: 'Backup eliminado',
+        clearedBackups: 'Se limpiaron {count} backups',
+      },
+    },
+    config: {
+      title: 'Conexión',
+      desc: 'Campos frecuentes aquí; mapeos avanzados en la sección plegable.',
+      actions: {
+        save: 'Guardar',
+        start: 'Iniciar',
+        restart: 'Reiniciar',
+        stop: 'Detener',
+        copyLocal: 'Copiar URL local',
+        expandAdvanced: 'Mostrar avanzado',
+        collapseAdvanced: 'Ocultar avanzado',
+      },
+      fields: {
+        defaultModel: 'Modelo por defecto',
+        listenHost: 'Host',
+        listenPort: 'Puerto',
+        requestTimeout: 'Timeout (ms)',
+        maxRetries: 'Reintentos máx.',
+        apiKeyHint: 'Mostrado: {masked}',
+        apiKeyMissing: 'No configurado',
+      },
+      advanced: {
+        modelMapping: {
+          title: 'Mapeo de modelos',
+          desc: 'Mapeo estático si el nombre de modelo de Codex difiere del de DeepSeek.',
+          keyPlaceholder: 'p.ej. gpt-4.1',
+          valuePlaceholder: 'p.ej. deepseek-chat',
+        },
+        headers: {
+          title: 'Headers extra',
+          desc: 'Solo para gateway/proxy. Si no, déjalo vacío.',
+          keyPlaceholder: 'p.ej. X-Source',
+          valuePlaceholder: 'p.ej. codex-desktop',
+        },
+      },
+    },
+    console: {
+      title: 'Consola',
+      actions: { refresh: 'Actualizar', healthCheck: 'Chequeo' },
+      meta: { listenAddress: 'Dirección', requestCount: 'Solicitudes', lastError: 'Último error', notRunning: 'Detenido' },
+      health: { ok: 'OK', failed: 'Falló: {count} problemas' },
+    },
+    guide: {
+      title: 'Guía',
+      actions: { copyBaseUrl: 'Copiar Base URL', openPreferences: 'Abrir preferencias', restoreDefault: 'Restaurar por defecto' },
+      step: {
+        one: { title: 'Inicia el bridge', notRunning: 'Detenido (pulsa "Iniciar" a la izquierda)', hint: 'Tras iniciar, expone /v1 local para Codex.' },
+        two: {
+          title: 'Apunta Codex a local',
+          baseUrl: 'Base URL',
+          apiKey: 'API Key',
+          apiKeyNone: 'No requiere',
+          baseUrlAuto: 'Se genera al iniciar',
+          hint: 'Recomendado: Preferencias → Codex config.toml → Escribir archivo (merge).',
+        },
+        three: {
+          title: 'Verificar y depurar',
+          healthCheck: 'Chequeo',
+          hint: 'Ejecuta el chequeo y revisa logs. Comprueba puerto/clave/conectividad.',
+          quickVerify: 'Verificación rápida',
+        },
+      },
+    },
+    common: { delete: 'Eliminar' },
+  },
+} as const
+
+export const i18n = createI18n({
+  legacy: false,
+  globalInjection: true,
+  locale: detectInitialLocale(),
+  fallbackLocale: 'en-US',
+  messages,
+})
+

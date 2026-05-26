@@ -1,7 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { createDiscreteApi, lightTheme } from 'naive-ui'
+import { computed, watch } from 'vue'
+import {
+  createDiscreteApi,
+  lightTheme,
+  dateEnUS,
+  dateZhCN,
+  enUS,
+  zhCN,
+} from 'naive-ui'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ClipboardSetText } from '../wailsjs/runtime/runtime'
 import SettingsDrawer from './components/SettingsDrawer.vue'
 import { useAppStore } from './stores/app'
@@ -10,27 +18,55 @@ import { useUiStore } from './stores/ui'
 const route = useRoute()
 const store = useAppStore()
 const ui = useUiStore()
+const { t, locale } = useI18n()
+
+watch(
+  () => ui.locale,
+  (value) => {
+    locale.value = value
+  },
+  { immediate: true },
+)
+
+const naiveLocale = computed(() => {
+  switch (ui.locale) {
+    case 'zh-CN':
+      return zhCN
+    default:
+      return enUS
+  }
+})
+
+const naiveDateLocale = computed(() => {
+  switch (ui.locale) {
+    case 'zh-CN':
+      return dateZhCN
+    default:
+      return dateEnUS
+  }
+})
+
 const { message, dialog } = createDiscreteApi(['message', 'dialog'], {
   configProviderProps: {
     theme: lightTheme,
   },
 })
 
-const navItems = [
-  { label: '主工作台', to: '/overview' },
-  { label: '最近日志', to: '/logs' },
-]
+const navItems = computed(() => [
+  { label: t('app.nav.overview'), to: '/overview' },
+  { label: t('app.nav.logs'), to: '/logs' },
+])
 
 const statusLabel = computed(() => {
   switch (store.status.status) {
     case 'running':
-      return '运行中'
+      return t('app.status.running')
     case 'starting':
-      return '启动中'
+      return t('app.status.starting')
     case 'error':
-      return '异常'
+      return t('app.status.error')
     default:
-      return '未启动'
+      return t('app.status.stopped')
   }
 })
 
@@ -38,7 +74,7 @@ async function handleSaveSettings(config: typeof store.config) {
   try {
     await store.saveConfig(config)
     ui.showSettings = false
-    message.success('设置已保存')
+    message.success(t('app.toast.settingsSaved'))
   } catch (error) {
     message.error(error instanceof Error ? error.message : String(error))
   }
@@ -48,12 +84,12 @@ async function handleExport() {
   try {
     const content = await store.exportConfig()
     await ClipboardSetText(content)
-    message.success('配置 JSON 已复制到剪贴板')
+    message.success(t('app.toast.configJsonCopied'))
   } catch (error) {
     dialog.warning({
-      title: '导出配置',
+      title: t('app.dialog.exportConfig.title'),
       content: error instanceof Error ? error.message : String(error),
-      positiveText: '知道了',
+      positiveText: t('app.dialog.exportConfig.ok'),
     })
   }
 }
@@ -62,12 +98,12 @@ async function handleCodexCopy() {
   try {
     const content = await store.generateCodexConfigToml()
     await ClipboardSetText(content)
-    message.success('Codex config.toml 已复制到剪贴板')
+    message.success(t('app.toast.codexTomlCopied'))
   } catch (error) {
     dialog.warning({
-      title: '生成 Codex config.toml',
+      title: t('app.dialog.codexCopy.title'),
       content: error instanceof Error ? error.message : String(error),
-      positiveText: '知道了',
+      positiveText: t('app.dialog.codexCopy.ok'),
     })
   }
 }
@@ -76,19 +112,19 @@ async function handleCodexWrite() {
   try {
     const path = await store.writeCodexConfigToml()
     const hintPath = await store.getCodexConfigPath()
-    message.success(`已写入 Codex config.toml: ${path || hintPath}`)
+    message.success(t('app.toast.codexTomlWritten', { path: path || hintPath }))
   } catch (error) {
     dialog.warning({
-      title: '写入 Codex config.toml',
+      title: t('app.dialog.codexWrite.title'),
       content: error instanceof Error ? error.message : String(error),
-      positiveText: '知道了',
+      positiveText: t('app.dialog.codexWrite.ok'),
     })
   }
 }
 </script>
 
 <template>
-  <n-config-provider :theme="lightTheme">
+  <n-config-provider :theme="lightTheme" :locale="naiveLocale" :date-locale="naiveDateLocale">
     <n-dialog-provider>
       <n-message-provider placement="bottom-right">
         <div class="shell">
@@ -118,7 +154,7 @@ async function handleCodexWrite() {
                 <span class="status-dot" />
                 {{ statusLabel }}
               </div>
-              <n-button secondary @click="ui.showSettings = true">偏好设置</n-button>
+              <n-button secondary @click="ui.showSettings = true">{{ t('app.actions.preferences') }}</n-button>
             </div>
           </header>
 

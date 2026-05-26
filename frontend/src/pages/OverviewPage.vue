@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useMessage } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import { ClipboardSetText } from '../../wailsjs/runtime/runtime'
 import ConfigPanel from '../components/ConfigPanel.vue'
 import ConsolePanel from '../components/ConsolePanel.vue'
@@ -11,6 +12,7 @@ import type { AppConfig } from '../types'
 
 const store = useAppStore()
 const message = useMessage()
+const { t } = useI18n()
 const busy = ref(false)
 
 async function wrapAction<T>(
@@ -21,7 +23,8 @@ async function wrapAction<T>(
   busy.value = true
   try {
     const timeoutMs = options?.timeoutMs ?? 5000
-    const timeoutError = new Error('操作超时：5 秒内未完成，已停止桥接启动')
+    const timeoutSeconds = Math.max(1, Math.round(timeoutMs / 1000))
+    const timeoutError = new Error(t('app.errors.timeoutStopped', { seconds: timeoutSeconds }))
     timeoutError.name = 'TimeoutError'
     const timeoutPromise = new Promise<never>((_, reject) => {
       window.setTimeout(() => reject(timeoutError), timeoutMs)
@@ -54,11 +57,11 @@ async function handleSave(config: AppConfig) {
   await wrapAction(async () => {
     await store.saveConfig(config)
     return store.refreshStatus()
-  }, '配置已保存')
+  }, t('overview.toast.configSaved'))
 }
 
 async function handleStart() {
-  await wrapAction(async () => store.startBridge(), '桥接服务已启动', {
+  await wrapAction(async () => store.startBridge(), t('overview.toast.bridgeStarted'), {
     timeoutMs: 5000,
     onTimeout: async () => {
       try {
@@ -71,23 +74,23 @@ async function handleStart() {
 }
 
 async function handleStop() {
-  await wrapAction(async () => store.stopBridge(), '桥接服务已停止')
+  await wrapAction(async () => store.stopBridge(), t('overview.toast.bridgeStopped'))
 }
 
 async function handleRestart() {
-  await wrapAction(async () => store.restartBridge(), '桥接服务已重启')
+  await wrapAction(async () => store.restartBridge(), t('overview.toast.bridgeRestarted'))
 }
 
 async function handleHealth() {
   const result = await wrapAction(async () => store.runHealthCheck())
   if (result) {
-    message[result.ok ? 'success' : 'warning'](result.ok ? '健康检查通过' : '健康检查存在异常，请查看控制台详情')
+    message[result.ok ? 'success' : 'warning'](result.ok ? t('overview.health.ok') : t('overview.health.bad'))
   }
 }
 
 async function copyText(value: string) {
   await ClipboardSetText(value)
-  message.success('已复制到剪贴板')
+  message.success(t('overview.toast.clipboardCopied'))
 }
 
 useBridgeEvents({

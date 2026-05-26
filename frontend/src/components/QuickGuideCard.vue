@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useMessage } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import { useAppStore } from '../stores/app'
 import { useUiStore } from '../stores/ui'
 
@@ -17,6 +18,7 @@ const props = defineProps<{
 const store = useAppStore()
 const ui = useUiStore()
 const message = useMessage()
+const { t } = useI18n()
 
 const codexBaseURL = computed(() => {
   if (!props.listenAddress) return ''
@@ -26,7 +28,7 @@ const codexBaseURL = computed(() => {
 async function handleRestoreCodex() {
   try {
     const path = await store.restoreCodexConfigToml()
-    message.success(`已恢复 Codex 配置: ${path}`)
+    message.success(t('settings.toast.restored', { path }))
   } catch (error) {
     message.error(error instanceof Error ? error.message : String(error))
   }
@@ -37,7 +39,7 @@ async function handleRestoreCodex() {
   <div class="guide-card">
     <div class="guide-header">
       <div>
-        <h3>接入指引</h3>
+        <h3>{{ t('guide.title') }}</h3>
       </div>
       <n-button
         tertiary
@@ -45,7 +47,7 @@ async function handleRestoreCodex() {
         :disabled="!codexBaseURL"
         @click="emit('copy', codexBaseURL)"
       >
-        复制 Base URL
+        {{ t('guide.actions.copyBaseUrl') }}
       </n-button>
     </div>
 
@@ -53,48 +55,48 @@ async function handleRestoreCodex() {
       <div class="step">
         <div class="step-head">
           <span class="step-badge">Step 1</span>
-          <span class="step-title">启动桥接服务</span>
+          <span class="step-title">{{ t('guide.step.one.title') }}</span>
         </div>
         <div class="step-body">
-          <div class="mono">{{ props.listenAddress || '未启动（先在左侧点击“启动桥接”）' }}</div>
-          <div class="hint">启动成功后会在本机监听一个地址，Codex 会通过它访问 /v1 接口。</div>
+          <div class="mono">{{ props.listenAddress || t('guide.step.one.notRunning') }}</div>
+          <div class="hint">{{ t('guide.step.one.hint') }}</div>
         </div>
       </div>
 
       <div class="step">
         <div class="step-head">
           <span class="step-badge">Step 2</span>
-          <span class="step-title">配置 Codex 指向本地</span>
+          <span class="step-title">{{ t('guide.step.two.title') }}</span>
         </div>
         <div class="step-body">
           <div class="actions">
-            <n-button secondary @click="ui.showSettings = true">打开偏好设置</n-button>
-            <n-button tertiary @click="handleRestoreCodex">恢复默认</n-button>
+            <n-button secondary @click="ui.showSettings = true">{{ t('guide.actions.openPreferences') }}</n-button>
+            <n-button tertiary @click="handleRestoreCodex">{{ t('guide.actions.restoreDefault') }}</n-button>
           </div>
           <div class="kv">
-            <span>Base URL</span>
-            <strong class="mono">{{ codexBaseURL || '启动后自动生成' }}</strong>
+            <span>{{ t('guide.step.two.baseUrl') }}</span>
+            <strong class="mono">{{ codexBaseURL || t('guide.step.two.baseUrlAuto') }}</strong>
           </div>
           <div class="kv">
-            <span>API Key</span>
-            <strong class="mono">无需配置</strong>
+            <span>{{ t('guide.step.two.apiKey') }}</span>
+            <strong class="mono">{{ t('guide.step.two.apiKeyNone') }}</strong>
           </div>
-          <div class="hint">推荐用“偏好设置 → Codex config.toml → 写入文件”，自动合并并保留原有 MCP/approvals 配置。</div>
+          <div class="hint">{{ t('guide.step.two.hint') }}</div>
         </div>
       </div>
 
       <div class="step">
         <div class="step-head">
           <span class="step-badge">Step 3</span>
-          <span class="step-title">验证与排障</span>
+          <span class="step-title">{{ t('guide.step.three.title') }}</span>
         </div>
         <div class="step-body">
           <div class="actions">
-            <n-button secondary :loading="props.loading" @click="emit('health')">健康检查</n-button>
+            <n-button secondary :loading="props.loading" @click="emit('health')">{{ t('guide.step.three.healthCheck') }}</n-button>
           </div>
-          <div class="hint">点击右侧“健康检查”，并观察控制台最近日志；异常时优先确认端口占用、Key、上游可达性。</div>
+          <div class="hint">{{ t('guide.step.three.hint') }}</div>
           <div class="cmd">
-            <div class="cmd-label">快速验证</div>
+            <div class="cmd-label">{{ t('guide.step.three.quickVerify') }}</div>
             <div class="mono">curl {{ props.listenAddress || 'http://127.0.0.1:11434' }}/health</div>
           </div>
         </div>

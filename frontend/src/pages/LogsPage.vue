@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useMessage } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import { ClipboardSetText } from '../../wailsjs/runtime/runtime'
 import { useAppStore } from '../stores/app'
 
 const store = useAppStore()
 const message = useMessage()
+const { t } = useI18n()
 const loading = ref(false)
 
 const logs = computed(() => store.recentLogs.slice().reverse())
@@ -14,7 +16,7 @@ async function refresh() {
   loading.value = true
   try {
     await store.refreshLogs(200)
-    message.success('已刷新')
+    message.success(t('logs.toast.refreshed'))
   } catch (error) {
     message.error(error instanceof Error ? error.message : String(error))
   } finally {
@@ -27,7 +29,7 @@ async function copyAll() {
     .map((e) => `[${e.timestamp}] ${e.level.toUpperCase()} ${e.source}: ${e.message}`)
     .join('\n')
   await ClipboardSetText(text)
-  message.success('已复制全部日志')
+  message.success(t('logs.toast.copiedAll'))
 }
 
 onMounted(async () => {
@@ -43,12 +45,12 @@ onMounted(async () => {
   <div class="logs-page">
     <div class="page-head">
       <div>
-        <h2>最近日志</h2>
-        <p>用于快速定位“启动/请求/健康检查”等关键事件。</p>
+        <h2>{{ t('logs.title') }}</h2>
+        <p>{{ t('logs.desc') }}</p>
       </div>
       <n-space>
-        <n-button secondary :loading="loading" @click="refresh">刷新</n-button>
-        <n-button tertiary :disabled="logs.length === 0" @click="copyAll">复制全部</n-button>
+        <n-button secondary :loading="loading" @click="refresh">{{ t('logs.actions.refresh') }}</n-button>
+        <n-button tertiary :disabled="logs.length === 0" @click="copyAll">{{ t('logs.actions.copyAll') }}</n-button>
       </n-space>
     </div>
 
@@ -62,7 +64,7 @@ onMounted(async () => {
         <div class="msg">{{ entry.message }}</div>
       </div>
     </div>
-    <n-empty v-else description="暂无日志" />
+    <n-empty v-else :description="t('logs.empty.noLogs')" />
   </div>
 </template>
 
@@ -168,4 +170,3 @@ onMounted(async () => {
   }
 }
 </style>
-

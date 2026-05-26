@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { BridgeStatusPayload, HealthCheckResult } from '../types'
 
 const props = defineProps<{
@@ -13,24 +14,26 @@ const emit = defineEmits<{
   refresh: []
 }>()
 
+const { t } = useI18n()
+
 const statusLabel = computed(() => {
   switch (props.status.status) {
     case 'running':
-      return '运行中'
+      return t('app.status.running')
     case 'starting':
-      return '启动中'
+      return t('app.status.starting')
     case 'error':
-      return '异常'
+      return t('app.status.error')
     default:
-      return '未启动'
+      return t('app.status.stopped')
   }
 })
 
 const healthSummary = computed(() => {
   if (!props.health) return null
   const failed = props.health.checks.filter((item) => !item.ok)
-  if (props.health.ok) return { tone: 'success', text: '健康检查通过' as const }
-  return { tone: 'warning', text: `健康检查失败：${failed.length} 项异常` as const }
+  if (props.health.ok) return { tone: 'success' as const, text: t('console.health.ok') }
+  return { tone: 'warning' as const, text: t('console.health.failed', { count: failed.length }) }
 })
 </script>
 
@@ -40,28 +43,28 @@ const healthSummary = computed(() => {
       <div class="title">
         <span class="status-icon" :data-status="status.status" />
         <div>
-          <h3>控制台</h3>
+          <h3>{{ t('console.title') }}</h3>
           <p>{{ statusLabel }}</p>
         </div>
       </div>
 
       <n-space>
-        <n-button secondary :loading="loading" @click="emit('refresh')">刷新</n-button>
-        <n-button type="primary" :loading="loading" @click="emit('health')">健康检查</n-button>
+        <n-button secondary :loading="loading" @click="emit('refresh')">{{ t('console.actions.refresh') }}</n-button>
+        <n-button type="primary" :loading="loading" @click="emit('health')">{{ t('console.actions.healthCheck') }}</n-button>
       </n-space>
     </div>
 
     <div class="meta-grid">
       <div class="meta-item">
-        <span>监听地址</span>
-        <strong>{{ status.listenAddress || '未启动' }}</strong>
+        <span>{{ t('console.meta.listenAddress') }}</span>
+        <strong>{{ status.listenAddress || t('console.meta.notRunning') }}</strong>
       </div>
       <div class="meta-item">
-        <span>请求次数</span>
+        <span>{{ t('console.meta.requestCount') }}</span>
         <strong>{{ status.requestCount }}</strong>
       </div>
       <div v-if="status.lastError" class="meta-item span-2" data-tone="error">
-        <span>最近错误</span>
+        <span>{{ t('console.meta.lastError') }}</span>
         <strong>{{ status.lastError }}</strong>
       </div>
     </div>

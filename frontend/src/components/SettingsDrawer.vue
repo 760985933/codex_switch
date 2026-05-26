@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useDialog, useMessage } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import type { AppConfig } from '../types'
 import { useAppStore } from '../stores/app'
+import { useUiStore } from '../stores/ui'
 
 const props = defineProps<{
   modelValue: boolean
@@ -19,8 +21,20 @@ const emit = defineEmits<{
 
 const localConfig = ref<AppConfig>({ ...props.config })
 const store = useAppStore()
+const ui = useUiStore()
 const message = useMessage()
 const dialog = useDialog()
+const { t } = useI18n()
+
+const localeOptions = [
+  { label: '简体中文', value: 'zh-CN' },
+  { label: 'English', value: 'en-US' },
+  { label: '日本語', value: 'ja-JP' },
+  { label: '한국어', value: 'ko-KR' },
+  { label: 'Français', value: 'fr-FR' },
+  { label: 'Deutsch', value: 'de-DE' },
+  { label: 'Español', value: 'es-ES' },
+] as const
 
 const codexPath = ref('')
 const codexRaw = ref('')
@@ -92,7 +106,7 @@ async function generateCodexRaw() {
   codexBusy.value = true
   try {
     codexRaw.value = await store.generateCodexConfigToml()
-    message.success('已生成 TOML（可直接保存）')
+    message.success(t('settings.toast.generatedToml'))
   } catch (error) {
     message.error(error instanceof Error ? error.message : String(error))
   } finally {
@@ -104,7 +118,7 @@ async function saveCodexRaw() {
   codexBusy.value = true
   try {
     const path = await store.writeCodexConfigTomlRaw(codexRaw.value)
-    message.success(`已保存: ${path || codexPath.value}`)
+    message.success(t('settings.toast.saved', { path: path || codexPath.value }))
   } catch (error) {
     message.error(error instanceof Error ? error.message : String(error))
   } finally {
@@ -116,7 +130,7 @@ async function mergeWriteCodex() {
   codexBusy.value = true
   try {
     const path = await store.writeCodexConfigToml()
-    message.success(`已合并写入: ${path || codexPath.value}`)
+    message.success(t('settings.toast.mergedWritten', { path: path || codexPath.value }))
     await loadCodexRaw()
   } catch (error) {
     message.error(error instanceof Error ? error.message : String(error))
@@ -127,15 +141,15 @@ async function mergeWriteCodex() {
 
 async function restoreCodex() {
   dialog.warning({
-    title: '恢复 Codex 配置',
-    content: '将使用最新备份覆盖恢复；若无备份则尝试移除 local-bridge 配置。',
-    positiveText: '恢复',
-    negativeText: '取消',
+    title: t('settings.dialog.restoreCodex.title'),
+    content: t('settings.dialog.restoreCodex.content'),
+    positiveText: t('settings.dialog.restoreCodex.ok'),
+    negativeText: t('settings.dialog.restoreCodex.cancel'),
     onPositiveClick: async () => {
       codexBusy.value = true
       try {
         const path = await store.restoreCodexConfigToml()
-        message.success(`已恢复: ${path || codexPath.value}`)
+        message.success(t('settings.toast.restored', { path: path || codexPath.value }))
         await loadCodexRaw()
       } catch (error) {
         message.error(error instanceof Error ? error.message : String(error))
@@ -148,13 +162,13 @@ async function restoreCodex() {
 
 async function restoreSelectedBackup() {
   if (!selectedBackup.value) {
-    message.warning('请选择一个备份')
+    message.warning(t('settings.toast.needSelectBackup'))
     return
   }
   codexBusy.value = true
   try {
     const path = await store.restoreCodexConfigTomlFromBackup(selectedBackup.value)
-    message.success(`已恢复: ${path || codexPath.value}`)
+    message.success(t('settings.toast.restored', { path: path || codexPath.value }))
     await loadCodexRaw()
   } catch (error) {
     message.error(error instanceof Error ? error.message : String(error))
@@ -165,21 +179,21 @@ async function restoreSelectedBackup() {
 
 async function deleteSelectedBackup() {
   if (!selectedBackup.value) {
-    message.warning('请选择一个备份')
+    message.warning(t('settings.toast.needSelectBackup'))
     return
   }
   dialog.warning({
-    title: '删除备份',
-    content: `确认删除备份：${selectedBackup.value.split('/').slice(-1)[0]}？`,
-    positiveText: '删除',
-    negativeText: '取消',
+    title: t('settings.dialog.deleteBackup.title'),
+    content: t('settings.dialog.deleteBackup.content', { name: selectedBackup.value.split('/').slice(-1)[0] }),
+    positiveText: t('settings.dialog.deleteBackup.ok'),
+    negativeText: t('settings.dialog.deleteBackup.cancel'),
     onPositiveClick: async () => {
       codexBusy.value = true
       try {
         await store.deleteCodexConfigBackup(selectedBackup.value)
         selectedBackup.value = ''
         await refreshCodexBackups()
-        message.success('已删除备份')
+        message.success(t('settings.toast.deletedBackup'))
       } catch (error) {
         message.error(error instanceof Error ? error.message : String(error))
       } finally {
@@ -191,17 +205,17 @@ async function deleteSelectedBackup() {
 
 async function clearAllBackups() {
   dialog.warning({
-    title: '清理备份',
-    content: '将删除所有备份文件（不影响当前 config.toml）。',
-    positiveText: '清理',
-    negativeText: '取消',
+    title: t('settings.dialog.clearBackups.title'),
+    content: t('settings.dialog.clearBackups.content'),
+    positiveText: t('settings.dialog.clearBackups.ok'),
+    negativeText: t('settings.dialog.clearBackups.cancel'),
     onPositiveClick: async () => {
       codexBusy.value = true
       try {
         const removed = await store.clearCodexConfigBackups()
         selectedBackup.value = ''
         await refreshCodexBackups()
-        message.success(`已清理 ${removed} 份备份`)
+        message.success(t('settings.toast.clearedBackups', { count: removed }))
       } catch (error) {
         message.error(error instanceof Error ? error.message : String(error))
       } finally {
@@ -219,53 +233,58 @@ async function clearAllBackups() {
     :width="420"
     @update:show="(value: boolean) => emit('update:modelValue', value)"
   >
-    <n-drawer-content title="偏好设置" closable>
+    <n-drawer-content :title="t('settings.title')" closable>
       <div class="drawer-body">
         <n-card size="small" embedded>
           <n-space vertical size="large">
+            <n-form label-placement="top">
+              <n-form-item :label="t('settings.language')">
+                <n-select :value="ui.locale" :options="localeOptions" @update:value="(value: string) => ui.setLocale(value)" />
+              </n-form-item>
+            </n-form>
             <n-switch v-model:value="localConfig.enableAutoStart">
-              <template #checked>自动启动桥接</template>
-              <template #unchecked>自动启动桥接</template>
+              <template #checked>{{ t('settings.switches.autoStart') }}</template>
+              <template #unchecked>{{ t('settings.switches.autoStart') }}</template>
             </n-switch>
             <n-switch v-model:value="localConfig.minimizeToTray">
-              <template #checked>关闭时隐藏窗口</template>
-              <template #unchecked>关闭时隐藏窗口</template>
+              <template #checked>{{ t('settings.switches.minimizeToTray') }}</template>
+              <template #unchecked>{{ t('settings.switches.minimizeToTray') }}</template>
             </n-switch>
             <n-switch v-model:value="localConfig.compactMode">
-              <template #checked>紧凑布局</template>
-              <template #unchecked>紧凑布局</template>
+              <template #checked>{{ t('settings.switches.compactMode') }}</template>
+              <template #unchecked>{{ t('settings.switches.compactMode') }}</template>
             </n-switch>
           </n-space>
         </n-card>
 
         <n-form label-placement="top">
-          <n-form-item label="日志保留天数">
+          <n-form-item :label="t('settings.form.logRetentionDays')">
             <n-input-number v-model:value="localConfig.logRetentionDays" :min="1" :max="30" />
           </n-form-item>
         </n-form>
 
         <n-space>
-          <n-button type="primary" @click="submit">保存设置</n-button>
-          <n-button secondary @click="emit('export')">导出配置</n-button>
+          <n-button type="primary" @click="submit">{{ t('settings.actions.save') }}</n-button>
+          <n-button secondary @click="emit('export')">{{ t('settings.actions.exportConfig') }}</n-button>
         </n-space>
 
         <n-card size="small" embedded>
           <n-space vertical size="small">
             <div>
-              <n-text style="font-weight: 600">Codex config.toml</n-text>
+              <n-text style="font-weight: 600">{{ t('settings.codex.title') }}</n-text>
               <n-text depth="3" style="display: block; margin-top: 6px; line-height: 1.6">
-                用于让 Codex 走本地桥接。支持直接编辑、保存，并自动生成历史备份用于回滚。
+                {{ t('settings.codex.desc') }}
               </n-text>
             </div>
             <n-space>
-              <n-button secondary @click="emit('codexCopy')">复制 TOML</n-button>
-              <n-button type="primary" @click="emit('codexWrite')">写入文件</n-button>
+              <n-button secondary @click="emit('codexCopy')">{{ t('settings.actions.copyToml') }}</n-button>
+              <n-button type="primary" @click="emit('codexWrite')">{{ t('settings.actions.writeFile') }}</n-button>
             </n-space>
             <n-form label-placement="top">
-              <n-form-item label="文件路径">
+              <n-form-item :label="t('settings.codex.filePath')">
                 <n-input :value="codexPath" readonly />
               </n-form-item>
-              <n-form-item label="内容（可直接编辑）">
+              <n-form-item :label="t('settings.codex.content')">
                 <n-input
                   v-model:value="codexRaw"
                   type="textarea"
@@ -276,15 +295,15 @@ async function clearAllBackups() {
             </n-form>
 
             <div v-if="needsWireApiFix" class="warning-text">
-              检测到 local-bridge 的 wire_api 仍为 "chat"。点击“合并写入”可自动修复为 "responses" 并保留其它配置项。
+              {{ t('settings.codex.wireApiFix') }}
             </div>
 
             <n-form label-placement="top">
-              <n-form-item label="历史备份">
+              <n-form-item :label="t('settings.codex.backups')">
                 <n-select
                   v-model:value="selectedBackup"
                   :options="backupOptions"
-                  placeholder="选择一个备份用于恢复"
+                  :placeholder="t('settings.codex.backupPlaceholder')"
                   :disabled="codexBusy"
                   filterable
                 />
@@ -292,15 +311,15 @@ async function clearAllBackups() {
             </n-form>
 
             <n-space>
-              <n-button tertiary :loading="codexBusy" @click="loadCodexRaw">读取文件</n-button>
-              <n-button tertiary :loading="codexBusy" @click="generateCodexRaw">生成模板</n-button>
-              <n-button secondary :loading="codexBusy" @click="saveCodexRaw">保存覆盖</n-button>
-              <n-button type="primary" :loading="codexBusy" @click="mergeWriteCodex">合并写入</n-button>
-              <n-button tertiary :loading="codexBusy" @click="refreshCodexBackups">刷新备份</n-button>
-              <n-button secondary :loading="codexBusy" @click="restoreSelectedBackup">恢复所选</n-button>
-              <n-button tertiary :loading="codexBusy" @click="deleteSelectedBackup">删除所选</n-button>
-              <n-button tertiary :loading="codexBusy" @click="clearAllBackups">清理备份</n-button>
-              <n-button tertiary :loading="codexBusy" @click="restoreCodex">恢复最新</n-button>
+              <n-button tertiary :loading="codexBusy" @click="loadCodexRaw">{{ t('settings.codexActions.readFile') }}</n-button>
+              <n-button tertiary :loading="codexBusy" @click="generateCodexRaw">{{ t('settings.codexActions.generateTemplate') }}</n-button>
+              <n-button secondary :loading="codexBusy" @click="saveCodexRaw">{{ t('settings.codexActions.saveOverwrite') }}</n-button>
+              <n-button type="primary" :loading="codexBusy" @click="mergeWriteCodex">{{ t('settings.codexActions.mergeWrite') }}</n-button>
+              <n-button tertiary :loading="codexBusy" @click="refreshCodexBackups">{{ t('settings.codexActions.refreshBackups') }}</n-button>
+              <n-button secondary :loading="codexBusy" @click="restoreSelectedBackup">{{ t('settings.codexActions.restoreSelected') }}</n-button>
+              <n-button tertiary :loading="codexBusy" @click="deleteSelectedBackup">{{ t('settings.codexActions.deleteSelected') }}</n-button>
+              <n-button tertiary :loading="codexBusy" @click="clearAllBackups">{{ t('settings.codexActions.clearBackups') }}</n-button>
+              <n-button tertiary :loading="codexBusy" @click="restoreCodex">{{ t('settings.codexActions.restoreLatest') }}</n-button>
             </n-space>
           </n-space>
         </n-card>

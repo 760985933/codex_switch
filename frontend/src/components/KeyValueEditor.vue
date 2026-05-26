@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface PairItem {
   key: string
@@ -17,6 +18,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: Record<string, string>]
 }>()
+
+const { t } = useI18n()
 
 const items = computed<PairItem[]>(() => {
   const source = Object.entries(props.modelValue ?? {})
@@ -77,7 +80,7 @@ function removeEntry(key: string) {
           :disabled="!item.key"
           @click="removeEntry(item.key)"
         >
-          删除
+          {{ t('common.delete') }}
         </n-button>
       </div>
     </div>
