@@ -3,9 +3,19 @@ import { computed, watch } from 'vue'
 import {
   createDiscreteApi,
   lightTheme,
+  dateDeDE,
   dateEnUS,
+  dateEsAR,
+  dateFrFR,
+  dateJaJP,
+  dateKoKR,
   dateZhCN,
+  deDE,
   enUS,
+  esAR,
+  frFR,
+  jaJP,
+  koKR,
   zhCN,
 } from 'naive-ui'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
@@ -42,6 +52,16 @@ const naiveLocale = computed(() => {
   switch (ui.locale) {
     case 'zh-CN':
       return zhCN
+    case 'ja-JP':
+      return jaJP
+    case 'ko-KR':
+      return koKR
+    case 'fr-FR':
+      return frFR
+    case 'de-DE':
+      return deDE
+    case 'es-ES':
+      return esAR
     default:
       return enUS
   }
@@ -51,6 +71,16 @@ const naiveDateLocale = computed(() => {
   switch (ui.locale) {
     case 'zh-CN':
       return dateZhCN
+    case 'ja-JP':
+      return dateJaJP
+    case 'ko-KR':
+      return dateKoKR
+    case 'fr-FR':
+      return dateFrFR
+    case 'de-DE':
+      return dateDeDE
+    case 'es-ES':
+      return dateEsAR
     default:
       return dateEnUS
   }
