@@ -19,6 +19,7 @@ const route = useRoute()
 const store = useAppStore()
 const ui = useUiStore()
 const { t, locale } = useI18n()
+const appVersion = 'v0.0.2'
 
 watch(
   () => ui.locale,
@@ -133,7 +134,10 @@ async function handleCodexWrite() {
               <div class="brand-mark">NT</div>
               <div>
                 <p>nettopo.com</p>
-                <strong>Nettopo switch</strong>
+                <div class="brand-title">
+                  <strong>Nettopo switch</strong>
+                  <span class="app-version">{{ appVersion }}</span>
+                </div>
               </div>
             </div>
 
@@ -226,6 +230,18 @@ async function handleCodexWrite() {
 .brand strong {
   font-size: 16px;
   color: var(--text);
+}
+
+.brand-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.app-version {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
 }
 
 .nav {
