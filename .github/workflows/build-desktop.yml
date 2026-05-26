@@ -17,7 +17,7 @@ jobs:
             artifact_name: nettopo-switch-darwin-arm64
             source_path: build/bin/nettopo-switch-darwin-arm64.app
             artifact_path: build/bin/nettopo-switch-darwin-arm64.zip
-          - os: macos-13
+          - os: macos-15-intel
             platform: darwin/amd64
             artifact_name: nettopo-switch-darwin-amd64
             source_path: build/bin/nettopo-switch-darwin-amd64.app
