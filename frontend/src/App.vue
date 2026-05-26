@@ -114,10 +114,10 @@ async function checkUpdates(showUpToDateToast: boolean, showDialogOnUpdate: bool
             `当前版本：${result.currentVersion || appVersion.value}\n` +
             `最新版本：${result.latestVersion || ''}\n\n` +
             `${result.notes || '请下载更新。'}`,
-          positiveText: '下载更新',
+          positiveText: updateURL.value ? '下载更新' : undefined,
           negativeText: '稍后',
           onPositiveClick: () => {
-            if (updateURL.value) BrowserOpenURL(updateURL.value)
+            BrowserOpenURL(updateURL.value)
           },
         })
       }
