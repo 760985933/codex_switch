@@ -62,3 +62,12 @@ type HealthCheckItem struct {
 	OK      bool   `json:"ok"`
 	Message string `json:"message"`
 }
+
+type UpdateCheckResult struct {
+	CurrentVersion string `json:"currentVersion"`
+	LatestVersion  string `json:"latestVersion"`
+	HasUpdate      bool   `json:"hasUpdate"`
+	DownloadURL    string `json:"downloadUrl"`
+	Notes          string `json:"notes"`
+	CheckedAt      string `json:"checkedAt"`
+}

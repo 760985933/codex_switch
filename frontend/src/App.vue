@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import {
   createDiscreteApi,
   lightTheme,
@@ -20,7 +20,8 @@ import {
 } from 'naive-ui'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ClipboardSetText, Quit, WindowMinimise } from '../wailsjs/runtime/runtime'
+import { BrowserOpenURL, ClipboardSetText, Quit, WindowMinimise } from '../wailsjs/runtime/runtime'
+import { CheckForUpdates, GetAppVersion } from '../wailsjs/go/main/App'
 import SettingsDrawer from './components/SettingsDrawer.vue'
 import { useAppStore } from './stores/app'
 import { useUiStore } from './stores/ui'
@@ -29,7 +30,11 @@ const route = useRoute()
 const store = useAppStore()
 const ui = useUiStore()
 const { t, locale } = useI18n()
-const appVersion = 'v0.0.4'
+const appVersion = ref('v0.0.4')
+const updateChecking = ref(false)
+const updateHasUpdate = ref(false)
+const updateLatest = ref('')
+const updateURL = ref('')
 const localeOptions = [
   { label: '简体中文', value: 'zh-CN' },
   { label: 'English', value: 'en-US' },
@@ -91,6 +96,48 @@ const { message, dialog } = createDiscreteApi(['message', 'dialog'], {
     theme: lightTheme,
   },
 })
+
+async function checkUpdates(showUpToDateToast: boolean, showDialogOnUpdate: boolean) {
+  if (updateChecking.value) return
+  updateChecking.value = true
+  try {
+    const result = await CheckForUpdates()
+    updateHasUpdate.value = !!result.hasUpdate
+    updateLatest.value = result.latestVersion || ''
+    updateURL.value = result.downloadUrl || ''
+
+    if (result.hasUpdate) {
+      if (showDialogOnUpdate) {
+        dialog.info({
+          title: '发现新版本',
+          content:
+            `当前版本：${result.currentVersion || appVersion.value}\n` +
+            `最新版本：${result.latestVersion || ''}\n\n` +
+            `${result.notes || '请下载更新。'}`,
+          positiveText: '下载更新',
+          negativeText: '稍后',
+          onPositiveClick: () => {
+            if (updateURL.value) BrowserOpenURL(updateURL.value)
+          },
+        })
+      }
+      return
+    }
+
+    if (showUpToDateToast) {
+      message.success('已是最新版本')
+    }
+  } catch (error) {
+    const text = error instanceof Error ? error.message : String(error)
+    if (text.includes('未配置更新地址')) {
+      message.warning('未配置更新地址')
+    } else {
+      message.error(text)
+    }
+  } finally {
+    updateChecking.value = false
+  }
+}
 
 const navItems = computed(() => [
   { label: t('app.nav.overview'), to: '/overview' },
@@ -169,6 +216,14 @@ function handleMinimise() {
 function handleClose() {
   Quit()
 }
+
+onMounted(async () => {
+  try {
+    appVersion.value = await GetAppVersion()
+  } catch {
+  }
+  await checkUpdates(false, true)
+})
 </script>
 
 <template>
@@ -210,6 +265,15 @@ function handleClose() {
                 <span class="status-dot" />
                 {{ statusLabel }}
               </div>
+              <n-button
+                secondary
+                size="small"
+                :loading="updateChecking"
+                :type="updateHasUpdate ? 'warning' : undefined"
+                @click="checkUpdates(true, true)"
+              >
+                {{ updateHasUpdate ? `有更新 ${updateLatest}` : '检查更新' }}
+              </n-button>
               <n-select
                 class="locale-select"
                 size="small"

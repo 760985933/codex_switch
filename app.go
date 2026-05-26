@@ -5,14 +5,23 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
+	"net/http"
 	"net/url"
+	"os"
+	goRuntime "runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
+
+const appVersion = "0.0.4"
+const updateManifestURL = "https://nettopo.com/nettopo-switch-version.txt"
+const updateDownloadURLTemplate = ""
 
 type App struct {
 	ctx    context.Context
@@ -62,6 +71,179 @@ func (a *App) startup(ctx context.Context) {
 			}
 		}()
 	}
+}
+
+func (a *App) GetAppVersion() string {
+	return "v" + appVersion
+}
+
+func (a *App) CheckForUpdates() (UpdateCheckResult, error) {
+	now := time.Now()
+	result := UpdateCheckResult{
+		CurrentVersion: "v" + appVersion,
+		CheckedAt:      now.Format(time.RFC3339),
+	}
+
+	manifestURL := strings.TrimSpace(os.Getenv("NETTOPO_SWITCH_UPDATE_URL"))
+	if manifestURL == "" {
+		manifestURL = updateManifestURL
+	}
+	if manifestURL == "" {
+		return result, errors.New("未配置更新地址")
+	}
+
+	client := &http.Client{Timeout: 8 * time.Second}
+	req, err := http.NewRequest(http.MethodGet, manifestURL, nil)
+	if err != nil {
+		return result, err
+	}
+	req.Header.Set("User-Agent", "nettopo-switch/"+appVersion)
+	resp, err := client.Do(req)
+	if err != nil {
+		return result, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= http.StatusBadRequest {
+		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		return result, fmt.Errorf("更新检查失败: %s", strings.TrimSpace(string(raw)))
+	}
+
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
+	if err != nil {
+		return result, err
+	}
+
+	latest, downloadURL, notes, err := parseUpdateManifest(raw)
+	if err != nil {
+		return result, err
+	}
+	result.LatestVersion = latest
+	result.DownloadURL = strings.TrimSpace(downloadURL)
+	result.Notes = strings.TrimSpace(notes)
+
+	if compareSemver(latest, "v"+appVersion) > 0 {
+		result.HasUpdate = true
+		if result.DownloadURL == "" {
+			result.DownloadURL = buildDownloadURL(latest)
+		}
+	}
+
+	return result, nil
+}
+
+func parseUpdateManifest(raw []byte) (string, string, string, error) {
+	text := strings.TrimSpace(string(raw))
+	if text == "" {
+		return "", "", "", errors.New("更新描述为空")
+	}
+	if strings.HasPrefix(text, "{") {
+		var payload map[string]any
+		if err := json.Unmarshal([]byte(text), &payload); err != nil {
+			return "", "", "", err
+		}
+		version, _ := payload["version"].(string)
+		if strings.TrimSpace(version) == "" {
+			version, _ = payload["latest"].(string)
+		}
+		if strings.TrimSpace(version) == "" {
+			return "", "", "", errors.New("更新描述缺少 version")
+		}
+		url, _ := payload["url"].(string)
+		notes, _ := payload["notes"].(string)
+		return strings.TrimSpace(version), strings.TrimSpace(url), strings.TrimSpace(notes), nil
+	}
+
+	lines := strings.Split(text, "\n")
+	version := ""
+	url := ""
+	notes := ""
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		if strings.Contains(line, "=") {
+			parts := strings.SplitN(line, "=", 2)
+			key := strings.ToLower(strings.TrimSpace(parts[0]))
+			val := strings.TrimSpace(parts[1])
+			switch key {
+			case "version", "latest":
+				version = val
+			case "url", "download":
+				url = val
+			case "notes":
+				notes = val
+			}
+			continue
+		}
+		if version == "" {
+			version = line
+			continue
+		}
+		if url == "" {
+			url = line
+			continue
+		}
+		if notes == "" {
+			notes = line
+		}
+	}
+	if strings.TrimSpace(version) == "" {
+		return "", "", "", errors.New("更新描述缺少 version")
+	}
+	return version, url, notes, nil
+}
+
+func compareSemver(a string, b string) int {
+	pa := parseSemverParts(a)
+	pb := parseSemverParts(b)
+	for i := 0; i < 3; i++ {
+		if pa[i] > pb[i] {
+			return 1
+		}
+		if pa[i] < pb[i] {
+			return -1
+		}
+	}
+	return 0
+}
+
+func parseSemverParts(v string) [3]int {
+	v = strings.TrimSpace(v)
+	v = strings.TrimPrefix(strings.ToLower(v), "v")
+	if idx := strings.IndexAny(v, "+-"); idx >= 0 {
+		v = v[:idx]
+	}
+	out := [3]int{}
+	parts := strings.Split(v, ".")
+	for i := 0; i < 3 && i < len(parts); i++ {
+		n, _ := strconv.Atoi(strings.TrimSpace(parts[i]))
+		out[i] = n
+	}
+	return out
+}
+
+func buildDownloadURL(latest string) string {
+	template := strings.TrimSpace(os.Getenv("NETTOPO_SWITCH_DOWNLOAD_URL_TEMPLATE"))
+	if template == "" {
+		template = updateDownloadURLTemplate
+	}
+	if template == "" {
+		return ""
+	}
+	ver := strings.TrimPrefix(strings.TrimSpace(latest), "v")
+	ext := "zip"
+	if goRuntime.GOOS == "windows" {
+		ext = "exe"
+	}
+	if goRuntime.GOOS == "darwin" {
+		ext = "app"
+	}
+	out := strings.ReplaceAll(template, "{version}", ver)
+	out = strings.ReplaceAll(out, "{os}", goRuntime.GOOS)
+	out = strings.ReplaceAll(out, "{arch}", goRuntime.GOARCH)
+	out = strings.ReplaceAll(out, "{ext}", ext)
+	return out
 }
 
 func (a *App) GetAppConfig() (AppConfig, error) {

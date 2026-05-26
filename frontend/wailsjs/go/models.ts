@@ -168,6 +168,28 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class UpdateCheckResult {
+	    currentVersion: string;
+	    latestVersion: string;
+	    hasUpdate: boolean;
+	    downloadUrl: string;
+	    notes: string;
+	    checkedAt: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateCheckResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.currentVersion = source["currentVersion"];
+	        this.latestVersion = source["latestVersion"];
+	        this.hasUpdate = source["hasUpdate"];
+	        this.downloadUrl = source["downloadUrl"];
+	        this.notes = source["notes"];
+	        this.checkedAt = source["checkedAt"];
+	    }
+	}
 
 }
 
