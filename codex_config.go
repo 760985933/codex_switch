@@ -129,8 +129,8 @@ func (a *App) WriteCodexConfigTomlRaw(content string) (string, error) {
 
 	existing, readErr := os.ReadFile(path)
 	if readErr == nil && len(existing) > 0 {
-		if backupPath, err := makeCodexBackup(path, existing); err != nil {
-			return "", err
+		if backupPath, backupErr := makeCodexBackup(path, existing); backupErr != nil {
+			return "", backupErr
 		} else if strings.TrimSpace(backupPath) != "" {
 			a.appendLog("info", "app", "已备份原 Codex config.toml: "+backupPath, "")
 		}
@@ -168,8 +168,8 @@ func (a *App) WriteCodexConfigToml() (string, error) {
 
 	existing, readErr := os.ReadFile(path)
 	if readErr == nil && len(existing) > 0 {
-		if backupPath, err := makeCodexBackup(path, existing); err != nil {
-			return "", err
+		if backupPath, backupErr := makeCodexBackup(path, existing); backupErr != nil {
+			return "", backupErr
 		} else if strings.TrimSpace(backupPath) != "" {
 			a.appendLog("info", "app", "已备份原 Codex config.toml: "+backupPath, "")
 		}
@@ -330,7 +330,7 @@ func (a *App) RestoreCodexConfigToml() (string, error) {
 		return "", err
 	}
 
-	if backups, err := a.ListCodexConfigBackups(); err == nil && len(backups) > 0 {
+	if backups, listErr := a.ListCodexConfigBackups(); listErr == nil && len(backups) > 0 {
 		return a.RestoreCodexConfigTomlFromBackup(backups[0])
 	}
 

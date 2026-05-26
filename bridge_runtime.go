@@ -1812,47 +1812,6 @@ type chatToolCall struct {
 	Arguments string
 }
 
-func extractChatDeltaToolCalls(chunk map[string]any) []chatToolCall {
-	choicesAny, ok := chunk["choices"]
-	if !ok {
-		return nil
-	}
-	choices, ok := choicesAny.([]any)
-	if !ok || len(choices) == 0 {
-		return nil
-	}
-	first, ok := choices[0].(map[string]any)
-	if !ok {
-		return nil
-	}
-	deltaAny, ok := first["delta"]
-	if !ok {
-		return nil
-	}
-	delta, ok := deltaAny.(map[string]any)
-	if !ok {
-		return nil
-	}
-	raw, ok := delta["tool_calls"].([]any)
-	if !ok || len(raw) == 0 {
-		return nil
-	}
-
-	out := make([]chatToolCall, 0, len(raw))
-	for _, item := range raw {
-		tc, ok := item.(map[string]any)
-		if !ok {
-			continue
-		}
-		id, _ := tc["id"].(string)
-		fn, _ := tc["function"].(map[string]any)
-		name, _ := fn["name"].(string)
-		args, _ := fn["arguments"].(string)
-		out = append(out, chatToolCall{ID: id, Name: name, Arguments: args})
-	}
-	return out
-}
-
 func extractChatCompletionToolCalls(payload map[string]any) []chatToolCall {
 	choicesAny, ok := payload["choices"]
 	if !ok {
