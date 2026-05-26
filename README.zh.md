@@ -4,6 +4,8 @@
 
 ---
 
+该项目面向 Codex Desktop：通过把 Codex 的 Base URL 指向本地桥接地址，让 Codex Desktop 走 DeepSeek 的模型能力（无需改变 Codex 的使用方式）。
+
 ## 功能
 
 - **Codex Responses 适配**：支持 `POST /v1/responses`（含流式 SSE），并转发到 DeepSeek `POST /v1/chat/completions`
@@ -11,6 +13,7 @@
 - **可视化配置**：桌面应用内完成 Base URL、Key、端口、映射等配置
 - **Codex config.toml 管理**：支持合并写入、原文编辑、历史备份、选择恢复、删除/清理备份
 - **健康检查与日志**：一键检查上游可达性，日志可追踪每次请求
+- **界面多语言（i18n）**：`zh-CN`（简体中文）、`en-US`（English）、`ja-JP`（日本語）、`ko-KR`（한국어）、`fr-FR`（Français）、`de-DE`（Deutsch）、`es-ES`（Español）
 - **跨平台构建**：macOS arm64 / Windows amd64 / Windows arm64
 
 ## 端点
@@ -80,4 +83,3 @@ wails dev
 export PATH="$(go env GOPATH)/bin:$PATH"
 wails build -platform darwin/arm64
 ```
-

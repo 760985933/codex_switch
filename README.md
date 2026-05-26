@@ -6,6 +6,8 @@
 
 Nettopo Switch is a local bridge that adapts Codex-compatible `POST /v1/responses` (including SSE streaming) and forwards requests to DeepSeek `POST /v1/chat/completions`. It also provides a desktop UI to manage endpoints, API keys, ports, and model mappings, plus tools to manage Codex `config.toml` with safe backups.
 
+This is designed to work with Codex Desktop by pointing Codex's Base URL to the local bridge, so Codex can use DeepSeek models without changing its workflow.
+
 ## Features
 
 - **Codex Responses adapter**: supports `POST /v1/responses` (SSE) and forwards to DeepSeek `POST /v1/chat/completions`
@@ -13,6 +15,7 @@ Nettopo Switch is a local bridge that adapts Codex-compatible `POST /v1/response
 - **Visual configuration**: configure Base URL, API key, port, and mappings in the desktop app
 - **Codex config.toml management**: merge-write, edit raw content, create/restore/delete/clean backup history
 - **Health check & logs**: one-click upstream connectivity check; logs for each request
+- **UI i18n**: `zh-CN` (简体中文), `en-US` (English), `ja-JP` (日本語), `ko-KR` (한국어), `fr-FR` (Français), `de-DE` (Deutsch), `es-ES` (Español)
 - **Cross-platform builds**: macOS arm64 / Windows amd64 / Windows arm64
 
 ## Endpoints
@@ -74,4 +77,3 @@ wails dev
 export PATH="$(go env GOPATH)/bin:$PATH"
 wails build -platform darwin/arm64
 ```
-
