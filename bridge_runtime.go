@@ -1573,6 +1573,47 @@ func responsesInputToMessages(payload map[string]any) ([]any, error) {
 			messages = append(messages, map[string]any{"role": "user", "content": typed})
 		}
 	case []any:
+		callIDsInInput := map[string]bool{}
+		outputsByCallID := map[string]string{}
+		for _, item := range typed {
+			msg, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+			t, _ := msg["type"].(string)
+			t = strings.TrimSpace(t)
+			switch t {
+			case "function_call":
+				callID, _ := msg["call_id"].(string)
+				if callID == "" {
+					callID, _ = msg["id"].(string)
+				}
+				if callID != "" {
+					callIDsInInput[callID] = true
+				}
+			case "function_call_output":
+				callID, _ := msg["call_id"].(string)
+				if callID == "" {
+					callID, _ = msg["tool_call_id"].(string)
+				}
+				if callID == "" {
+					callID, _ = msg["id"].(string)
+				}
+				if callID == "" {
+					continue
+				}
+				output := strings.TrimSpace(flattenAnyText(msg["output"]))
+				if output == "" {
+					output = strings.TrimSpace(flattenResponsesContent(msg["content"]))
+				}
+				if output == "" {
+					output = strings.TrimSpace(flattenResponsesContent(msg))
+				}
+				outputsByCallID[callID] = output
+			}
+		}
+
+		consumedOutputs := map[string]bool{}
 		for _, item := range typed {
 			msg, ok := item.(map[string]any)
 			if !ok {
@@ -1599,17 +1640,16 @@ func responsesInputToMessages(payload map[string]any) ([]any, error) {
 					if callID == "" {
 						callID, _ = msg["id"].(string)
 					}
-					output := strings.TrimSpace(flattenAnyText(msg["output"]))
-					if output == "" {
-						output = strings.TrimSpace(flattenResponsesContent(msg["content"]))
+					if callID == "" {
+						continue
 					}
-					if output == "" {
-						output = strings.TrimSpace(flattenResponsesContent(msg))
+					if callIDsInInput[callID] {
+						continue
 					}
 					messages = append(messages, map[string]any{
 						"role":         "tool",
 						"tool_call_id": callID,
-						"content":      output,
+						"content":      outputsByCallID[callID],
 					})
 					continue
 				case "function_call":
@@ -1617,6 +1657,14 @@ func responsesInputToMessages(payload map[string]any) ([]any, error) {
 					if callID == "" {
 						callID, _ = msg["id"].(string)
 					}
+					if callID == "" {
+						continue
+					}
+					toolOutput, hasOutput := outputsByCallID[callID]
+					if !hasOutput {
+						continue
+					}
+
 					name, _ := msg["name"].(string)
 					arguments := ""
 					switch v := msg["arguments"].(type) {
@@ -1627,12 +1675,13 @@ func responsesInputToMessages(payload map[string]any) ([]any, error) {
 							arguments = string(out)
 						}
 					}
-					if callID == "" && name == "" && strings.TrimSpace(arguments) == "" {
+					if strings.TrimSpace(name) == "" && strings.TrimSpace(arguments) == "" {
 						continue
 					}
+
 					messages = append(messages, map[string]any{
 						"role":    "assistant",
-						"content": "",
+						"content": nil,
 						"tool_calls": []any{
 							map[string]any{
 								"id":   callID,
@@ -1644,6 +1693,12 @@ func responsesInputToMessages(payload map[string]any) ([]any, error) {
 							},
 						},
 					})
+					messages = append(messages, map[string]any{
+						"role":         "tool",
+						"tool_call_id": callID,
+						"content":      toolOutput,
+					})
+					consumedOutputs[callID] = true
 					continue
 				}
 			}
