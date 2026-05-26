@@ -23,17 +23,20 @@ import (
 type BridgeRuntime struct {
 	app *App
 
-	mu            sync.RWMutex
-	server        *http.Server
-	listener      net.Listener
-	status        BridgeStatus
-	listenAddress string
-	startedAt     time.Time
-	lastError     string
-	requestCount  int64
-	config        AppConfig
-	lastReasoning string
-	lastReasonAt  time.Time
+	mu                 sync.RWMutex
+	server             *http.Server
+	listener           net.Listener
+	status             BridgeStatus
+	listenAddress      string
+	startedAt          time.Time
+	lastError          string
+	requestCount       int64
+	config             AppConfig
+	lastReasoning      string
+	lastReasonAt       time.Time
+	lastUpstreamStatus int
+	lastUpstreamError  string
+	lastUpstreamAt     time.Time
 }
 
 func NewBridgeRuntime(app *App) *BridgeRuntime {
@@ -82,6 +85,9 @@ func (b *BridgeRuntime) Start(cfg AppConfig) error {
 	b.config = cfg
 	b.lastReasoning = ""
 	b.lastReasonAt = time.Time{}
+	b.lastUpstreamStatus = 0
+	b.lastUpstreamError = ""
+	b.lastUpstreamAt = time.Time{}
 	server := b.server
 	ln := b.listener
 	listenAddress := b.listenAddress
@@ -160,6 +166,9 @@ func (b *BridgeRuntime) Stop() error {
 	b.server = nil
 	listener := b.listener
 	b.listener = nil
+	b.lastUpstreamStatus = 0
+	b.lastUpstreamError = ""
+	b.lastUpstreamAt = time.Time{}
 	b.mu.Unlock()
 
 	if server == nil {
@@ -367,6 +376,22 @@ func (b *BridgeRuntime) handleChatCompletions(w http.ResponseWriter, r *http.Req
 	defer resp.Body.Close()
 
 	atomic.AddInt64(&b.requestCount, 1)
+	if resp.StatusCode >= http.StatusBadRequest {
+		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 10<<20))
+		b.setLastUpstreamFailure(resp.StatusCode, string(raw))
+		b.copyHeaders(w.Header(), resp.Header)
+		w.WriteHeader(resp.StatusCode)
+		_, _ = w.Write(raw)
+
+		duration := time.Since(startedAt).Milliseconds()
+		msg := fmt.Sprintf("POST /v1/chat/completions -> %d (%dms)", resp.StatusCode, duration)
+		if strings.TrimSpace(string(raw)) != "" {
+			msg += " upstream_error=" + truncateForLog(string(raw), 2048)
+		}
+		b.app.appendLog(statusToLevel(resp.StatusCode), "proxy", msg, requestID)
+		return
+	}
+
 	b.copyHeaders(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
 
@@ -479,6 +504,7 @@ func (b *BridgeRuntime) handleResponses(w http.ResponseWriter, r *http.Request) 
 			} else {
 				msg = fmt.Sprintf("上游返回 %d: %s", resp.StatusCode, msg)
 			}
+			b.setLastUpstreamFailure(resp.StatusCode, msg)
 			b.streamResponsesFailed(w, "bad_gateway", msg)
 			message := fmt.Sprintf("POST /v1/responses (stream) -> %d (%dms)", resp.StatusCode, time.Since(startedAt).Milliseconds())
 			if reqSummary != "" {
@@ -539,6 +565,7 @@ func (b *BridgeRuntime) handleResponses(w http.ResponseWriter, r *http.Request) 
 		upstreamRaw, _ = io.ReadAll(io.LimitReader(resp.Body, 10<<20))
 		statusCode = resp.StatusCode
 		if resp.StatusCode >= http.StatusBadRequest {
+			b.setLastUpstreamFailure(resp.StatusCode, string(upstreamRaw))
 			b.copyHeaders(w.Header(), resp.Header)
 			w.WriteHeader(resp.StatusCode)
 			_, _ = w.Write(upstreamRaw)
@@ -622,6 +649,20 @@ func (b *BridgeRuntime) getLastReasoning() string {
 		return ""
 	}
 	return value
+}
+
+func (b *BridgeRuntime) setLastUpstreamFailure(status int, message string) {
+	b.mu.Lock()
+	b.lastUpstreamStatus = status
+	b.lastUpstreamError = strings.TrimSpace(message)
+	b.lastUpstreamAt = time.Now()
+	b.mu.Unlock()
+}
+
+func (b *BridgeRuntime) getLastUpstreamFailure() (int, string, time.Time) {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	return b.lastUpstreamStatus, b.lastUpstreamError, b.lastUpstreamAt
 }
 
 func injectReasoningIntoChatPayload(body []byte, reasoning string) ([]byte, bool) {

@@ -235,6 +235,19 @@ func (a *App) RunHealthCheck() (HealthCheckResult, error) {
 		})
 	}
 
+	if status, msg, at := a.bridge.getLastUpstreamFailure(); status == 402 && !at.IsZero() && time.Since(at) < 24*time.Hour {
+		result.OK = false
+		hint := "检测到最近一次上游请求返回 402（余额不足/额度不足）。请充值或更换 API Key。"
+		if strings.TrimSpace(msg) != "" {
+			hint += " " + strings.TrimSpace(msg)
+		}
+		result.Checks = append(result.Checks, HealthCheckItem{
+			Name:    "DeepSeek 余额/额度",
+			OK:      false,
+			Message: hint,
+		})
+	}
+
 	return result, nil
 }
 

@@ -35,6 +35,11 @@ const healthSummary = computed(() => {
   if (props.health.ok) return { tone: 'success' as const, text: t('console.health.ok') }
   return { tone: 'warning' as const, text: t('console.health.failed', { count: failed.length }) }
 })
+
+const failedChecks = computed(() => {
+  if (!props.health) return []
+  return props.health.checks.filter((item) => !item.ok)
+})
 </script>
 
 <template>
@@ -72,6 +77,13 @@ const healthSummary = computed(() => {
     <div v-if="healthSummary" class="health-row" :data-tone="healthSummary.tone">
       <span class="health-dot" />
       <span class="health-text">{{ healthSummary.text }}</span>
+    </div>
+
+    <div v-if="failedChecks.length" class="health-details">
+      <div v-for="item in failedChecks" :key="item.name" class="health-detail">
+        <strong>{{ item.name }}</strong>
+        <div class="health-msg">{{ item.message }}</div>
+      </div>
     </div>
   </div>
 </template>
@@ -163,6 +175,32 @@ const healthSummary = computed(() => {
 .health-text {
   font-size: 13px;
   color: rgba(11, 18, 32, 0.86);
+}
+
+.health-details {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(216, 150, 20, 0.22);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.health-detail {
+  display: grid;
+  gap: 4px;
+}
+
+.health-detail strong {
+  font-size: 12px;
+  color: rgba(11, 18, 32, 0.9);
+}
+
+.health-msg {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(11, 18, 32, 0.72);
+  word-break: break-word;
 }
 
 .meta-grid {
