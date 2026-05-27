@@ -4,6 +4,7 @@ import { detectInitialLocale, normalizeLocale, type SupportedLocale } from '../i
 export const useUiStore = defineStore('ui', {
   state: () => ({
     showSettings: false,
+    showHelp: false,
     locale: detectInitialLocale() as SupportedLocale,
   }),
   actions: {

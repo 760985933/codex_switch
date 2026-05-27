@@ -6,6 +6,8 @@ export function CheckForUpdates():Promise<main.UpdateCheckResult>;
 
 export function ClearCodexConfigBackups():Promise<number>;
 
+export function CountLegacySessions():Promise<number>;
+
 export function DeleteCodexConfigBackup(arg1:string):Promise<string>;
 
 export function ExportConfig():Promise<string>;
@@ -18,6 +20,8 @@ export function GetAppVersion():Promise<string>;
 
 export function GetCodexConfigPath():Promise<string>;
 
+export function GetCodexSessionContent(arg1:string):Promise<main.SessionDetail>;
+
 export function GetLogHistory(arg1:number):Promise<Array<main.LogEntry>>;
 
 export function GetOverviewSnapshot():Promise<main.OverviewSnapshot>;
@@ -28,9 +32,17 @@ export function GetSandboxConfig():Promise<main.SandboxWorkspaceConfig>;
 
 export function GetUsageBalance():Promise<main.UsageBalance>;
 
+export function HasLegacySessions():Promise<boolean>;
+
 export function ImportConfig(arg1:string):Promise<main.AppConfig>;
 
 export function ListCodexConfigBackups():Promise<Array<string>>;
+
+export function ListCodexSessionBackups():Promise<Array<string>>;
+
+export function ListCodexSessions():Promise<Array<main.CodexSession>>;
+
+export function MigrateCodexProviders(arg1:string,arg2:string):Promise<main.MigrationResult>;
 
 export function ReadCodexConfigToml():Promise<string>;
 
@@ -39,6 +51,8 @@ export function RestartProxy():Promise<main.ProxyStatusPayload>;
 export function RestoreCodexConfigToml():Promise<string>;
 
 export function RestoreCodexConfigTomlFromBackup(arg1:string):Promise<string>;
+
+export function RestoreCodexSessions(arg1:string):Promise<main.MigrationResult>;
 
 export function RunHealthCheck():Promise<main.HealthCheckResult>;
 

@@ -39,7 +39,7 @@ export function detectInitialLocale(): SupportedLocale {
 export const messages = {
   'zh-CN': {
     app: {
-      nav: { overview: '主工作台', logs: '最近日志', contact: '联系与赞助' },
+      nav: { overview: '主工作台', logs: '最近日志', sessions: '会话管理', contact: '联系与赞助' },
       status: { running: '运行中', starting: '启动中', error: '异常', stopped: '未启动' },
       actions: { preferences: '偏好设置' },
       toast: {
@@ -56,8 +56,27 @@ export const messages = {
       errors: {
         timeoutStopped: '操作超时：{seconds} 秒内未完成，已停止代理启动',
       },
+      help: {
+        title: '使用帮助',
+        usage: {
+          title: '快速上手',
+          step1: '在连接面板中选择提供商并填写 API Key',
+          step2: '点击「保存配置」',
+          step3: '点击「启动代理」',
+          step4: '点击左侧「合并写入」将 Codex 配置写入文件',
+          step5: '打开 Codex Desktop 即可使用',
+        },
+        backup: {
+          title: '迁移备份与恢复',
+          desc: '会话迁移前会自动备份，备份文件保存在 ~/.codex/backups/ 目录下。',
+          step1: '进入「会话管理」页面查看会话列表',
+          step2: '如需恢复，在「会话管理」页点击备份文件旁的「恢复」按钮',
+          note: '恢复操作会先备份当前状态再执行，不会丢失数据。',
+        },
+      },
     },
     overview: {
+      title: '主工作台',
       toast: {
         configSaved: '配置已保存',
         proxyStarted: '代理服务已启动',
@@ -72,10 +91,38 @@ export const messages = {
     },
     logs: {
       title: '最近日志',
-      desc: '用于快速定位“启动/请求/健康检查”等关键事件。',
+      desc: '用于快速定位”启动/请求/健康检查”等关键事件。',
       actions: { refresh: '刷新', copyAll: '复制全部' },
       empty: { noLogs: '暂无日志' },
       toast: { refreshed: '已刷新', copiedAll: '已复制全部日志' },
+    },
+    sessions: {
+      title: '会话管理',
+      desc: '查看 Codex 本地会话列表，支持一键迁移旧格式会话。',
+      table: { title: '标题', model: '模型', messages: '消息数', time: '时间', status: '状态' },
+      status: { active: '活跃', archived: '已归档' },
+      empty: '暂无会话',
+      migration: {
+        banner: '检测到 {count} 条旧格式会话（model_provider = “Local”），一键迁移到新格式？',
+        button: '一键迁移',
+        success: '成功迁移 {count} 条会话，已在 {path} 创建备份',
+        confirmTitle: '确认迁移',
+        confirmContent: '将会话的 model_provider 从 “Local” 统一改为 “openai”，确保所有会话在同一分组下可见。迁移前会自动备份。',
+      },
+      detail: {
+        title: '会话详情',
+        roleUser: '用户',
+        roleAssistant: '助手',
+        noContent: '暂无消息内容',
+        loading: '加载中...',
+      },
+      backup: {
+        title: '备份管理',
+        restoreButton: '恢复',
+        restoreConfirm: '确认恢复',
+        restoreConfirmContent: '将从所选备份文件恢复会话。当前会话将先被备份，以防需要回滚。确定继续？',
+        restoreSuccess: '已恢复 {count} 条会话',
+      },
     },
     settings: {
       title: '偏好设置',
@@ -268,7 +315,7 @@ export const messages = {
   },
   'en-US': {
     app: {
-      nav: { overview: 'Dashboard', logs: 'Recent Logs', contact: 'Contact & Sponsor' },
+      nav: { overview: 'Dashboard', logs: 'Recent Logs', sessions: 'Sessions', contact: 'Contact & Sponsor' },
       status: { running: 'Running', starting: 'Starting', error: 'Error', stopped: 'Stopped' },
       actions: { preferences: 'Preferences' },
       toast: {
@@ -283,8 +330,27 @@ export const messages = {
         codexWrite: { title: 'Write Codex config.toml', ok: 'OK' },
       },
       errors: { timeoutStopped: 'Timed out: not finished in {seconds}s; proxy start stopped' },
+      help: {
+        title: 'Help',
+        usage: {
+          title: 'Quick Start',
+          step1: 'Select a provider and enter your API Key',
+          step2: 'Click "Save Config"',
+          step3: 'Click "Start Proxy"',
+          step4: 'Click "Merge Write" to write Codex config',
+          step5: 'Open Codex Desktop and start coding',
+        },
+        backup: {
+          title: 'Migration Backup & Restore',
+          desc: 'Backups are automatically created before migration, saved in ~/.codex/backups/.',
+          step1: 'Go to "Sessions" page to view session list',
+          step2: 'To restore, click "Restore" next to a backup file on the Sessions page',
+          note: 'Restore will backup current state first — no data loss.',
+        },
+      },
     },
     overview: {
+      title: 'Dashboard',
       toast: {
         configSaved: 'Config saved',
         proxyStarted: 'Proxy started',
@@ -303,6 +369,34 @@ export const messages = {
       actions: { refresh: 'Refresh', copyAll: 'Copy All' },
       empty: { noLogs: 'No logs' },
       toast: { refreshed: 'Refreshed', copiedAll: 'Copied all logs' },
+    },
+    sessions: {
+      title: 'Sessions',
+      desc: 'Browse Codex local sessions and migrate legacy sessions.',
+      table: { title: 'Title', model: 'Model', messages: 'Messages', time: 'Time', status: 'Status' },
+      status: { active: 'Active', archived: 'Archived' },
+      empty: 'No sessions',
+      migration: {
+        banner: 'Found {count} legacy session(s) (model_provider = "Local"). Migrate to new format?',
+        button: 'Migrate Now',
+        success: 'Migrated {count} sessions, backup at {path}',
+        confirmTitle: 'Confirm Migration',
+        confirmContent: 'Change model_provider from "Local" to "openai" so all sessions are visible under the same bucket. Backup is created before migration.',
+      },
+      detail: {
+        title: 'Session Detail',
+        roleUser: 'You',
+        roleAssistant: 'Assistant',
+        noContent: 'No messages',
+        loading: 'Loading...',
+      },
+      backup: {
+        title: 'Backups',
+        restoreButton: 'Restore',
+        restoreConfirm: 'Confirm Restore',
+        restoreConfirmContent: 'Sessions will be restored from the selected backup. Current sessions will be backed up first in case you need to roll back. Continue?',
+        restoreSuccess: 'Restored {count} sessions',
+      },
     },
     settings: {
       title: 'Preferences',
@@ -487,7 +581,7 @@ export const messages = {
   },
   'ja-JP': {
     app: {
-      nav: { overview: 'ダッシュボード', logs: '最近のログ', contact: '連絡とスポンサー' },
+      nav: { overview: 'ダッシュボード', logs: '最近のログ', sessions: 'セッション', contact: '連絡とスポンサー' },
       status: { running: '稼働中', starting: '起動中', error: 'エラー', stopped: '停止中' },
       actions: { preferences: '設定' },
       toast: {
@@ -502,8 +596,27 @@ export const messages = {
         codexWrite: { title: 'Codex config.toml を書き込み', ok: 'OK' },
       },
       errors: { timeoutStopped: 'タイムアウト: {seconds} 秒以内に完了せず、起動を停止しました' },
+      help: {
+        title: 'ヘルプ',
+        usage: {
+          title: 'クイックスタート',
+          step1: 'プロバイダーを選択し、APIキーを入力',
+          step2: '「設定を保存」をクリック',
+          step3: '「プロキシを起動」をクリック',
+          step4: '「マージ書き込み」でCodex設定を書き込み',
+          step5: 'Codex Desktop を開いて使用開始',
+        },
+        backup: {
+          title: '移行バックアップと復元',
+          desc: '移行前に自動バックアップが作成され、~/.codex/backups/ に保存されます。',
+          step1: '「セッション」ページでセッション一覧を表示',
+          step2: '復元するには、セッションページのバックアップファイル横の「復元」をクリック',
+          note: '復元前に現在の状態がバックアップされるため、データは失われません。',
+        },
+      },
     },
     overview: {
+      title: 'ダッシュボード',
       toast: {
         configSaved: '設定を保存しました',
         proxyStarted: 'ブリッジを起動しました',
@@ -519,6 +632,34 @@ export const messages = {
       actions: { refresh: '更新', copyAll: 'すべてコピー' },
       empty: { noLogs: 'ログなし' },
       toast: { refreshed: '更新しました', copiedAll: 'ログをすべてコピーしました' },
+    },
+    sessions: {
+      title: 'セッション',
+      desc: 'Codex のローカルセッションを表示し、レガシーセッションを移行します。',
+      table: { title: 'タイトル', model: 'モデル', messages: 'メッセージ', time: '時間', status: '状態' },
+      status: { active: 'アクティブ', archived: 'アーカイブ' },
+      empty: 'セッションなし',
+      migration: {
+        banner: '{count} 件のレガシーセッション（model_provider = "Local"）が見つかりました。移行しますか？',
+        button: '今すぐ移行',
+        success: '{count} 件のセッションを移行しました。バックアップ: {path}',
+        confirmTitle: '移行の確認',
+        confirmContent: 'model_provider を "Local" から "openai" に変更し、すべてのセッションを同じバケットで表示できるようにします。移行前に自動バックアップが作成されます。',
+      },
+      detail: {
+        title: 'セッション詳細',
+        roleUser: 'ユーザー',
+        roleAssistant: 'アシスタント',
+        noContent: 'メッセージなし',
+        loading: '読み込み中...',
+      },
+      backup: {
+        title: 'バックアップ',
+        restoreButton: '復元',
+        restoreConfirm: '復元の確認',
+        restoreConfirmContent: '選択したバックアップからセッションを復元します。現在のセッションは、必要に応じてロールバックできるよう、事前にバックアップされます。続行しますか？',
+        restoreSuccess: '{count} 件のセッションを復元しました',
+      },
     },
     settings: {
       title: '設定',
@@ -678,7 +819,7 @@ export const messages = {
   },
   'ko-KR': {
     app: {
-      nav: { overview: '대시보드', logs: '최근 로그', contact: '연락 및 후원' },
+      nav: { overview: '대시보드', logs: '최근 로그', sessions: '세션', contact: '연락 및 후원' },
       status: { running: '실행 중', starting: '시작 중', error: '오류', stopped: '중지됨' },
       actions: { preferences: '설정' },
       toast: {
@@ -693,8 +834,27 @@ export const messages = {
         codexWrite: { title: 'Codex config.toml 쓰기', ok: '확인' },
       },
       errors: { timeoutStopped: '시간 초과: {seconds}초 내 완료되지 않아 시작을 중지했습니다' },
+      help: {
+        title: '도움말',
+        usage: {
+          title: '빠른 시작',
+          step1: '공급자를 선택하고 API 키를 입력하세요',
+          step2: '「설정 저장」을 클릭',
+          step3: '「프록시 시작」을 클릭',
+          step4: '「병합 쓰기」로 Codex 설정을 파일에 쓰기',
+          step5: 'Codex Desktop을 열고 사용 시작',
+        },
+        backup: {
+          title: '마이그레이션 백업 및 복원',
+          desc: '마이그레이션 전에 자동으로 백업되며, ~/.codex/backups/ 에 저장됩니다.',
+          step1: '「세션」페이지에서 세션 목록 보기',
+          step2: '복원하려면 세션 페이지의 백업 파일 옆 「복원」을 클릭',
+          note: '복원 전 현재 상태가 백업되므로 데이터 손실이 없습니다.',
+        },
+      },
     },
     overview: {
+      title: '대시보드',
       toast: {
         configSaved: '설정이 저장되었습니다',
         proxyStarted: '브리지가 시작되었습니다',
@@ -710,6 +870,34 @@ export const messages = {
       actions: { refresh: '새로고침', copyAll: '전체 복사' },
       empty: { noLogs: '로그 없음' },
       toast: { refreshed: '새로고침 완료', copiedAll: '전체 로그를 복사했습니다' },
+    },
+    sessions: {
+      title: '세션',
+      desc: 'Codex 로컬 세션을 보고 레거시 세션을 마이그레이션합니다.',
+      table: { title: '제목', model: '모델', messages: '메시지', time: '시간', status: '상태' },
+      status: { active: '활성', archived: '보관됨' },
+      empty: '세션 없음',
+      migration: {
+        banner: '{count}개의 레거시 세션(model_provider = "Local")을 찾았습니다. 마이그레이션하시겠습니까?',
+        button: '지금 마이그레이션',
+        success: '{count}개 세션 마이그레이션 완료, 백업: {path}',
+        confirmTitle: '마이그레이션 확인',
+        confirmContent: 'model_provider를 "Local"에서 "openai"로 변경하여 모든 세션을 동일한 버킷에서 볼 수 있게 합니다. 마이그레이션 전에 자동 백업이 생성됩니다.',
+      },
+      detail: {
+        title: '세션 상세',
+        roleUser: '사용자',
+        roleAssistant: '어시스턴트',
+        noContent: '메시지 없음',
+        loading: '로딩 중...',
+      },
+      backup: {
+        title: '백업',
+        restoreButton: '복원',
+        restoreConfirm: '복원 확인',
+        restoreConfirmContent: '선택한 백업에서 세션을 복원합니다. 현재 세션은 롤백이 필요할 경우를 대비해 먼저 백업됩니다. 계속하시겠습니까?',
+        restoreSuccess: '{count}개 세션 복원됨',
+      },
     },
     settings: {
       title: '설정',
@@ -869,7 +1057,7 @@ export const messages = {
   },
   'fr-FR': {
     app: {
-      nav: { overview: 'Tableau', logs: 'Journaux', contact: 'Contact & Sponsor' },
+      nav: { overview: 'Tableau', logs: 'Journaux', sessions: 'Sessions', contact: 'Contact & Sponsor' },
       status: { running: 'En cours', starting: 'Démarrage', error: 'Erreur', stopped: 'Arrêté' },
       actions: { preferences: 'Préférences' },
       toast: {
@@ -884,8 +1072,27 @@ export const messages = {
         codexWrite: { title: 'Écrire Codex config.toml', ok: 'OK' },
       },
       errors: { timeoutStopped: 'Délai dépassé : non terminé en {seconds}s ; démarrage arrêté' },
+      help: {
+        title: 'Aide',
+        usage: {
+          title: 'Démarrage rapide',
+          step1: 'Sélectionnez un fournisseur et entrez votre clé API',
+          step2: 'Cliquez sur "Enregistrer la configuration"',
+          step3: 'Cliquez sur "Démarrer le proxy"',
+          step4: 'Cliquez sur "Écriture combinée" pour écrire la config Codex',
+          step5: 'Ouvrez Codex Desktop et commencez à coder',
+        },
+        backup: {
+          title: 'Sauvegarde et restauration de migration',
+          desc: 'Les sauvegardes sont créées automatiquement avant la migration, dans ~/.codex/backups/.',
+          step1: 'Allez dans "Sessions" pour voir la liste des sessions',
+          step2: 'Pour restaurer, cliquez sur "Restaurer" à côté du fichier de sauvegarde',
+          note: 'La restauration sauvegarde d\'abord l\'état actuel — pas de perte de données.',
+        },
+      },
     },
     overview: {
+      title: 'Tableau de bord',
       toast: {
         configSaved: 'Configuration enregistrée',
         proxyStarted: 'Proxy démarré',
@@ -901,6 +1108,34 @@ export const messages = {
       actions: { refresh: 'Rafraîchir', copyAll: 'Tout copier' },
       empty: { noLogs: 'Aucun journal' },
       toast: { refreshed: 'Rafraîchi', copiedAll: 'Journaux copiés' },
+    },
+    sessions: {
+      title: 'Sessions',
+      desc: 'Parcourir les sessions Codex locales et migrer les sessions legacy.',
+      table: { title: 'Titre', model: 'Modèle', messages: 'Messages', time: 'Heure', status: 'Statut' },
+      status: { active: 'Actif', archived: 'Archivé' },
+      empty: 'Aucune session',
+      migration: {
+        banner: '{count} session(s) legacy (model_provider = "Local") trouvée(s). Migrer vers le nouveau format ?',
+        button: 'Migrer maintenant',
+        success: '{count} session(s) migrée(s), sauvegarde : {path}',
+        confirmTitle: 'Confirmer la migration',
+        confirmContent: 'Changer model_provider de "Local" à "openai" pour que toutes les sessions soient visibles dans le même bucket. Une sauvegarde est créée avant la migration.',
+      },
+      detail: {
+        title: 'Détail de la session',
+        roleUser: 'Utilisateur',
+        roleAssistant: 'Assistant',
+        noContent: 'Aucun message',
+        loading: 'Chargement...',
+      },
+      backup: {
+        title: 'Sauvegardes',
+        restoreButton: 'Restaurer',
+        restoreConfirm: 'Confirmer la restauration',
+        restoreConfirmContent: 'Les sessions seront restaurées à partir de la sauvegarde sélectionnée. Les sessions actuelles seront d\'abord sauvegardées au cas où vous auriez besoin de revenir en arrière. Continuer ?',
+        restoreSuccess: '{count} session(s) restaurée(s)',
+      },
     },
     settings: {
       title: 'Préférences',
@@ -1060,7 +1295,7 @@ export const messages = {
   },
   'de-DE': {
     app: {
-      nav: { overview: 'Übersicht', logs: 'Logs', contact: 'Kontakt & Sponsoring' },
+      nav: { overview: 'Übersicht', logs: 'Logs', sessions: 'Sitzungen', contact: 'Kontakt & Sponsoring' },
       status: { running: 'Läuft', starting: 'Startet', error: 'Fehler', stopped: 'Gestoppt' },
       actions: { preferences: 'Einstellungen' },
       toast: {
@@ -1075,8 +1310,27 @@ export const messages = {
         codexWrite: { title: 'Codex config.toml schreiben', ok: 'OK' },
       },
       errors: { timeoutStopped: 'Zeitüberschreitung: nicht in {seconds}s fertig; Start gestoppt' },
+      help: {
+        title: 'Hilfe',
+        usage: {
+          title: 'Schnellstart',
+          step1: 'Anbieter auswählen und API-Schlüssel eingeben',
+          step2: '"Einstellungen speichern" klicken',
+          step3: '"Proxy starten" klicken',
+          step4: '"Merge-Schreiben" klicken, um Codex-Konfiguration zu schreiben',
+          step5: 'Codex Desktop öffnen und loslegen',
+        },
+        backup: {
+          title: 'Migrations-Backup & Wiederherstellung',
+          desc: 'Backups werden vor der Migration automatisch erstellt und in ~/.codex/backups/ gespeichert.',
+          step1: 'Gehen Sie zu "Sitzungen", um die Liste anzuzeigen',
+          step2: 'Zum Wiederherstellen klicken Sie neben der Sicherungsdatei auf "Wiederherstellen"',
+          note: 'Die Wiederherstellung sichert zuerst den aktuellen Zustand — kein Datenverlust.',
+        },
+      },
     },
     overview: {
+      title: 'Übersicht',
       toast: {
         configSaved: 'Konfiguration gespeichert',
         proxyStarted: 'Proxy gestartet',
@@ -1092,6 +1346,34 @@ export const messages = {
       actions: { refresh: 'Aktualisieren', copyAll: 'Alles kopieren' },
       empty: { noLogs: 'Keine Logs' },
       toast: { refreshed: 'Aktualisiert', copiedAll: 'Alle Logs kopiert' },
+    },
+    sessions: {
+      title: 'Sitzungen',
+      desc: 'Codex lokale Sitzungen durchsuchen und Legacy-Sitzungen migrieren.',
+      table: { title: 'Titel', model: 'Modell', messages: 'Nachrichten', time: 'Zeit', status: 'Status' },
+      status: { active: 'Aktiv', archived: 'Archiviert' },
+      empty: 'Keine Sitzungen',
+      migration: {
+        banner: '{count} Legacy-Sitzung(en) (model_provider = "Local") gefunden. Migration durchführen?',
+        button: 'Jetzt migrieren',
+        success: '{count} Sitzung(en) migriert, Backup: {path}',
+        confirmTitle: 'Migration bestätigen',
+        confirmContent: 'Ändert model_provider von "Local" zu "openai", damit alle Sitzungen im selben Bucket sichtbar sind. Vor der Migration wird ein Backup erstellt.',
+      },
+      detail: {
+        title: 'Sitzungsdetails',
+        roleUser: 'Benutzer',
+        roleAssistant: 'Assistent',
+        noContent: 'Keine Nachrichten',
+        loading: 'Wird geladen...',
+      },
+      backup: {
+        title: 'Backups',
+        restoreButton: 'Wiederherstellen',
+        restoreConfirm: 'Wiederherstellung bestätigen',
+        restoreConfirmContent: 'Sitzungen werden aus dem ausgewählten Backup wiederhergestellt. Aktuelle Sitzungen werden zuerst gesichert, falls ein Rollback erforderlich ist. Fortfahren?',
+        restoreSuccess: '{count} Sitzung(en) wiederhergestellt',
+      },
     },
     settings: {
       title: 'Einstellungen',
@@ -1247,7 +1529,7 @@ export const messages = {
   },
   'es-AR': {
     app: {
-      nav: { overview: 'Panel', logs: 'Registros', contact: 'Contacto y Patrocinio' },
+      nav: { overview: 'Panel', logs: 'Registros', sessions: 'Sesiones', contact: 'Contacto y Patrocinio' },
       status: { running: 'En ejecución', starting: 'Iniciando', error: 'Error', stopped: 'Detenido' },
       actions: { preferences: 'Preferencias' },
       toast: {
@@ -1262,8 +1544,27 @@ export const messages = {
         codexWrite: { title: 'Escribir Codex config.toml', ok: 'OK' },
       },
       errors: { timeoutStopped: 'Tiempo agotado: no terminó en {seconds}s; inicio detenido' },
+      help: {
+        title: 'Ayuda',
+        usage: {
+          title: 'Inicio rápido',
+          step1: 'Seleccione un proveedor e ingrese su clave API',
+          step2: 'Haga clic en "Guardar configuración"',
+          step3: 'Haga clic en "Iniciar proxy"',
+          step4: 'Haga clic en "Escritura combinada" para escribir la configuración de Codex',
+          step5: 'Abra Codex Desktop y comience a usar',
+        },
+        backup: {
+          title: 'Copia de seguridad y restauración de migración',
+          desc: 'Las copias de seguridad se crean automáticamente antes de la migración en ~/.codex/backups/.',
+          step1: 'Vaya a "Sesiones" para ver la lista de sesiones',
+          step2: 'Para restaurar, haga clic en "Restaurar" junto al archivo de copia de seguridad',
+          note: 'La restauración respalda el estado actual primero — sin pérdida de datos.',
+        },
+      },
     },
     overview: {
+      title: 'Panel',
       toast: {
         configSaved: 'Configuración guardada',
         proxyStarted: 'Proxy iniciado',
@@ -1279,6 +1580,34 @@ export const messages = {
       actions: { refresh: 'Actualizar', copyAll: 'Copiar todo' },
       empty: { noLogs: 'Sin registros' },
       toast: { refreshed: 'Actualizado', copiedAll: 'Registros copiados' },
+    },
+    sessions: {
+      title: 'Sesiones',
+      desc: 'Explorar sesiones locales de Codex y migrar sesiones heredadas.',
+      table: { title: 'Título', model: 'Modelo', messages: 'Mensajes', time: 'Hora', status: 'Estado' },
+      status: { active: 'Activo', archived: 'Archivado' },
+      empty: 'Sin sesiones',
+      migration: {
+        banner: 'Se encontraron {count} sesión(es) legacy (model_provider = "Local"). ¿Migrar?',
+        button: 'Migrar ahora',
+        success: '{count} sesión(es) migrada(s), respaldo: {path}',
+        confirmTitle: 'Confirmar migración',
+        confirmContent: 'Cambia model_provider de "Local" a "openai" para que todas las sesiones sean visibles en el mismo grupo. Se crea una copia de seguridad antes de la migración.',
+      },
+      detail: {
+        title: 'Detalle de sesión',
+        roleUser: 'Usuario',
+        roleAssistant: 'Asistente',
+        noContent: 'Sin mensajes',
+        loading: 'Cargando...',
+      },
+      backup: {
+        title: 'Respaldo',
+        restoreButton: 'Restaurar',
+        restoreConfirm: 'Confirmar restauración',
+        restoreConfirmContent: 'Las sesiones se restaurarán desde la copia de seguridad seleccionada. Las sesiones actuales se respaldarán primero en caso de que necesite revertir los cambios. ¿Continuar?',
+        restoreSuccess: '{count} sesión(es) restaurada(s)',
+      },
     },
     settings: {
       title: 'Preferencias',

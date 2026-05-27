@@ -20,7 +20,7 @@ import {
 } from 'naive-ui'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { BrowserOpenURL, ClipboardSetText, Quit, WindowMinimise } from '../wailsjs/runtime/runtime'
+import { BrowserOpenURL, ClipboardSetText, EventsOn, Quit, WindowMinimise } from '../wailsjs/runtime/runtime'
 import { CheckForUpdates, GetAppVersion } from '../wailsjs/go/main/App'
 import SettingsDrawer from './components/SettingsDrawer.vue'
 import { useAppStore } from './stores/app'
@@ -142,6 +142,7 @@ async function checkUpdates(showUpToDateToast: boolean, showDialogOnUpdate: bool
 const navItems = computed(() => [
   { label: t('app.nav.overview'), to: '/overview' },
   { label: t('app.nav.logs'), to: '/logs' },
+  { label: t('app.nav.sessions'), to: '/sessions' },
   { label: t('app.nav.contact'), to: '/contact' },
 ])
 
@@ -224,6 +225,11 @@ onMounted(async () => {
   } catch {
   }
   await checkUpdates(false, true)
+
+  // Listen for tray help menu click
+  EventsOn('tray:help', () => {
+    ui.showHelp = true
+  })
 })
 </script>
 
@@ -297,6 +303,31 @@ onMounted(async () => {
             @codex-copy="handleCodexCopy"
             @codex-write="handleCodexWrite"
           />
+
+          <!-- Help modal -->
+          <n-modal v-model:show="ui.showHelp" preset="card" :title="'💡 ' + t('app.help.title')" style="max-width: 600px" :bordered="false" closable>
+            <div class="help-content">
+              <div class="help-section">
+                <h4>{{ t('app.help.usage.title') }}</h4>
+                <ol class="help-steps">
+                  <li>{{ t('app.help.usage.step1') }}</li>
+                  <li>{{ t('app.help.usage.step2') }}</li>
+                  <li>{{ t('app.help.usage.step3') }}</li>
+                  <li>{{ t('app.help.usage.step4') }}</li>
+                  <li>{{ t('app.help.usage.step5') }}</li>
+                </ol>
+              </div>
+              <div class="help-section">
+                <h4>{{ t('app.help.backup.title') }}</h4>
+                <p>{{ t('app.help.backup.desc') }}</p>
+                <ol class="help-steps">
+                  <li>{{ t('app.help.backup.step1') }}</li>
+                  <li>{{ t('app.help.backup.step2') }}</li>
+                </ol>
+                <p class="help-note">{{ t('app.help.backup.note') }}</p>
+              </div>
+            </div>
+          </n-modal>
         </div>
       </n-message-provider>
     </n-dialog-provider>
@@ -490,5 +521,33 @@ onMounted(async () => {
   .locale-select {
     width: 118px;
   }
+}
+</style>
+
+<style>
+.help-content {
+  display: grid;
+  gap: 20px;
+}
+
+.help-section h4 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.help-steps {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 2;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.help-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--accent);
+  opacity: 0.85;
 }
 </style>

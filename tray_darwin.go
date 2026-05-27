@@ -90,6 +90,7 @@ import (
 const (
 	trayMenuOpen = 1
 	trayMenuQuit = 2
+	trayMenuHelp = 3
 )
 
 func (a *App) initPlatformTray() {
@@ -106,6 +107,10 @@ func (a *App) initPlatformTray() {
 		openTitle := C.CString("打开面板")
 		defer C.free(unsafe.Pointer(openTitle))
 		C.tray_add_item(openTitle, C.int(trayMenuOpen))
+
+		helpTitle := C.CString("帮助")
+		defer C.free(unsafe.Pointer(helpTitle))
+		C.tray_add_item(helpTitle, C.int(trayMenuHelp))
 
 		C.tray_add_separator()
 
@@ -141,5 +146,9 @@ func handleTrayClick(tag int) {
 		runtime.WindowUnminimise(mainAppCtx)
 	case trayMenuQuit:
 		runtime.Quit(mainAppCtx)
+	case trayMenuHelp:
+		runtime.WindowShow(mainAppCtx)
+		runtime.WindowUnminimise(mainAppCtx)
+		runtime.EventsEmit(mainAppCtx, "tray:help")
 	}
 }

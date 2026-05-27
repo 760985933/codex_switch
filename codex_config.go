@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	codexProviderID = "Local"
+	codexProviderID = "openai"
 )
 
 func codexConfigPath() (string, error) {
@@ -366,33 +366,34 @@ func mergeCodexConfigToml(existing []byte, baseURL string, defaultModel string) 
 
 	doc["model_provider"] = codexProviderID
 	delete(doc, "model_catalog_json")
-	doc["profile"] = codexProviderID
+	delete(doc, "profile")
 	if strings.TrimSpace(defaultModel) != "" {
 		doc["model"] = defaultModel
 	} else if _, ok := doc["model"]; !ok {
 		doc["model"] = "deepseek-v4-flash"
 	}
 
-	modelProviders := ensureTomlMap(doc, "model_providers")
-	provider := ensureTomlMap(modelProviders, codexProviderID)
-	provider["name"] = "Local"
-	provider["base_url"] = baseURL
-	provider["wire_api"] = "responses"
-	delete(provider, "env_key")
-	if _, ok := provider["query_params"]; !ok {
-		provider["query_params"] = map[string]any{}
-	}
+	// 使用 openai_base_url 指向本地代理，而非创建自定义 provider
+	// 这样 model_provider 始终为 "openai"，Codex 不会按 provider 做分桶隔离
+	doc["openai_base_url"] = strings.TrimRight(baseURL, "/") + "/"
 
-	profiles := ensureTomlMap(doc, "profiles")
-	profile := ensureTomlMap(profiles, codexProviderID)
-	profile["model_provider"] = codexProviderID
-	if model, ok := doc["model"].(string); ok && strings.TrimSpace(model) != "" {
-		profile["model"] = model
-	} else {
-		profile["model"] = "deepseek-v4-flash"
+	// 清理旧版自定义 provider 配置（如果有残留）
+	if modelProviders, ok := doc["model_providers"].(map[string]any); ok {
+		delete(modelProviders, "Local")
+		if len(modelProviders) == 0 {
+			delete(doc, "model_providers")
+		} else {
+			doc["model_providers"] = modelProviders
+		}
 	}
-	profile["openai_base_url"] = strings.TrimRight(baseURL, "/") + "/"
-	delete(profile, "model_catalog_json")
+	if profiles, ok := doc["profiles"].(map[string]any); ok {
+		delete(profiles, "Local")
+		if len(profiles) == 0 {
+			delete(doc, "profiles")
+		} else {
+			doc["profiles"] = profiles
+		}
+	}
 
 	return toml.Marshal(doc)
 }
@@ -408,30 +409,40 @@ func removeCodexBridgeFromConfig(existing []byte) ([]byte, bool, error) {
 
 	changed := false
 
-	modelProvidersAny, ok := doc["model_providers"]
-	if ok {
+	// 移除 openai_base_url（本应用设置的路由）
+	if _, has := doc["openai_base_url"]; has {
+		delete(doc, "openai_base_url")
+		changed = true
+	}
+
+	// 清理旧版 [model_providers.Local] 残留
+	modelProvidersAny, hasMp := doc["model_providers"]
+	if hasMp {
 		if modelProviders, ok := modelProvidersAny.(map[string]any); ok {
-			if _, has := modelProviders[codexProviderID]; has {
-				delete(modelProviders, codexProviderID)
+			if _, has := modelProviders["Local"]; has {
+				delete(modelProviders, "Local")
 				changed = true
 			}
 			if len(modelProviders) == 0 {
 				delete(doc, "model_providers")
-				changed = true
 			} else {
 				doc["model_providers"] = modelProviders
 			}
+		}
+	}
 
-			if current, ok := doc["model_provider"].(string); ok && current == codexProviderID {
-				for k := range modelProviders {
-					doc["model_provider"] = k
-					changed = true
-					break
-				}
-				if doc["model_provider"] == codexProviderID {
-					delete(doc, "model_provider")
-					changed = true
-				}
+	// 清理旧版 [profiles.Local] 残留
+	profilesAny, hasProf := doc["profiles"]
+	if hasProf {
+		if profiles, ok := profilesAny.(map[string]any); ok {
+			if _, has := profiles["Local"]; has {
+				delete(profiles, "Local")
+				changed = true
+			}
+			if len(profiles) == 0 {
+				delete(doc, "profiles")
+			} else {
+				doc["profiles"] = profiles
 			}
 		}
 	}
@@ -446,14 +457,3 @@ func removeCodexBridgeFromConfig(existing []byte) ([]byte, bool, error) {
 	return out, true, nil
 }
 
-func ensureTomlMap(parent map[string]any, key string) map[string]any {
-	if value, ok := parent[key]; ok {
-		if m, ok := value.(map[string]any); ok {
-			return m
-		}
-	}
-
-	m := map[string]any{}
-	parent[key] = m
-	return m
-}

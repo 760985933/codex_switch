@@ -90,6 +90,30 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class CodexSession {
+	    id: string;
+	    title: string;
+	    model: string;
+	    modelProvider: string;
+	    messageCount: number;
+	    createdAt: string;
+	    isArchived: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new CodexSession(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.title = source["title"];
+	        this.model = source["model"];
+	        this.modelProvider = source["modelProvider"];
+	        this.messageCount = source["messageCount"];
+	        this.createdAt = source["createdAt"];
+	        this.isArchived = source["isArchived"];
+	    }
+	}
 	export class HealthCheckItem {
 	    name: string;
 	    ok: boolean;
@@ -158,6 +182,22 @@ export namespace main {
 	        this.source = source["source"];
 	        this.message = source["message"];
 	        this.requestId = source["requestId"];
+	    }
+	}
+	export class MigrationResult {
+	    migratedCount: number;
+	    backupPath: string;
+	    error?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new MigrationResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.migratedCount = source["migratedCount"];
+	        this.backupPath = source["backupPath"];
+	        this.error = source["error"];
 	    }
 	}
 	export class ProxyStatusPayload {
@@ -240,6 +280,55 @@ export namespace main {
 	        this.approvalPolicy = source["approvalPolicy"];
 	    }
 	}
+	export class SessionMessage {
+	    role: string;
+	    content: string;
+	    timestamp: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SessionMessage(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.role = source["role"];
+	        this.content = source["content"];
+	        this.timestamp = source["timestamp"];
+	    }
+	}
+	export class SessionDetail {
+	    session: CodexSession;
+	    messages: SessionMessage[];
+	
+	    static createFrom(source: any = {}) {
+	        return new SessionDetail(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.session = this.convertValues(source["session"], CodexSession);
+	        this.messages = this.convertValues(source["messages"], SessionMessage);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	export class UpdateCheckResult {
 	    currentVersion: string;
 	    latestVersion: string;

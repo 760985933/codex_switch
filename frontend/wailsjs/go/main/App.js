@@ -10,6 +10,10 @@ export function ClearCodexConfigBackups() {
   return window['go']['main']['App']['ClearCodexConfigBackups']();
 }
 
+export function CountLegacySessions() {
+  return window['go']['main']['App']['CountLegacySessions']();
+}
+
 export function DeleteCodexConfigBackup(arg1) {
   return window['go']['main']['App']['DeleteCodexConfigBackup'](arg1);
 }
@@ -34,6 +38,10 @@ export function GetCodexConfigPath() {
   return window['go']['main']['App']['GetCodexConfigPath']();
 }
 
+export function GetCodexSessionContent(arg1) {
+  return window['go']['main']['App']['GetCodexSessionContent'](arg1);
+}
+
 export function GetLogHistory(arg1) {
   return window['go']['main']['App']['GetLogHistory'](arg1);
 }
@@ -54,12 +62,28 @@ export function GetUsageBalance() {
   return window['go']['main']['App']['GetUsageBalance']();
 }
 
+export function HasLegacySessions() {
+  return window['go']['main']['App']['HasLegacySessions']();
+}
+
 export function ImportConfig(arg1) {
   return window['go']['main']['App']['ImportConfig'](arg1);
 }
 
 export function ListCodexConfigBackups() {
   return window['go']['main']['App']['ListCodexConfigBackups']();
+}
+
+export function ListCodexSessionBackups() {
+  return window['go']['main']['App']['ListCodexSessionBackups']();
+}
+
+export function ListCodexSessions() {
+  return window['go']['main']['App']['ListCodexSessions']();
+}
+
+export function MigrateCodexProviders(arg1, arg2) {
+  return window['go']['main']['App']['MigrateCodexProviders'](arg1, arg2);
 }
 
 export function ReadCodexConfigToml() {
@@ -76,6 +100,10 @@ export function RestoreCodexConfigToml() {
 
 export function RestoreCodexConfigTomlFromBackup(arg1) {
   return window['go']['main']['App']['RestoreCodexConfigTomlFromBackup'](arg1);
+}
+
+export function RestoreCodexSessions(arg1) {
+  return window['go']['main']['App']['RestoreCodexSessions'](arg1);
 }
 
 export function RunHealthCheck() {

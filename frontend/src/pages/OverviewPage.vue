@@ -7,8 +7,10 @@ import ConfigPanel from '../components/ConfigPanel.vue'
 import QuickGuideCard from '../components/QuickGuideCard.vue'
 import { useProxyEvents } from '../composables/useProxyEvents'
 import { useAppStore } from '../stores/app'
+import { useUiStore } from '../stores/ui'
 
 const store = useAppStore()
+const ui = useUiStore()
 const message = useMessage()
 const { t } = useI18n()
 const busy = ref(false)
@@ -104,6 +106,16 @@ onMounted(async () => {
 
 <template>
   <div class="overview-page">
+    <div class="page-head">
+      <div>
+        <h2>{{ t('overview.title') }}</h2>
+      </div>
+      <n-button quaternary circle size="small" @click="ui.showHelp = true">
+        <template #icon>
+          <span class="help-icon">?</span>
+        </template>
+      </n-button>
+    </div>
     <div class="page-grid">
       <div class="main-column">
         <ConfigPanel
@@ -133,6 +145,31 @@ onMounted(async () => {
 .overview-page {
   display: grid;
   gap: 24px;
+}
+
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-head h2 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  cursor: pointer;
 }
 
 .page-grid {
