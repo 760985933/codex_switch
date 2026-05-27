@@ -195,6 +195,18 @@ export const messages = {
       sandbox: {
         title: 'API 沙盒',
         networkAccess: '互联网访问',
+        sandboxMode: '沙盒模式',
+        sandboxModeOptions: {
+          readOnly: '只读',
+          workspaceWrite: '工作区写入',
+          dangerFullAccess: '完全访问',
+        },
+        approvalPolicy: '审批提示',
+        approvalPolicyOptions: {
+          untrusted: '不受信任',
+          onRequest: '按需询问',
+          never: '从不',
+        },
         placeholder: '在此输入测试消息...',
         send: '发送',
         response: '响应',
@@ -395,6 +407,18 @@ export const messages = {
       sandbox: {
         title: 'API Sandbox',
         networkAccess: 'Network Access',
+        sandboxMode: 'Sandbox Mode',
+        sandboxModeOptions: {
+          readOnly: 'Read-only',
+          workspaceWrite: 'Workspace Write',
+          dangerFullAccess: 'Full Access (Dangerous)',
+        },
+        approvalPolicy: 'Approval Policy',
+        approvalPolicyOptions: {
+          untrusted: 'Untrusted',
+          onRequest: 'On Request',
+          never: 'Never',
+        },
         placeholder: 'Enter a test message...',
         send: 'Send',
         response: 'Response',
@@ -582,6 +606,18 @@ export const messages = {
       sandbox: {
         title: 'API サンドボックス',
         networkAccess: 'ネットワークアクセス',
+        sandboxMode: 'サンドボックスモード',
+        sandboxModeOptions: {
+          readOnly: '読み取り専用',
+          workspaceWrite: 'ワークスペース書き込み',
+          dangerFullAccess: '完全アクセス',
+        },
+        approvalPolicy: '承認ポリシー',
+        approvalPolicyOptions: {
+          untrusted: '信頼しない',
+          onRequest: 'オンデマンド',
+          never: 'しない',
+        },
         placeholder: 'テストメッセージを入力...',
         send: '送信',
         response: '応答',
@@ -756,6 +792,18 @@ export const messages = {
       sandbox: {
         title: 'API 샌드박스',
         networkAccess: '네트워크 액세스',
+        sandboxMode: '샌드박스 모드',
+        sandboxModeOptions: {
+          readOnly: '읽기 전용',
+          workspaceWrite: '워크스페이스 쓰기',
+          dangerFullAccess: '전체 액세스',
+        },
+        approvalPolicy: '승인 정책',
+        approvalPolicyOptions: {
+          untrusted: '신뢰하지 않음',
+          onRequest: '요청 시',
+          never: '하지 않음',
+        },
         placeholder: '테스트 메시지를 입력하세요...',
         send: '보내기',
         response: '응답',
@@ -930,6 +978,18 @@ export const messages = {
       sandbox: {
         title: 'Bac à sable API',
         networkAccess: 'Accès Internet',
+        sandboxMode: 'Mode sandbox',
+        sandboxModeOptions: {
+          readOnly: 'Lecture seule',
+          workspaceWrite: 'Écriture workspace',
+          dangerFullAccess: 'Accès complet',
+        },
+        approvalPolicy: 'Politique d\'approbation',
+        approvalPolicyOptions: {
+          untrusted: 'Non fiable',
+          onRequest: 'Sur demande',
+          never: 'Jamais',
+        },
         placeholder: 'Entrez un message de test...',
         send: 'Envoyer',
         response: 'Réponse',
@@ -1104,6 +1164,18 @@ export const messages = {
       sandbox: {
         title: 'API-Sandbox',
         networkAccess: 'Internetzugriff',
+        sandboxMode: 'Sandbox-Modus',
+        sandboxModeOptions: {
+          readOnly: 'Nur Lesen',
+          workspaceWrite: 'Workspace-Schreiben',
+          dangerFullAccess: 'Vollzugriff',
+        },
+        approvalPolicy: 'Genehmigungsrichtlinie',
+        approvalPolicyOptions: {
+          untrusted: 'Nicht vertrauenswürdig',
+          onRequest: 'Auf Anfrage',
+          never: 'Nie',
+        },
         placeholder: 'Testnachricht eingeben...',
         send: 'Senden',
         response: 'Antwort',
@@ -1274,6 +1346,18 @@ export const messages = {
       sandbox: {
         title: 'Sandbox de API',
         networkAccess: 'Acceso a Internet',
+        sandboxMode: 'Modo sandbox',
+        sandboxModeOptions: {
+          readOnly: 'Solo lectura',
+          workspaceWrite: 'Escritura workspace',
+          dangerFullAccess: 'Acceso completo',
+        },
+        approvalPolicy: 'Política de aprobación',
+        approvalPolicyOptions: {
+          untrusted: 'No confiable',
+          onRequest: 'A pedido',
+          never: 'Nunca',
+        },
         placeholder: 'Ingrese un mensaje de prueba...',
         send: 'Enviar',
         response: 'Respuesta',

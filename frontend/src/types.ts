@@ -71,4 +71,6 @@ export interface OverviewSnapshot {
 
 export interface SandboxWorkspaceConfig {
   networkAccess: boolean
+  sandboxMode: string
+  approvalPolicy: string
 }

@@ -247,6 +247,8 @@ export namespace main {
 
 	export class SandboxWorkspaceConfig {
 	    networkAccess: boolean;
+	    sandboxMode: string;
+	    approvalPolicy: string;
 
 	    static createFrom(source: any = {}) {
 	        return new SandboxWorkspaceConfig(source);
@@ -255,6 +257,8 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.networkAccess = source["networkAccess"];
+	        this.sandboxMode = source["sandboxMode"];
+	        this.approvalPolicy = source["approvalPolicy"];
 	    }
 	}
 

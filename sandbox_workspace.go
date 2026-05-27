@@ -9,8 +9,41 @@ import (
 	toml "github.com/pelletier/go-toml/v2"
 )
 
+const (
+	defaultSandboxMode    = "workspace-write"
+	defaultApprovalPolicy = "on-request"
+)
+
 func sandboxConfigPath() (string, error) {
 	return codexConfigPath()
+}
+
+func sandboxReadSection(doc map[string]any) SandboxWorkspaceConfig {
+	cfg := SandboxWorkspaceConfig{
+		NetworkAccess:  true,
+		SandboxMode:    defaultSandboxMode,
+		ApprovalPolicy: defaultApprovalPolicy,
+	}
+	if sw, ok := doc["sandbox_workspace_write"]; ok {
+		if swMap, ok := sw.(map[string]any); ok {
+			if na, ok := swMap["network_access"]; ok {
+				if b, ok := na.(bool); ok {
+					cfg.NetworkAccess = b
+				}
+			}
+			if sm, ok := swMap["sandbox_mode"]; ok {
+				if s, ok := sm.(string); ok && s != "" {
+					cfg.SandboxMode = s
+				}
+			}
+			if ap, ok := swMap["approval_policy"]; ok {
+				if s, ok := ap.(string); ok && s != "" {
+					cfg.ApprovalPolicy = s
+				}
+			}
+		}
+	}
+	return cfg
 }
 
 func (a *App) GetSandboxConfig() (SandboxWorkspaceConfig, error) {
@@ -22,7 +55,11 @@ func (a *App) GetSandboxConfig() (SandboxWorkspaceConfig, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return SandboxWorkspaceConfig{NetworkAccess: true}, nil
+			return SandboxWorkspaceConfig{
+				NetworkAccess:  true,
+				SandboxMode:    defaultSandboxMode,
+				ApprovalPolicy: defaultApprovalPolicy,
+			}, nil
 		}
 		return SandboxWorkspaceConfig{}, err
 	}
@@ -34,18 +71,13 @@ func (a *App) GetSandboxConfig() (SandboxWorkspaceConfig, error) {
 		}
 	}
 
-	cfg := SandboxWorkspaceConfig{NetworkAccess: true}
-	if sw, ok := doc["sandbox_workspace_write"]; ok {
-		if swMap, ok := sw.(map[string]any); ok {
-			if na, ok := swMap["network_access"]; ok {
-				if b, ok := na.(bool); ok {
-					cfg.NetworkAccess = b
-				}
-			}
-		}
-	}
+	return sandboxReadSection(doc), nil
+}
 
-	return cfg, nil
+func sandboxConfigsEqual(a, b SandboxWorkspaceConfig) bool {
+	return a.NetworkAccess == b.NetworkAccess &&
+		a.SandboxMode == b.SandboxMode &&
+		a.ApprovalPolicy == b.ApprovalPolicy
 }
 
 func (a *App) SetSandboxConfig(cfg SandboxWorkspaceConfig) (SandboxWorkspaceConfig, error) {
@@ -67,23 +99,16 @@ func (a *App) SetSandboxConfig(cfg SandboxWorkspaceConfig) (SandboxWorkspaceConf
 		}
 	}
 
-	// Dedup: skip write if the value is already the same
-	current := SandboxWorkspaceConfig{NetworkAccess: true}
-	if sw, ok := doc["sandbox_workspace_write"]; ok {
-		if swMap, ok := sw.(map[string]any); ok {
-			if na, ok := swMap["network_access"]; ok {
-				if b, ok := na.(bool); ok {
-					current.NetworkAccess = b
-				}
-			}
-		}
-	}
-	if current.NetworkAccess == cfg.NetworkAccess {
+	// Dedup: skip write if nothing changed
+	current := sandboxReadSection(doc)
+	if sandboxConfigsEqual(current, cfg) {
 		return cfg, nil
 	}
 
 	doc["sandbox_workspace_write"] = map[string]any{
-		"network_access": cfg.NetworkAccess,
+		"network_access":  cfg.NetworkAccess,
+		"sandbox_mode":    cfg.SandboxMode,
+		"approval_policy": cfg.ApprovalPolicy,
 	}
 
 	out, err := toml.Marshal(doc)
@@ -99,13 +124,6 @@ func (a *App) SetSandboxConfig(cfg SandboxWorkspaceConfig) (SandboxWorkspaceConf
 		return SandboxWorkspaceConfig{}, err
 	}
 
-	a.appendLog("info", "app", "已更新 sandbox 配置: network_access="+boolStr(cfg.NetworkAccess)+" → "+path, "")
+	a.appendLog("info", "app", "已更新 sandbox 配置 → "+path, "")
 	return cfg, nil
-}
-
-func boolStr(b bool) string {
-	if b {
-		return "true"
-	}
-	return "false"
 }

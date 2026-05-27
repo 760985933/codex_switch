@@ -117,6 +117,8 @@ const sandboxInput = ref('')
 const sandboxResponse = ref('')
 const sandboxLoading = ref(false)
 const networkAccess = ref(true)
+const sandboxMode = ref('workspace-write')
+const approvalPolicy = ref('on-request')
 const sandboxConfigLoading = ref(false)
 let sandboxConfigLoaded = false
 
@@ -124,24 +126,40 @@ async function loadSandboxConfig() {
   try {
     const cfg = await store.getSandboxConfig()
     networkAccess.value = cfg.networkAccess
+    sandboxMode.value = cfg.sandboxMode || 'workspace-write'
+    approvalPolicy.value = cfg.approvalPolicy || 'on-request'
     sandboxConfigLoaded = true
   } catch (err) {
     console.error('load sandbox config failed', err)
   }
 }
 
-async function handleNetworkAccessChange(val: boolean) {
-  if (sandboxConfigLoaded && val === networkAccess.value) return
+async function saveSandboxConfig() {
   sandboxConfigLoading.value = true
   try {
-    await store.setSandboxConfig({ networkAccess: val })
+    await store.setSandboxConfig({
+      networkAccess: networkAccess.value,
+      sandboxMode: sandboxMode.value,
+      approvalPolicy: approvalPolicy.value,
+    })
   } catch (err) {
     message.error(String(err))
-    networkAccess.value = !val
   } finally {
     sandboxConfigLoading.value = false
   }
 }
+
+const sandboxModeOptions = [
+  { label: t('guide.sandbox.sandboxModeOptions.readOnly'), value: 'read-only' },
+  { label: t('guide.sandbox.sandboxModeOptions.workspaceWrite'), value: 'workspace-write' },
+  { label: t('guide.sandbox.sandboxModeOptions.dangerFullAccess'), value: 'danger-full-access' },
+]
+
+const approvalPolicyOptions = [
+  { label: t('guide.sandbox.approvalPolicyOptions.untrusted'), value: 'untrusted' },
+  { label: t('guide.sandbox.approvalPolicyOptions.onRequest'), value: 'on-request' },
+  { label: t('guide.sandbox.approvalPolicyOptions.never'), value: 'never' },
+]
 
 watch(showSandbox, (v) => {
   if (v) loadSandboxConfig()
@@ -364,14 +382,36 @@ async function handleCodexWrite() {
       :mask-closable="false"
     >
       <div class="sandbox">
-        <!-- Switches -->
-        <div class="sandbox-switches">
-          <div class="sandbox-switch">
-            <span class="sandbox-switch-label">{{ t('guide.sandbox.networkAccess') }}</span>
+        <!-- Switches & selects -->
+        <div class="sandbox-fields">
+          <div class="sandbox-field">
+            <span class="sandbox-field-label">{{ t('guide.sandbox.networkAccess') }}</span>
             <n-switch
               v-model:value="networkAccess"
               :loading="sandboxConfigLoading"
-              @update:value="handleNetworkAccessChange"
+              @update:value="saveSandboxConfig"
+            />
+          </div>
+          <div class="sandbox-field">
+            <span class="sandbox-field-label">{{ t('guide.sandbox.sandboxMode') }}</span>
+            <n-select
+              v-model:value="sandboxMode"
+              :options="sandboxModeOptions"
+              :loading="sandboxConfigLoading"
+              size="small"
+              class="sandbox-field-select"
+              @update:value="saveSandboxConfig"
+            />
+          </div>
+          <div class="sandbox-field">
+            <span class="sandbox-field-label">{{ t('guide.sandbox.approvalPolicy') }}</span>
+            <n-select
+              v-model:value="approvalPolicy"
+              :options="approvalPolicyOptions"
+              :loading="sandboxConfigLoading"
+              size="small"
+              class="sandbox-field-select"
+              @update:value="saveSandboxConfig"
             />
           </div>
         </div>
@@ -662,23 +702,28 @@ async function handleCodexWrite() {
   gap: 12px;
 }
 
-.sandbox-switches {
+.sandbox-fields {
   display: grid;
-  gap: 10px;
-  padding: 8px 0;
+  gap: 12px;
+  padding: 4px 0;
 }
 
-.sandbox-switch {
+.sandbox-field {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.sandbox-switch-label {
+.sandbox-field-label {
   font-size: 13px;
   font-weight: 500;
   color: rgba(11, 18, 32, 0.88);
+  flex-shrink: 0;
+}
+
+.sandbox-field-select {
+  width: 200px;
 }
 
 .sandbox-actions {

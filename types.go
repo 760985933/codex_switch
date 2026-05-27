@@ -89,5 +89,7 @@ type UpdateCheckResult struct {
 }
 
 type SandboxWorkspaceConfig struct {
-	NetworkAccess bool `json:"networkAccess" toml:"network_access"`
+	NetworkAccess  bool   `json:"networkAccess" toml:"network_access"`
+	SandboxMode    string `json:"sandboxMode" toml:"sandbox_mode"`
+	ApprovalPolicy string `json:"approvalPolicy" toml:"approval_policy"`
 }
