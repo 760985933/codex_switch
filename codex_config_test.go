@@ -17,7 +17,7 @@ func TestGenerateCodexConfigToml(t *testing.T) {
 	if !strings.Contains(got, `base_url = 'http://127.0.0.1:11434/v1'`) {
 		t.Fatalf("unexpected config content: %s", got)
 	}
-	if !strings.Contains(got, `model_provider = 'local-bridge'`) {
+	if !strings.Contains(got, `model_provider = 'Local'`) {
 		t.Fatalf("missing model_provider: %s", got)
 	}
 }
@@ -45,7 +45,7 @@ wire_api = "chat"
 	if !bytes.Contains(merged, []byte(`[model_providers.keepme]`)) {
 		t.Fatalf("expected keepme provider preserved, got: %s", string(merged))
 	}
-	if !bytes.Contains(merged, []byte(`[model_providers.local-bridge]`)) {
+	if !bytes.Contains(merged, []byte(`[model_providers.Local]`)) {
 		t.Fatalf("expected local-bridge provider inserted, got: %s", string(merged))
 	}
 }

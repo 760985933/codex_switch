@@ -46,6 +46,10 @@ export function GetProxyStatus() {
   return window['go']['main']['App']['GetProxyStatus']();
 }
 
+export function GetSandboxConfig() {
+  return window['go']['main']['App']['GetSandboxConfig']();
+}
+
 export function ImportConfig(arg1) {
   return window['go']['main']['App']['ImportConfig'](arg1);
 }
@@ -80,6 +84,10 @@ export function SaveAppConfig(arg1) {
 
 export function SetCurrentProfile(arg1) {
   return window['go']['main']['App']['SetCurrentProfile'](arg1);
+}
+
+export function SetSandboxConfig(arg1) {
+  return window['go']['main']['App']['SetSandboxConfig'](arg1);
 }
 
 export function StartProxy() {

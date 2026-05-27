@@ -24,6 +24,8 @@ export function GetOverviewSnapshot():Promise<main.OverviewSnapshot>;
 
 export function GetProxyStatus():Promise<main.ProxyStatusPayload>;
 
+export function GetSandboxConfig():Promise<main.SandboxWorkspaceConfig>;
+
 export function ImportConfig(arg1:string):Promise<main.AppConfig>;
 
 export function ListCodexConfigBackups():Promise<Array<string>>;
@@ -41,6 +43,8 @@ export function RunHealthCheck():Promise<main.HealthCheckResult>;
 export function SaveAppConfig(arg1:main.AppConfig):Promise<main.AppConfig>;
 
 export function SetCurrentProfile(arg1:string):Promise<main.AppConfig>;
+
+export function SetSandboxConfig(arg1:main.SandboxWorkspaceConfig):Promise<main.SandboxWorkspaceConfig>;
 
 export function StartProxy():Promise<main.ProxyStatusPayload>;
 

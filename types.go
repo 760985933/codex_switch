@@ -87,3 +87,7 @@ type UpdateCheckResult struct {
 	Notes          string `json:"notes"`
 	CheckedAt      string `json:"checkedAt"`
 }
+
+type SandboxWorkspaceConfig struct {
+	NetworkAccess bool `json:"networkAccess" toml:"network_access"`
+}

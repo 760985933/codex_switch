@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	codexProviderID = "local-bridge"
+	codexProviderID = "Local"
 )
 
 func codexConfigPath() (string, error) {

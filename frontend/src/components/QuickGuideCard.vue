@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '../stores/app'
@@ -111,6 +111,66 @@ async function handleRestoreCodex() {
   }
 }
 
+// ── Sandbox ──
+const showSandbox = ref(false)
+const sandboxInput = ref('')
+const sandboxResponse = ref('')
+const sandboxLoading = ref(false)
+const networkAccess = ref(true)
+const sandboxConfigLoading = ref(false)
+let sandboxConfigLoaded = false
+
+async function loadSandboxConfig() {
+  try {
+    const cfg = await store.getSandboxConfig()
+    networkAccess.value = cfg.networkAccess
+    sandboxConfigLoaded = true
+  } catch (err) {
+    console.error('load sandbox config failed', err)
+  }
+}
+
+async function handleNetworkAccessChange(val: boolean) {
+  if (sandboxConfigLoaded && val === networkAccess.value) return
+  sandboxConfigLoading.value = true
+  try {
+    await store.setSandboxConfig({ networkAccess: val })
+  } catch (err) {
+    message.error(String(err))
+    networkAccess.value = !val
+  } finally {
+    sandboxConfigLoading.value = false
+  }
+}
+
+watch(showSandbox, (v) => {
+  if (v) loadSandboxConfig()
+})
+
+async function handleSandboxSend() {
+  const msg = sandboxInput.value.trim()
+  if (!msg) return
+  sandboxLoading.value = true
+  sandboxResponse.value = ''
+  try {
+    const base = props.listenAddress.replace(/\/+$/, '')
+    const res = await fetch(`${base}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: store.currentProfile?.defaultModel || 'deepseek-v4-flash',
+        messages: [{ role: 'user', content: msg }],
+      }),
+    })
+    const data = await res.json()
+    sandboxResponse.value = JSON.stringify(data, null, 2)
+  } catch (error) {
+    sandboxResponse.value = String(error)
+  } finally {
+    sandboxLoading.value = false
+  }
+}
+
 async function handleCodexWrite() {
   try {
     const path = await store.writeCodexConfigToml()
@@ -216,6 +276,7 @@ async function handleCodexWrite() {
             <n-button type="primary" @click="handleCodexWrite">{{ t('guide.actions.writeFile') }}</n-button>
             <n-button secondary @click="ui.showSettings = true">{{ t('guide.actions.preferences') }}</n-button>
             <n-button tertiary @click="handleRestoreCodex">{{ t('guide.actions.restoreDefault') }}</n-button>
+            <n-button tertiary @click="showSandbox = true">{{ t('guide.actions.sandbox') }}</n-button>
           </div>
         </div>
       </div>
@@ -292,6 +353,52 @@ async function handleCodexWrite() {
         :placeholder="t('profile.namePlaceholder')"
         @keyup.enter="handleAddProfile"
       />
+    </n-modal>
+
+    <!-- Sandbox modal -->
+    <n-modal
+      v-model:show="showSandbox"
+      :title="t('guide.sandbox.title')"
+      preset="card"
+      style="width: 560px; max-width: 90vw;"
+      :mask-closable="false"
+    >
+      <div class="sandbox">
+        <!-- Switches -->
+        <div class="sandbox-switches">
+          <div class="sandbox-switch">
+            <span class="sandbox-switch-label">{{ t('guide.sandbox.networkAccess') }}</span>
+            <n-switch
+              v-model:value="networkAccess"
+              :loading="sandboxConfigLoading"
+              @update:value="handleNetworkAccessChange"
+            />
+          </div>
+        </div>
+
+        <n-divider />
+
+        <n-input
+          v-model:value="sandboxInput"
+          type="textarea"
+          :placeholder="t('guide.sandbox.placeholder')"
+          :rows="4"
+        />
+        <div class="sandbox-actions">
+          <n-button
+            type="primary"
+            :loading="sandboxLoading"
+            :disabled="!sandboxInput.trim()"
+            @click="handleSandboxSend"
+          >
+            {{ t('guide.sandbox.send') }}
+          </n-button>
+        </div>
+        <div v-if="sandboxResponse" class="sandbox-response">
+          <div class="sandbox-response-label">{{ t('guide.sandbox.response') }}</div>
+          <pre class="mono">{{ sandboxResponse }}</pre>
+        </div>
+      </div>
     </n-modal>
   </div>
 </template>
@@ -547,5 +654,61 @@ async function handleCodexWrite() {
   line-height: 1.5;
   color: rgba(11, 18, 32, 0.72);
   word-break: break-word;
+}
+
+/* ── Sandbox ── */
+.sandbox {
+  display: grid;
+  gap: 12px;
+}
+
+.sandbox-switches {
+  display: grid;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.sandbox-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sandbox-switch-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(11, 18, 32, 0.88);
+}
+
+.sandbox-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sandbox-response {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.sandbox-response-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(11, 18, 32, 0.72);
+}
+
+.sandbox-response pre {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: rgba(11, 18, 32, 0.9);
+  max-height: 400px;
+  overflow: auto;
 }
 </style>

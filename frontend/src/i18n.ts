@@ -191,7 +191,14 @@ export const messages = {
     },
     guide: {
       title: '接入指引',
-      actions: { copyBaseUrl: '复制 Base URL', preferences:'偏好设置', writeFile: '写入文件', restoreDefault: '恢复默认' },
+      actions: { copyBaseUrl: '复制 Base URL', preferences:'偏好设置', writeFile: '写入文件', restoreDefault: '恢复默认', sandbox: '沙盒测试' },
+      sandbox: {
+        title: 'API 沙盒',
+        networkAccess: '互联网访问',
+        placeholder: '在此输入测试消息...',
+        send: '发送',
+        response: '响应',
+      },
       step: {
         one: {
           title: '启动代理服务',
@@ -384,7 +391,14 @@ export const messages = {
     },
     guide: {
       title: 'Quick Start',
-      actions: { copyBaseUrl: 'Copy Base URL', preferences:'Preferences', writeFile: 'Write File', restoreDefault: 'Restore default' },
+      actions: { copyBaseUrl: 'Copy Base URL', preferences:'Preferences', writeFile: 'Write File', restoreDefault: 'Restore default', sandbox: 'Sandbox' },
+      sandbox: {
+        title: 'API Sandbox',
+        networkAccess: 'Network Access',
+        placeholder: 'Enter a test message...',
+        send: 'Send',
+        response: 'Response',
+      },
       step: {
         one: {
           title: 'Start the proxy',
@@ -564,7 +578,14 @@ export const messages = {
     },
     guide: {
       title: '接続ガイド',
-      actions: { copyBaseUrl: 'Base URL をコピー', preferences:'設定', writeFile: 'ファイルに書き込み', restoreDefault: '既定に戻す' },
+      actions: { copyBaseUrl: 'Base URL をコピー', preferences:'設定', writeFile: 'ファイルに書き込み', restoreDefault: '既定に戻す', sandbox: 'Sandbox' },
+      sandbox: {
+        title: 'API サンドボックス',
+        networkAccess: 'ネットワークアクセス',
+        placeholder: 'テストメッセージを入力...',
+        send: '送信',
+        response: '応答',
+      },
       step: {
         one: {
           title: 'ブリッジを起動',
@@ -731,7 +752,14 @@ export const messages = {
     },
     guide: {
       title: '빠른 시작',
-      actions: { copyBaseUrl: 'Base URL 복사', preferences:'설정', writeFile: '파일에 쓰기', restoreDefault: '기본 복원' },
+      actions: { copyBaseUrl: 'Base URL 복사', preferences:'설정', writeFile: '파일에 쓰기', restoreDefault: '기본 복원', sandbox: 'Sandbox' },
+      sandbox: {
+        title: 'API 샌드박스',
+        networkAccess: '네트워크 액세스',
+        placeholder: '테스트 메시지를 입력하세요...',
+        send: '보내기',
+        response: '응답',
+      },
       step: {
         one: {
           title: '브리지 시작',
@@ -898,7 +926,14 @@ export const messages = {
     },
     guide: {
       title: 'Guide',
-      actions: { copyBaseUrl: 'Copier Base URL', preferences:'Préférences', writeFile: 'Écrire le fichier', restoreDefault: 'Restaurer défaut' },
+      actions: { copyBaseUrl: 'Copier Base URL', preferences:'Préférences', writeFile: 'Écrire le fichier', restoreDefault: 'Restaurer défaut', sandbox: 'Sandbox' },
+      sandbox: {
+        title: 'Bac à sable API',
+        networkAccess: 'Accès Internet',
+        placeholder: 'Entrez un message de test...',
+        send: 'Envoyer',
+        response: 'Réponse',
+      },
       step: {
         one: {
           title: 'Démarrer le proxy',
@@ -1065,7 +1100,14 @@ export const messages = {
     },
     guide: {
       title: 'Anleitung',
-      actions: { copyBaseUrl: 'Base URL kopieren', preferences:'Einstellungen', writeFile: 'Datei schreiben', restoreDefault: 'Standard wiederherstellen' },
+      actions: { copyBaseUrl: 'Base URL kopieren', preferences:'Einstellungen', writeFile: 'Datei schreiben', restoreDefault: 'Standard wiederherstellen', sandbox: 'Sandbox' },
+      sandbox: {
+        title: 'API-Sandbox',
+        networkAccess: 'Internetzugriff',
+        placeholder: 'Testnachricht eingeben...',
+        send: 'Senden',
+        response: 'Antwort',
+      },
       step: {
         one: { title: 'Proxy starten', notRunning: 'Gestoppt (links "Starten" klicken)', hint: 'Nach dem Start wird lokal /v1 für Codex bereitgestellt.' },
         two: {
@@ -1228,7 +1270,14 @@ export const messages = {
     },
     guide: {
       title: 'Guía',
-      actions: { copyBaseUrl: 'Copiar Base URL', preferences:'Preferencias', writeFile: 'Escribir archivo', restoreDefault: 'Restaurar por defecto' },
+      actions: { copyBaseUrl: 'Copiar Base URL', preferences:'Preferencias', writeFile: 'Escribir archivo', restoreDefault: 'Restaurar por defecto', sandbox: 'Sandbox' },
+      sandbox: {
+        title: 'Sandbox de API',
+        networkAccess: 'Acceso a Internet',
+        placeholder: 'Ingrese un mensaje de prueba...',
+        send: 'Enviar',
+        response: 'Respuesta',
+      },
       step: {
         one: { title: 'Inicia el proxy', notRunning: 'Detenido (pulsa "Iniciar" a la izquierda)', hint: 'Tras iniciar, expone /v1 local para Codex.' },
         two: {

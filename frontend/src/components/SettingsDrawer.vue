@@ -42,7 +42,7 @@ const backupOptions = computed(() => {
 const needsWireApiFix = computed(() => {
   if (!codexRaw.value) return false
   const value = codexRaw.value
-  const providerBlock = /\[\s*model_providers\.local-bridge\s*\][\s\S]*?(\n\[|$)/.exec(value)
+  const providerBlock = /\[\s*model_providers\.Local\s*\][\s\S]*?(\n\[|$)/.exec(value)
   if (!providerBlock) return false
   return /wire_api\s*=\s*"chat"/.test(providerBlock[0])
 })

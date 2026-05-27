@@ -9,6 +9,7 @@ import {
   GetCodexConfigPath,
   GetLogHistory,
   GetOverviewSnapshot,
+  GetSandboxConfig,
   ImportConfig,
   ListCodexConfigBackups,
   RestartProxy,
@@ -18,6 +19,7 @@ import {
   RestoreCodexConfigToml,
   SaveAppConfig,
   SetCurrentProfile,
+  SetSandboxConfig,
   StartProxy,
   StopProxy,
   WriteCodexConfigTomlRaw,
@@ -30,6 +32,7 @@ import type {
   HealthCheckResult,
   LogEntry,
   OverviewSnapshot,
+  SandboxWorkspaceConfig,
 } from '../types'
 
 const FALLBACK_CONFIG: AppConfig = {
@@ -175,6 +178,12 @@ export const useAppStore = defineStore('app', {
     },
     async writeCodexConfigTomlRaw(content: string) {
       return WriteCodexConfigTomlRaw(content)
+    },
+    async getSandboxConfig(): Promise<SandboxWorkspaceConfig> {
+      return GetSandboxConfig()
+    },
+    async setSandboxConfig(cfg: SandboxWorkspaceConfig): Promise<SandboxWorkspaceConfig> {
+      return SetSandboxConfig(cfg)
     },
     async setCurrentProfile(id: string) {
       this.config = (await SetCurrentProfile(id)) as AppConfig

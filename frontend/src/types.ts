@@ -68,3 +68,7 @@ export interface OverviewSnapshot {
   defaults: Record<string, string>
   features: Record<string, boolean>
 }
+
+export interface SandboxWorkspaceConfig {
+  networkAccess: boolean
+}
