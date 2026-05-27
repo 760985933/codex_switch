@@ -42,7 +42,7 @@ const FALLBACK_CONFIG: AppConfig = {
   minimizeToTray: false,
   logRetentionDays: 7,
   compactMode: true,
-  pluginUnlockEnabled: true,
+  pluginUnlockEnabled: false,
   mappings: {},
   headers: {},
 }

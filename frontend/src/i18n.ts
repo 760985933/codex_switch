@@ -202,7 +202,7 @@ export const messages = {
           baseUrlAuto: '启动后自动生成',
           hint: '推荐用”偏好设置 → Codex config.toml → 写入文件”，自动合并并保留原有 MCP/approvals 配置。',
           pluginUnlock: '插件解锁',
-          pluginUnlockHint: '开启后自动注入解锁脚本，启用 Codex 插件入口',
+          pluginUnlockHint: '需用终端启动 Codex：/Applications/Codex.app/Contents/MacOS/Codex --remote-debugging-port=9229 --remote-allow-origins=http://127.0.0.1:9229',
         },
         three: {
           title: '验证与排障',

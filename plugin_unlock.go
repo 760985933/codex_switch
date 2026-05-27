@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
-	"os/exec"
-	"runtime"
 	"strings"
 	"time"
 
@@ -15,196 +12,281 @@ import (
 
 const codexDebugPort = 9229
 
-// unlockScript — injected via Page.addScriptToEvaluateOnNewDocument so it runs
-// BEFORE any Codex JS initializes. Based on Codex++ approach.
+// Injection script — modeled after Codex++ renderer-inject.js.
+// Registered via Page.addScriptToEvaluateOnNewDocument so it runs
+// BEFORE any Codex app JS, then also executed immediately.
 const unlockScript = `
 (function(){
-	// Patch feature flags before any app code reads them
-	var origDefineProperty = Object.defineProperty;
+	console.log('[Codex++] Plugin unlock starting...');
+
+	// ---- 1. Intercept Object.defineProperty ----
+	// React and many frameworks use this to set reactive state.
+	// If Codex tries to define plugins=false, we block it.
+	var _dp = Object.defineProperty;
 	Object.defineProperty = function(obj, prop, desc) {
-		if (prop === 'plugins' || prop === 'pluginsEnabled' || prop === 'pluginEnabled') {
-			if (desc && (desc.value === false || desc.get)) {
-				console.log('[Codex++] Intercepted Object.defineProperty for', prop);
-				return;
+		var lp = (prop||'').toLowerCase();
+		if (lp==='plugins'||lp==='pluginsenabled'||lp==='pluginenabled'||lp==='haspluginaccess') {
+			if (desc && desc.value===false) {
+				console.log('[Codex++] Blocked Object.defineProperty('+prop+', false)');
+				desc.value = true;
 			}
 		}
-		return origDefineProperty.call(this, obj, prop, desc);
+		return _dp.call(this, obj, prop, desc);
 	};
 
-	// Intercept fetch to patch feature responses
-	var origFetch = window.fetch;
-	window.fetch = function(url, options) {
-		var urlStr = typeof url === 'string' ? url : (url && url.url ? url.url : '');
-		return origFetch.apply(this, arguments).then(function(resp) {
-			var ct = resp.headers.get('content-type') || '';
-			if (ct.indexOf('json') !== -1) {
-				var cloned = resp.clone();
-				cloned.json().then(function(data) {
-					var changed = false;
-					function deepPatch(obj) {
-						if (!obj || typeof obj !== 'object') return;
-						if (Array.isArray(obj)) { obj.forEach(deepPatch); return; }
-						Object.keys(obj).forEach(function(k) {
-							var lk = k.toLowerCase();
-							if (lk === 'plugins' || lk === 'pluginsenabled' || lk === 'pluginenabled') {
-								if (typeof obj[k] === 'boolean' || obj[k] === null || obj[k] === undefined) {
-									obj[k] = true; changed = true;
-								}
-							}
-							if (lk === 'features' || lk === 'entitlements' || lk === 'featureflags') {
-								if (obj[k] && typeof obj[k] === 'object') {
-									obj[k].plugins = true;
-									obj[k].pluginsEnabled = true;
-									obj[k].pluginEnabled = true;
-									changed = true;
-								}
-							}
-							if (typeof obj[k] === 'object') deepPatch(obj[k]);
-						});
-					}
-					deepPatch(data);
-				}).catch(function(){});
-			}
-			return resp;
-		}).catch(function(e) { return Promise.reject(e); });
+	// ---- 2. Intercept fetch ----
+	// Patch any JSON response that contains feature flags.
+	var _fetch = window.fetch;
+	window.fetch = function(url, opts) {
+		var urlStr = typeof url==='string' ? url : (url&&url.url?url.url:'');
+		return _fetch.apply(this, arguments).then(function(resp){
+			var ct = resp.headers.get('content-type')||'';
+			if (ct.indexOf('json')===-1) return resp;
+			return resp.clone().json().then(function(data){
+				var c = false;
+				(function patch(o){
+					if (!o||typeof o!=='object') return;
+					if (Array.isArray(o)){o.forEach(patch);return;}
+					Object.keys(o).forEach(function(k){
+						var lk=k.toLowerCase();
+						if (lk==='plugins'||lk==='pluginsenabled'||lk==='pluginenabled'){if(typeof o[k]==='boolean'||o[k]===null){o[k]=true;c=true;}}
+						if (lk==='features'||lk==='entitlements'||lk==='featureflags'){if(o[k]&&typeof o[k]==='object'){o[k].plugins=true;o[k].pluginsEnabled=true;c=true;}}
+						if (typeof o[k]==='object') patch(o[k]);
+					});
+				})(data);
+				if (c) console.log('[Codex++] Patched fetch response:', urlStr.substring(0,80));
+				return new Response(JSON.stringify(data),{status:resp.status,statusText:resp.statusText,headers:resp.headers});
+			}).catch(function(){return resp;});
+		}).catch(function(e){return Promise.reject(e);});
 	};
 
-	// Intercept WebSocket for real-time feature updates
-	var OrigWebSocket = window.WebSocket;
+	// ---- 3. Intercept WebSocket ----
+	var _WS = window.WebSocket;
 	window.WebSocket = function(url, protocols) {
-		var ws = new OrigWebSocket(url, protocols);
-		var desc = Object.getOwnPropertyDescriptor(ws.constructor.prototype, 'onmessage');
-		if (!desc) {
-			desc = Object.getOwnPropertyDescriptor(ws, 'onmessage');
-		}
-		var realHandler = null;
+		var ws = new _WS(url, protocols);
+		var _handler = null;
 		try {
 			Object.defineProperty(ws, 'onmessage', {
-				get: function() { return realHandler; },
-				set: function(fn) {
-					realHandler = function(event) {
+				get:function(){return _handler;},
+				set:function(fn){
+					_handler = function(ev){
 						try {
-							if (typeof event.data === 'string') {
-								var data = JSON.parse(event.data);
-								if (data && typeof data === 'object') {
-									if (data.type === 'features' || data.type === 'entitlements') {
-										data.plugins = true; data.pluginsEnabled = true;
-									}
-									event = new MessageEvent('message', {data: JSON.stringify(data), origin: event.origin});
+							if (typeof ev.data==='string'){
+								var d = JSON.parse(ev.data);
+								if (d&&typeof d==='object'){
+									if (d.features){d.features.plugins=true;d.features.pluginsEnabled=true;}
+									if ('plugins' in d) d.plugins=true;
+									if ('pluginsEnabled' in d) d.pluginsEnabled=true;
+									ev=new MessageEvent('message',{data:JSON.stringify(d),origin:ev.origin});
 								}
 							}
-						} catch(e) {}
-						return fn.call(this, event);
+						}catch(_){}
+						return fn.call(this, ev);
 					};
 				},
-				configurable: true
+				configurable:true
 			});
-		} catch(e) {}
+		}catch(_){}
 		return ws;
 	};
 
-	// Intercept Storage APIs
-	var origSetItem = Storage.prototype.setItem;
-	Storage.prototype.setItem = function(key, value) {
-		try {
-			var k = (key||'').toLowerCase();
-			if (k.indexOf('feature')!==-1 || k.indexOf('plugin')!==-1 || k.indexOf('entitle')!==-1) {
-				var o = JSON.parse(value);
-				if (o && typeof o === 'object') { o.plugins=true; o.pluginsEnabled=true; value=JSON.stringify(o); }
-			}
-		} catch(e) {}
-		return origSetItem.call(this, key, value);
+	// ---- 4. Intercept Storage ----
+	var _setItem = Storage.prototype.setItem;
+	Storage.prototype.setItem = function(k,v){
+		try{var lk=(k||'').toLowerCase();if(lk.indexOf('feature')!==-1||lk.indexOf('plugin')!==-1||lk.indexOf('entitle')!==-1){var o=JSON.parse(v);if(o&&typeof o==='object'){o.plugins=true;o.pluginsEnabled=true;v=JSON.stringify(o);}}}catch(_){}
+		return _setItem.call(this,k,v);
 	};
 
-	// Intercept IPC calls (Electron)
+	// ---- 5. Intercept Electron IPC (contextBridge) ----
 	try {
-		var apiKeys = Object.keys(window).filter(function(k) {
-			try { return window[k] && typeof window[k] === 'object' && typeof window[k].invoke === 'function'; } catch(e) {}
+		Object.keys(window).forEach(function(k){
+			try {
+				var api=window[k];
+				if (api&&typeof api==='object'&&typeof api.invoke==='function'&&!api.nodeType){
+					var _invoke=api.invoke.bind(api);
+					api.invoke=function(){
+						return _invoke.apply(this,arguments).then(function(r){
+							if(r&&typeof r==='object'){
+								(function patch(o){if(!o||typeof o!=='object')return;if(Array.isArray(o)){o.forEach(patch);return;}Object.keys(o).forEach(function(k){var lk=k.toLowerCase();if(lk==='plugins'||lk==='pluginsenabled')o[k]=true;if(lk==='features'||lk==='entitlements'){if(o[k]&&typeof o[k]==='object'){o[k].plugins=true;o[k].pluginsEnabled=true;}}if(typeof o[k]==='object')patch(o[k]);});})(r);
+							}
+							return r;
+						}).catch(function(e){return Promise.reject(e);});
+					};
+				}
+			}catch(_){}
 		});
-		apiKeys.forEach(function(k) {
-			var api = window[k];
-			var origInvoke = api.invoke.bind(api);
-			api.invoke = function() {
-				return origInvoke.apply(this, arguments).then(function(r) {
-					if (r && typeof r === 'object') {
-						function deepPatch(obj) {
-							if (!obj || typeof obj !== 'object') return;
-							if (Array.isArray(obj)) { obj.forEach(deepPatch); return; }
-							Object.keys(obj).forEach(function(k) {
-								var lk = k.toLowerCase();
-								if (lk === 'plugins' || lk === 'pluginsenabled') { obj[k]=true; }
-								if (lk === 'features' || lk === 'entitlements') {
-									if (obj[k] && typeof obj[k] === 'object') { obj[k].plugins=true; obj[k].pluginsEnabled=true; }
-								}
-								if (typeof obj[k] === 'object') deepPatch(obj[k]);
-							});
-						}
-						deepPatch(r);
+	}catch(_){}
+
+	// ---- 6. Set globals ----
+	Object.defineProperty(window,'__PLUGINS_ENABLED',{value:true,writable:false,configurable:false});
+	window.hasPluginAccess = function(){return true;};
+
+	// ---- 7. CSS + DOM + React state patching ----
+	function applyCSS(){
+		if (document.getElementById('cxpp-css')) return;
+		var s=document.createElement('style');
+		s.id='cxpp-css';
+		s.textContent='[class*="plugin"],[class*="Plugin"]{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;z-index:auto!important;filter:none!important}[class*="plugin"][disabled],[class*="Plugin"][disabled],[class*="plugin"] [disabled],[class*="Plugin"] [disabled]{pointer-events:auto!important;opacity:1!important}[aria-disabled=true]{pointer-events:auto!important}[class*="overlay"]:has([class*="plugin"]){display:none!important}[class*="grey"],[class*="gray"]{filter:none!important;opacity:1!important}';
+		document.head.appendChild(s);
+	}
+	function removeDisabled(){
+		document.querySelectorAll('[class*="plugin"][disabled],[class*="Plugin"][disabled],[class*="plugin"] [disabled],[class*="Plugin"] [disabled]').forEach(function(e){e.removeAttribute('disabled');});
+		document.querySelectorAll('[class*="plugin"][aria-disabled=true],[class*="Plugin"][aria-disabled=true]').forEach(function(e){e.setAttribute('aria-disabled','false');});
+	}
+
+	// ---- 8. Deep React state mutation ----
+	// Traverse React fiber tree and force plugin-related state to true
+	function patchReactFiberTree(){
+		try {
+			// Find any element with React fiber
+			var rootEl = document.getElementById('root') || document.getElementById('app') || document.body;
+			var fiberKey = null;
+			// Try body and children
+			var allEls = document.querySelectorAll('body, body *, #root, #root *, #app, #app *');
+			for (var i = 0; i < Math.min(allEls.length, 200); i++) {
+				var keys = Object.keys(allEls[i]);
+				for (var j = 0; j < keys.length; j++) {
+					if (keys[j].startsWith('__reactFiber') || keys[j].startsWith('__reactInternalInstance')) {
+						fiberKey = keys[j];
+						rootEl = allEls[i];
+						break;
 					}
-					return r;
-				}).catch(function(e) { return Promise.reject(e); });
-			};
-		});
-	} catch(e) {}
-
-	// Set globals before any app code runs
-	Object.defineProperty(window, '__PLUGINS_ENABLED', {value:true, writable:false, configurable:false});
-	Object.defineProperty(window, 'hasPluginAccess', {value:function(){return true}, writable:false, configurable:false});
-
-	// Periodic CSS/direct patching for late-loading elements
-	function patchOnce() {
-		// CSS
-		if (!document.getElementById('codexpp-unlock-css')) {
-			var style = document.createElement('style');
-			style.id = 'codexpp-unlock-css';
-			style.textContent = '[class*="plugin"],[class*="Plugin"]{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}[class*="overlay"]:has([class*="plugin"]){display:none!important}[class*="plugin"] [disabled]{pointer-events:auto!important;opacity:1!important}';
-			document.head.appendChild(style);
-		}
-		// Button/click enabler
-		document.querySelectorAll('[class*="plugin"] [disabled],[class*="Plugin"] [disabled]').forEach(function(el){
-			el.removeAttribute('disabled');
-		});
-		document.querySelectorAll('[aria-disabled="true"]').forEach(function(el){
-			if (el.className && typeof el.className === 'string' && el.className.toLowerCase().indexOf('plugin') !== -1) {
-				el.setAttribute('aria-disabled','false');
+				}
+				if (fiberKey) break;
 			}
+
+			if (!fiberKey) {
+				console.log('[Codex++] No React fiber found');
+				return;
+			}
+
+			var visited = new Set();
+			var patchedCount = 0;
+			var maxNodes = 20000;
+
+			function patchValue(v) {
+				if (!v || typeof v !== 'object' || visited.has(v)) return;
+				if (patchedCount > maxNodes) return;
+				visited.add(v);
+				patchedCount++;
+				if (Array.isArray(v)) { v.forEach(function(item){patchValue(item);}); return; }
+				try {
+					var keys = Object.keys(v);
+					for (var i = 0; i < keys.length; i++) {
+						var k = keys[i];
+						var lk = k.toLowerCase();
+						if (lk === 'plugins' || lk === 'pluginsenabled' || lk === 'pluginenabled' || lk === 'haspluginaccess' || lk === 'ispluginenabled' || lk === 'pluginaccess') {
+							if (typeof v[k] === 'boolean' || v[k] === null || v[k] === undefined) {
+								v[k] = true;
+							}
+						}
+						if (lk === 'features' || lk === 'featureflags' || lk === 'entitlements' || lk === 'capabilities') {
+							if (v[k] && typeof v[k] === 'object' && !Array.isArray(v[k])) {
+								v[k].plugins = true;
+								v[k].pluginsEnabled = true;
+								v[k].pluginEnabled = true;
+							}
+						}
+						if (lk === 'plan' || lk === 'plantype' || lk === 'subscription') {
+							if (typeof v[k] === 'string' && v[k] === 'free') {
+								v[k] = 'plus';
+							}
+						}
+						if (typeof v[k] === 'object' && v[k] !== null) {
+							patchValue(v[k]);
+						}
+					}
+				} catch(e) {}
+			}
+
+			var fiber = rootEl[fiberKey];
+			// Walk entire fiber tree
+			function walk(node) {
+				if (!node || visited.has(node) || patchedCount > maxNodes) return;
+				visited.add(node);
+				try {
+					if (node.memoizedState) {
+						// Walk hooks linked list
+						var hook = node.memoizedState;
+						while (hook) {
+							if (hook.memoizedState) patchValue(hook.memoizedState);
+							if (hook.queue && hook.queue.lastRenderedState) {
+								if (typeof hook.queue.lastRenderedState === 'boolean') {
+									hook.queue.lastRenderedState = true;
+								} else {
+									patchValue(hook.queue.lastRenderedState);
+								}
+							}
+							hook = hook.next;
+						}
+					}
+					if (node.memoizedProps) patchValue(node.memoizedProps);
+					if (node.pendingProps) patchValue(node.pendingProps);
+					if (node.stateNode && node.stateNode.state) patchValue(node.stateNode.state);
+				} catch(e) {}
+				walk(node.child);
+				walk(node.sibling);
+				walk(node.return); // also walk up to find context providers
+			}
+			walk(fiber);
+			console.log('[Codex++] React fiber patched (' + patchedCount + ' nodes visited)');
+		} catch(e) {
+			console.log('[Codex++] React fiber patch error:', e.message);
+		}
+	}
+
+	// ---- 9. Find and patch global stores (Zustand, Redux, etc.) ----
+	function patchGlobalStores(){
+		Object.keys(window).forEach(function(k){
+			try {
+				var v = window[k];
+				if (!v || typeof v !== 'object' || v.nodeType) return;
+				// Zustand stores have getState/setState
+				if (typeof v.getState === 'function' && typeof v.setState === 'function') {
+					try {
+						var state = v.getState();
+						if (state && typeof state === 'object') {
+							(function patch(o){
+								if (!o||typeof o!=='object') return;
+								if (Array.isArray(o)){o.forEach(patch);return;}
+								Object.keys(o).forEach(function(kk){
+									var lk=kk.toLowerCase();
+									if (lk==='plugins'||lk==='pluginsenabled'||lk==='pluginenabled'){if(typeof o[kk]==='boolean'||o[kk]===null){o[kk]=true;}}
+									if (lk==='features'||lk==='entitlements'){if(o[kk]&&typeof o[kk]==='object'){o[kk].plugins=true;o[kk].pluginsEnabled=true;}}
+									if (typeof o[kk]==='object') patch(o[kk]);
+								});
+							})(state);
+							v.setState(state);
+							console.log('[Codex++] Patched Zustand store:', k);
+						}
+					} catch(e) {}
+				}
+			} catch(e) {}
 		});
 	}
-	document.addEventListener('DOMContentLoaded', function(){ patchOnce(); setTimeout(patchOnce, 1000); setTimeout(patchOnce, 5000); });
-	if (document.readyState !== 'loading') { patchOnce(); setTimeout(patchOnce, 1000); setTimeout(patchOnce, 5000); }
 
-	console.log('[Codex++] Plugin unlock injected via addScriptToEvaluateOnNewDocument');
+	// Run patching on DOM ready
+	function runAllPatches(){
+		applyCSS();
+		removeDisabled();
+		patchReactFiberTree();
+		patchGlobalStores();
+		setTimeout(removeDisabled, 500);
+		setTimeout(patchReactFiberTree, 1000);
+		setTimeout(patchReactFiberTree, 3000);
+		setTimeout(patchReactFiberTree, 8000);
+	}
+	if (document.readyState==='loading'){
+		document.addEventListener('DOMContentLoaded', runAllPatches);
+	} else {
+		runAllPatches();
+	}
+	// Observer for dynamically added elements
+	new MutationObserver(function(){removeDisabled();}).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled','aria-disabled']});
+
+	console.log('[Codex++] Plugin unlock registered (with React fiber + store patching)');
 })();
 `
-
-func findCodexPath() string {
-	if runtime.GOOS == "darwin" {
-		paths := []string{
-			"/Applications/Codex.app/Contents/MacOS/Codex",
-			os.Getenv("HOME") + "/Applications/Codex.app/Contents/MacOS/Codex",
-		}
-		for _, p := range paths {
-			if _, err := os.Stat(p); err == nil {
-				return p
-			}
-		}
-		return ""
-	}
-	if runtime.GOOS == "windows" {
-		paths := []string{
-			os.Getenv("LOCALAPPDATA") + "\\Programs\\Codex\\Codex.exe",
-			os.Getenv("USERPROFILE") + "\\AppData\\Local\\Programs\\Codex\\Codex.exe",
-			"C:\\Program Files\\Codex\\Codex.exe",
-		}
-		for _, p := range paths {
-			if _, err := os.Stat(p); err == nil {
-				return p
-			}
-		}
-		return ""
-	}
-	return ""
-}
 
 type cdpTarget struct {
 	WebSocketDebuggerURL string `json:"webSocketDebuggerUrl"`
@@ -246,10 +328,10 @@ func getCodexTargets() []cdpTarget {
 	return append(codexPages, otherPages...)
 }
 
-// injectUnlockScript connects via CDP WebSocket and uses
-// Page.addScriptToEvaluateOnNewDocument to register the injection
-// BEFORE any page JS runs. Then navigates to trigger execution.
-func injectUnlockScript(logFn func(level, source, msg, requestID string), wsURL string) error {
+// injectIntoPage connects to a single CDP page target and:
+// 1. Registers the unlock script via Page.addScriptToEvaluateOnNewDocument (runs before page JS)
+// 2. Also evaluates it immediately in the current page context
+func injectIntoPage(wsURL string) error {
 	dialer := websocket.Dialer{HandshakeTimeout: 5 * time.Second}
 	conn, _, err := dialer.Dial(wsURL, nil)
 	if err != nil {
@@ -261,39 +343,23 @@ func injectUnlockScript(logFn func(level, source, msg, requestID string), wsURL 
 	conn.WriteJSON(map[string]interface{}{"id": 1, "method": "Page.enable"})
 	conn.SetReadDeadline(time.Now().Add(3 * time.Second))
 	var res map[string]interface{}
-	for i := 0; i < 3; i++ {
-		if err := conn.ReadJSON(&res); err != nil {
-			break
-		}
-		if _, ok := res["result"]; ok {
-			break
-		}
-	}
-	logFn("info", "plugin", "CDP Page.enable 完成", "")
+	conn.ReadJSON(&res) // discard response
 
-	// Register script to evaluate on new document BEFORE any page JS
-	msg := map[string]interface{}{
+	// Register for new documents
+	conn.WriteJSON(map[string]interface{}{
 		"id":     2,
 		"method": "Page.addScriptToEvaluateOnNewDocument",
-		"params": map[string]interface{}{
-			"source": unlockScript,
-		},
-	}
-	if err := conn.WriteJSON(msg); err != nil {
-		return fmt.Errorf("addScriptToEvaluateOnNewDocument 失败: %w", err)
-	}
-
+		"params": map[string]interface{}{"source": unlockScript},
+	})
 	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	if err := conn.ReadJSON(&res); err != nil {
-		return fmt.Errorf("读取结果失败: %w", err)
+		return fmt.Errorf("addScriptToEvaluateOnNewDocument 失败: %w", err)
 	}
 	if errInfo, ok := res["error"]; ok {
 		return fmt.Errorf("addScriptToEvaluateOnNewDocument 异常: %v", errInfo)
 	}
-	scriptID, _ := res["result"].(map[string]interface{})["identifier"].(string)
-	logFn("info", "plugin", fmt.Sprintf("注入脚本已注册 (scriptID=%s)，将在页面加载前执行", scriptID), "")
 
-	// Also evaluate immediately in current page context
+	// Also evaluate immediately in current page
 	conn.WriteJSON(map[string]interface{}{
 		"id":     3,
 		"method": "Runtime.evaluate",
@@ -303,85 +369,40 @@ func injectUnlockScript(logFn func(level, source, msg, requestID string), wsURL 
 		},
 	})
 	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
-	conn.ReadJSON(&res)
+	conn.ReadJSON(&res) // discard response
 
 	return nil
 }
 
-// TryPluginUnlock attempts to inject the plugin unlock script into Codex.
+// TryPluginUnlock detects a running Codex with CDP enabled and injects
+// the unlock script. It does NOT launch or kill Codex — the user must
+// start Codex with: --remote-debugging-port=9229 --remote-allow-origins=http://127.0.0.1:9229
 func TryPluginUnlock(logFn func(level, source, msg, requestID string)) error {
-	// Step 1: try existing Codex with debug port
 	targets := getCodexTargets()
-	if len(targets) > 0 {
-		logFn("info", "plugin", fmt.Sprintf("检测到 Codex 调试端口（%d 个页面）", len(targets)), "")
-
-		var lastErr error
-		successCount := 0
-		for _, t := range targets {
-			logFn("info", "plugin", fmt.Sprintf("注入目标: %s (%s)", t.Title, t.URL), "")
-			if err := injectUnlockScript(logFn, t.WebSocketDebuggerURL); err != nil {
-				lastErr = err
-				logFn("warn", "plugin", fmt.Sprintf("目标 %s: %v", t.Title, err), "")
-			} else {
-				successCount++
-			}
-		}
-		if successCount > 0 {
-			logFn("info", "plugin", fmt.Sprintf("插件解锁已注入 %d 个页面（addScriptToEvaluateOnNewDocument）", successCount), "")
-			return nil
-		}
-		if lastErr != nil {
-			return fmt.Errorf("注入失败: %w", lastErr)
-		}
-		return fmt.Errorf("未找到 Codex 页面")
+	if len(targets) == 0 {
+		logFn("warn", "plugin",
+			fmt.Sprintf("未检测到 Codex CDP 端口 %d。请用以下参数启动 Codex: --remote-debugging-port=%d --remote-allow-origins=http://127.0.0.1:%d",
+				codexDebugPort, codexDebugPort, codexDebugPort), "")
+		return fmt.Errorf("Codex CDP 端口 %d 不可用", codexDebugPort)
 	}
 
-	// Step 2: launch Codex with debug flags
-	codexPath := findCodexPath()
-	if codexPath == "" {
-		return fmt.Errorf("未找到 Codex 安装路径")
-	}
+	logFn("info", "plugin", fmt.Sprintf("检测到 Codex CDP（%d 个页面），注入解锁脚本...", len(targets)), "")
 
-	logFn("info", "plugin", fmt.Sprintf("启动 Codex: %s", codexPath), "")
-
-	if runtime.GOOS == "windows" {
-		exec.Command("taskkill", "/F", "/IM", "Codex.exe").Run()
-	} else {
-		exec.Command("pkill", "-f", "Codex").Run()
-	}
-	time.Sleep(800 * time.Millisecond)
-
-	cmd := exec.Command(codexPath,
-		fmt.Sprintf("--remote-debugging-port=%d", codexDebugPort),
-		fmt.Sprintf("--remote-allow-origins=http://127.0.0.1:%d", codexDebugPort),
-	)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Env = os.Environ()
-
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("启动失败: %w", err)
-	}
-
-	// Step 3: wait and inject
-	logFn("info", "plugin", "等待 Codex 调试端口...", "")
-	for i := 0; i < 30; i++ {
-		time.Sleep(1 * time.Second)
-		targets = getCodexTargets()
-		if len(targets) > 0 {
-			successCount := 0
-			for _, t := range targets {
-				if err := injectUnlockScript(logFn, t.WebSocketDebuggerURL); err != nil {
-					logFn("warn", "plugin", fmt.Sprintf("%s: %v", t.Title, err), "")
-				} else {
-					successCount++
-				}
-			}
-			if successCount > 0 {
-				logFn("info", "plugin", fmt.Sprintf("插件解锁已注入 %d 个页面", successCount), "")
-				return nil
-			}
+	var lastErr error
+	ok := 0
+	for _, t := range targets {
+		logFn("info", "plugin", fmt.Sprintf("  → %s (%s)", t.Title, t.URL), "")
+		if err := injectIntoPage(t.WebSocketDebuggerURL); err != nil {
+			lastErr = err
+			logFn("warn", "plugin", fmt.Sprintf("  ✗ %s: %v", t.Title, err), "")
+		} else {
+			ok++
 		}
 	}
-	return fmt.Errorf("Codex 启动超时")
+
+	if ok > 0 {
+		logFn("info", "plugin", fmt.Sprintf("插件解锁脚本已注入 %d 个页面（addScriptToEvaluateOnNewDocument + Runtime.evaluate）", ok), "")
+		return nil
+	}
+	return fmt.Errorf("所有目标注入失败: %w", lastErr)
 }
