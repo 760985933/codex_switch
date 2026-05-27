@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import OverviewPage from '../pages/OverviewPage.vue'
 import LogsPage from '../pages/LogsPage.vue'
+import ContactPage from '../pages/ContactPage.vue'
 
 export const router = createRouter({
   history: createWebHashHistory(),
@@ -18,6 +19,11 @@ export const router = createRouter({
       path: '/logs',
       name: 'logs',
       component: LogsPage,
+    },
+    {
+      path: '/contact',
+      name: 'contact',
+      component: ContactPage,
     },
   ],
 })

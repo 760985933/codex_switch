@@ -39,7 +39,7 @@ export function detectInitialLocale(): SupportedLocale {
 export const messages = {
   'zh-CN': {
     app: {
-      nav: { overview: '主工作台', logs: '最近日志' },
+      nav: { overview: '主工作台', logs: '最近日志', contact: '联系与赞助' },
       status: { running: '运行中', starting: '启动中', error: '异常', stopped: '未启动' },
       actions: { preferences: '偏好设置' },
       toast: {
@@ -216,6 +216,14 @@ export const messages = {
         },
       },
     },
+    contact: {
+      title: '联系与赞助',
+      desc: '如果您觉得这个工具有帮助，欢迎通过以下方式赞助支持。',
+      contactLabel: '联系方式',
+      sponsorLabel: '赞助支持',
+      wxLabel: '微信',
+      zfbLabel: '支付宝',
+    },
     common: { delete: '删除' },
     profile: {
       add: '+ 添加配置',
@@ -233,7 +241,7 @@ export const messages = {
   },
   'en-US': {
     app: {
-      nav: { overview: 'Dashboard', logs: 'Recent Logs' },
+      nav: { overview: 'Dashboard', logs: 'Recent Logs', contact: 'Contact & Sponsor' },
       status: { running: 'Running', starting: 'Starting', error: 'Error', stopped: 'Stopped' },
       actions: { preferences: 'Preferences' },
       toast: {
@@ -400,6 +408,14 @@ export const messages = {
         },
       },
     },
+    contact: {
+      title: 'Contact & Sponsor',
+      desc: 'If you find this tool helpful, feel free to sponsor us.',
+      contactLabel: 'Contact',
+      sponsorLabel: 'Sponsor',
+      wxLabel: 'WeChat',
+      zfbLabel: 'Alipay',
+    },
     common: { delete: 'Delete' },
     profile: {
       add: '+ Add profile',
@@ -417,7 +433,7 @@ export const messages = {
   },
   'ja-JP': {
     app: {
-      nav: { overview: 'ダッシュボード', logs: '最近のログ' },
+      nav: { overview: 'ダッシュボード', logs: '最近のログ', contact: '連絡とスポンサー' },
       status: { running: '稼働中', starting: '起動中', error: 'エラー', stopped: '停止中' },
       actions: { preferences: '設定' },
       toast: {
@@ -571,11 +587,19 @@ export const messages = {
         },
       },
     },
+    contact: {
+      title: '連絡とスポンサー',
+      desc: 'このツールが役に立ったと思われましたら、ぜひスポンサーをご検討ください。',
+      contactLabel: '連絡先',
+      sponsorLabel: 'スポンサー',
+      wxLabel: 'WeChat',
+      zfbLabel: 'Alipay',
+    },
     common: { delete: '削除' },
   },
   'ko-KR': {
     app: {
-      nav: { overview: '대시보드', logs: '최근 로그' },
+      nav: { overview: '대시보드', logs: '최근 로그', contact: '연락 및 후원' },
       status: { running: '실행 중', starting: '시작 중', error: '오류', stopped: '중지됨' },
       actions: { preferences: '설정' },
       toast: {
@@ -729,11 +753,19 @@ export const messages = {
         },
       },
     },
+    contact: {
+      title: '연락 및 후원',
+      desc: '이 도구가 도움이 되셨다면 후원을 고려해 주세요.',
+      contactLabel: '연락처',
+      sponsorLabel: '후원',
+      wxLabel: 'WeChat',
+      zfbLabel: 'Alipay',
+    },
     common: { delete: '삭제' },
   },
   'fr-FR': {
     app: {
-      nav: { overview: 'Tableau', logs: 'Journaux' },
+      nav: { overview: 'Tableau', logs: 'Journaux', contact: 'Contact & Sponsor' },
       status: { running: 'En cours', starting: 'Démarrage', error: 'Erreur', stopped: 'Arrêté' },
       actions: { preferences: 'Préférences' },
       toast: {
@@ -887,11 +919,19 @@ export const messages = {
         },
       },
     },
+    contact: {
+      title: 'Contact & Sponsor',
+      desc: 'Si cet outil vous est utile, n\'hésitez pas à sponsoriser.',
+      contactLabel: 'Contact',
+      sponsorLabel: 'Sponsor',
+      wxLabel: 'WeChat',
+      zfbLabel: 'Alipay',
+    },
     common: { delete: 'Supprimer' },
   },
   'de-DE': {
     app: {
-      nav: { overview: 'Übersicht', logs: 'Logs' },
+      nav: { overview: 'Übersicht', logs: 'Logs', contact: 'Kontakt & Sponsoring' },
       status: { running: 'Läuft', starting: 'Startet', error: 'Fehler', stopped: 'Gestoppt' },
       actions: { preferences: 'Einstellungen' },
       toast: {
@@ -1041,11 +1081,19 @@ export const messages = {
         },
       },
     },
+    contact: {
+      title: 'Kontakt & Sponsoring',
+      desc: 'Wenn Ihnen dieses Tool hilft, können Sie gerne sponsern.',
+      contactLabel: 'Kontakt',
+      sponsorLabel: 'Sponsoring',
+      wxLabel: 'WeChat',
+      zfbLabel: 'Alipay',
+    },
     common: { delete: 'Löschen' },
   },
   'es-AR': {
     app: {
-      nav: { overview: 'Panel', logs: 'Registros' },
+      nav: { overview: 'Panel', logs: 'Registros', contact: 'Contacto y Patrocinio' },
       status: { running: 'En ejecución', starting: 'Iniciando', error: 'Error', stopped: 'Detenido' },
       actions: { preferences: 'Preferencias' },
       toast: {
@@ -1194,6 +1242,14 @@ export const messages = {
           quickVerify: 'Verificación rápida',
         },
       },
+    },
+    contact: {
+      title: 'Contacto y Patrocinio',
+      desc: 'Si esta herramienta te resulta útil, no dudes en patrocinar.',
+      contactLabel: 'Contacto',
+      sponsorLabel: 'Patrocinio',
+      wxLabel: 'WeChat',
+      zfbLabel: 'Alipay',
     },
     common: { delete: 'Eliminar' },
   },
