@@ -510,8 +510,6 @@ func (a *App) GetUsageBalance() UsageBalance {
 	// Build balance URL from scheme + host (strip path like /v1)
 	balanceURL := fmt.Sprintf("%s://%s/user/balance", parsed.Scheme, parsed.Host)
 
-	a.appendLog("debug", "app", fmt.Sprintf("用量查询: profile=%s balanceURL=%s", profile.Name, balanceURL), "")
-
 	client := &http.Client{Timeout: 10 * time.Second}
 	req, err := http.NewRequest(http.MethodGet, balanceURL, nil)
 	if err != nil {
@@ -528,7 +526,6 @@ func (a *App) GetUsageBalance() UsageBalance {
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-	a.appendLog("debug", "app", fmt.Sprintf("用量查询响应: status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(body))), "")
 
 	if resp.StatusCode != http.StatusOK {
 		return UsageBalance{Error: fmt.Sprintf("API 返回状态 %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))}
@@ -556,8 +553,6 @@ func (a *App) GetUsageBalance() UsageBalance {
 		total = info.TotalBalance
 		currency = info.Currency
 	}
-
-	a.appendLog("debug", "app", fmt.Sprintf("用量查询结果: available=%s total=%s currency=%s", available, total, currency), "")
 
 	result := UsageBalance{
 		AvailableBalance: available,
