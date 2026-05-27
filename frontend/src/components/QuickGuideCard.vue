@@ -82,6 +82,16 @@ async function handleRestoreCodex() {
     message.error(error instanceof Error ? error.message : String(error))
   }
 }
+
+async function handleCodexWrite() {
+  try {
+    const path = await store.writeCodexConfigToml()
+    const hintPath = await store.getCodexConfigPath()
+    message.success(t('app.toast.codexTomlWritten', { path: path || hintPath }))
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  }
+}
 </script>
 
 <template>
@@ -176,6 +186,7 @@ async function handleRestoreCodex() {
         <div class="step-body">
           <div class="actions">
             <n-button secondary @click="ui.showSettings = true">{{ t('guide.actions.openPreferences') }}</n-button>
+            <n-button secondary @click="handleCodexWrite">{{ t('guide.actions.writeFile') }}</n-button>
             <n-button tertiary @click="handleRestoreCodex">{{ t('guide.actions.restoreDefault') }}</n-button>
           </div>
           <div class="kv">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 interface PairItem {
@@ -21,31 +21,56 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const items = computed<PairItem[]>(() => {
-  const source = Object.entries(props.modelValue ?? {})
-  return [...source.map(([key, value]) => ({ key, value })), { key: '', value: '' }]
-})
+// Local editing state — avoids focus loss from computed rebuilding on every keystroke
+const localItems = ref<PairItem[]>([])
 
-function updateEntry(index: number, field: keyof PairItem, value: string) {
-  const nextItems = items.value.map((item) => ({ ...item }))
-  nextItems[index][field] = value
-
-  const normalized = nextItems.reduce<Record<string, string>>((acc, item) => {
-    const key = item.key.trim()
-    const currentValue = item.value.trim()
-    if (key && currentValue) {
-      acc[key] = currentValue
+watch(
+  () => props.modelValue,
+  (val) => {
+    const fromProp = Object.entries(val ?? {}).map(([k, v]) => ({ key: k, value: v }))
+    // Only reset when external data actually differs (not when we emitted it)
+    if (!entriesEqual(localItems.value, fromProp)) {
+      localItems.value = fromProp
     }
-    return acc
-  }, {})
+  },
+  { deep: true, immediate: true },
+)
 
+function entriesEqual(a: PairItem[], b: PairItem[]) {
+  if (a.length !== b.length) return false
+  return a.every((item, i) => item.key === b[i].key && item.value === b[i].value)
+}
+
+// Append an empty row for the "add new" affordance
+const displayItems = computed<PairItem[]>(() => [...localItems.value, { key: '', value: '' }])
+
+function syncToParent() {
+  const normalized: Record<string, string> = {}
+  for (const item of localItems.value) {
+    const k = item.key.trim()
+    const v = item.value.trim()
+    if (k && v) normalized[k] = v
+  }
   emit('update:modelValue', normalized)
 }
 
+function updateEntry(index: number, field: keyof PairItem, value: string) {
+  const next = localItems.value.map((item) => ({ ...item }))
+  // If index is past the end, we're filling in the "add new" row
+  if (index >= next.length) {
+    const item: PairItem = { key: '', value: '' }
+    item[field] = value
+    next.push(item)
+  } else {
+    next[index] = { ...next[index], [field]: value }
+  }
+  localItems.value = next
+  syncToParent()
+}
+
 function removeEntry(key: string) {
-  const normalized = { ...(props.modelValue ?? {}) }
-  delete normalized[key]
-  emit('update:modelValue', normalized)
+  localItems.value = localItems.value.filter((e) => e.key !== key)
+  syncToParent()
 }
 </script>
 
@@ -60,8 +85,8 @@ function removeEntry(key: string) {
 
     <div class="kv-list">
       <div
-        v-for="(item, index) in items"
-        :key="`${item.key}-${index}`"
+        v-for="(item, index) in displayItems"
+        :key="index"
         class="kv-row"
       >
         <n-input

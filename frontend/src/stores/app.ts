@@ -74,6 +74,15 @@ function makeDefaultProfile(id: string, name: string): Profile {
   }
 }
 
+// --- Type-safe Wails bridge ---
+// Wails-generated bindings type arguments as Go-derived classes (with methods), but
+// at runtime only data fields traverse the JSON serialization boundary.  Plain
+// objects matching the field shape are sufficient.  This wrapper isolates the
+// unavoidable casts so store actions stay fully type-checked.
+function saveAppConfigBridge(cfg: AppConfig): Promise<AppConfig> {
+  return SaveAppConfig(cfg as any) as Promise<AppConfig>
+}
+
 export const useAppStore = defineStore('app', {
   state: () => ({
     config: { ...FALLBACK_CONFIG } as AppConfig,
@@ -111,7 +120,7 @@ export const useAppStore = defineStore('app', {
       this.recentLogs = (await GetLogHistory(limit)) as LogEntry[]
     },
     async saveConfig(config: AppConfig) {
-      this.config = (await SaveAppConfig(config as any)) as AppConfig
+      this.config = await saveAppConfigBridge(config)
       return this.config
     },
     async startProxy() {
@@ -183,7 +192,7 @@ export const useAppStore = defineStore('app', {
           [id]: profile,
         },
       }
-      this.config = (await SaveAppConfig(updated as any)) as AppConfig
+      this.config = await saveAppConfigBridge(updated)
       return this.config
     },
     async deleteProfile(id: string) {
@@ -195,7 +204,7 @@ export const useAppStore = defineStore('app', {
       }
       const { [id]: _, ...rest } = this.config.profiles
       const updated = { ...this.config, profiles: rest }
-      this.config = (await SaveAppConfig(updated as any)) as AppConfig
+      this.config = await saveAppConfigBridge(updated)
       return this.config
     },
     pushLog(entry: LogEntry) {

@@ -109,7 +109,6 @@ onMounted(async () => {
       <div class="main-column">
         <ConfigPanel
           @save="wrapAction(async () => store.refreshStatus())"
-          @copy="copyText"
         />
       </div>
 
@@ -145,6 +144,7 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
   gap: 20px;
+  align-items: start;
 }
 
 .main-column,

@@ -171,7 +171,7 @@ export const messages = {
       advanced: {
         modelMapping: {
           title: '模型映射',
-          desc: '当 Codex 请求中的模型名与 DeepSeek 模型不一致时，在此做静态映射。',
+          desc: '当 Codex 请求中的模型名与目标模型不一致时，在此做静态映射。（可选配置）',
           keyPlaceholder: '如 gpt-4.1',
           valuePlaceholder: '如 deepseek-v4-flash',
         },
@@ -191,7 +191,7 @@ export const messages = {
     },
     guide: {
       title: '接入指引',
-      actions: { copyBaseUrl: '复制 Base URL', openPreferences: '打开偏好设置', restoreDefault: '恢复默认' },
+      actions: { copyBaseUrl: '复制 Base URL', openPreferences: '打开偏好设置', writeFile: '写入文件', restoreDefault: '恢复默认' },
       step: {
         one: {
           title: '启动代理服务',
@@ -355,7 +355,7 @@ export const messages = {
       advanced: {
         modelMapping: {
           title: 'Model mapping',
-          desc: 'Static mapping when Codex model names differ from DeepSeek model names.',
+          desc: 'Static mapping when Codex model names differ from target model names. (Optional)',
           keyPlaceholder: 'e.g. gpt-4.1',
           valuePlaceholder: 'e.g. deepseek-v4-flash',
         },
@@ -375,7 +375,7 @@ export const messages = {
     },
     guide: {
       title: 'Quick Start',
-      actions: { copyBaseUrl: 'Copy Base URL', openPreferences: 'Open preferences', restoreDefault: 'Restore default' },
+      actions: { copyBaseUrl: 'Copy Base URL', openPreferences: 'Open preferences', writeFile: 'Write File', restoreDefault: 'Restore default' },
       step: {
         one: {
           title: 'Start the proxy',
@@ -546,7 +546,7 @@ export const messages = {
     },
     guide: {
       title: '接続ガイド',
-      actions: { copyBaseUrl: 'Base URL をコピー', openPreferences: '設定を開く', restoreDefault: '既定に戻す' },
+      actions: { copyBaseUrl: 'Base URL をコピー', openPreferences: '設定を開く', writeFile: 'ファイルに書き込み', restoreDefault: '既定に戻す' },
       step: {
         one: {
           title: 'ブリッジを起動',
@@ -704,7 +704,7 @@ export const messages = {
     },
     guide: {
       title: '빠른 시작',
-      actions: { copyBaseUrl: 'Base URL 복사', openPreferences: '설정 열기', restoreDefault: '기본 복원' },
+      actions: { copyBaseUrl: 'Base URL 복사', openPreferences: '설정 열기', writeFile: '파일에 쓰기', restoreDefault: '기본 복원' },
       step: {
         one: {
           title: '브리지 시작',
@@ -862,7 +862,7 @@ export const messages = {
     },
     guide: {
       title: 'Guide',
-      actions: { copyBaseUrl: 'Copier Base URL', openPreferences: 'Ouvrir préférences', restoreDefault: 'Restaurer défaut' },
+      actions: { copyBaseUrl: 'Copier Base URL', openPreferences: 'Ouvrir préférences', writeFile: 'Écrire le fichier', restoreDefault: 'Restaurer défaut' },
       step: {
         one: {
           title: 'Démarrer le proxy',
@@ -1020,7 +1020,7 @@ export const messages = {
     },
     guide: {
       title: 'Anleitung',
-      actions: { copyBaseUrl: 'Base URL kopieren', openPreferences: 'Einstellungen öffnen', restoreDefault: 'Standard wiederherstellen' },
+      actions: { copyBaseUrl: 'Base URL kopieren', openPreferences: 'Einstellungen öffnen', writeFile: 'Datei schreiben', restoreDefault: 'Standard wiederherstellen' },
       step: {
         one: { title: 'Proxy starten', notRunning: 'Gestoppt (links "Starten" klicken)', hint: 'Nach dem Start wird lokal /v1 für Codex bereitgestellt.' },
         two: {
@@ -1174,7 +1174,7 @@ export const messages = {
     },
     guide: {
       title: 'Guía',
-      actions: { copyBaseUrl: 'Copiar Base URL', openPreferences: 'Abrir preferencias', restoreDefault: 'Restaurar por defecto' },
+      actions: { copyBaseUrl: 'Copiar Base URL', openPreferences: 'Abrir preferencias', writeFile: 'Escribir archivo', restoreDefault: 'Restaurar por defecto' },
       step: {
         one: { title: 'Inicia el proxy', notRunning: 'Detenido (pulsa "Iniciar" a la izquierda)', hint: 'Tras iniciar, expone /v1 local para Codex.' },
         two: {

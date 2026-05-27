@@ -9,14 +9,11 @@ import { maskSecret } from '../utils/format'
 const store = useAppStore()
 const emit = defineEmits<{
   save: []
-  copy: [value: string]
 }>()
 
 const formProfile = ref<Profile>({ ...store.currentProfile ?? {} as Profile })
-const showAdvanced = ref(false)
+const showAdvanced = ref(true)
 const { t } = useI18n()
-let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
-const autoSaveScheduled = ref(false)
 
 // Sync form when switching profiles
 watch(
@@ -41,19 +38,6 @@ function syncForm() {
 }
 syncForm()
 
-// Auto-save on form changes (debounced)
-watch(
-  formProfile,
-  () => {
-    if (autoSaveTimer) clearTimeout(autoSaveTimer)
-    autoSaveScheduled.value = true
-    autoSaveTimer = setTimeout(() => {
-      submitSave()
-    }, 600)
-  },
-  { deep: true },
-)
-
 const isRunning = computed(() => store.isRunning)
 const maskedApiKey = computed(() => maskSecret(formProfile.value.apiKey))
 const apiKeyHint = computed(() =>
@@ -63,11 +47,6 @@ const apiKeyHint = computed(() =>
 )
 
 async function submitSave() {
-  if (autoSaveTimer) {
-    clearTimeout(autoSaveTimer)
-    autoSaveTimer = null
-  }
-  autoSaveScheduled.value = false
   const profiles = { ...store.config.profiles }
   profiles[store.config.currentProfileId] = { ...formProfile.value }
   const updated = {
@@ -102,7 +81,7 @@ async function submitSave() {
         <n-form-item label="API Base URL" class="span-2">
           <n-input v-model:value="formProfile.baseURL" placeholder="https://api.deepseek.com/v1" size="small" />
         </n-form-item>
-        <n-form-item label="API Key" class="span-2">
+        <n-form-item label="API Key" class="span-2" required>
           <n-input
             v-model:value="formProfile.apiKey"
             type="password"
@@ -129,20 +108,11 @@ async function submitSave() {
 
     <div class="action-bar">
       <n-button type="primary" :loading="store.isBusy" @click="submitSave">
-        {{ autoSaveScheduled ? t('config.actions.saving') : t('config.actions.save') }}
-      </n-button>
-      <n-button
-        tertiary
-        size="tiny"
-        :disabled="!store.status.listenAddress"
-        @click="emit('copy', store.status.listenAddress)"
-      >
-        {{ t('config.actions.copyLocal') }}
+        {{ t('config.actions.save') }}
       </n-button>
     </div>
 
-    <n-collapse-transition :show="showAdvanced">
-      <div class="advanced-panel">
+    <div v-if="showAdvanced" class="advanced-panel">
         <KeyValueEditor
           v-model:model-value="formProfile.mappings"
           :title="t('config.advanced.modelMapping.title')"
@@ -160,7 +130,6 @@ async function submitSave() {
           size="small"
         />
       </div>
-    </n-collapse-transition>
 
     <n-button text type="primary" @click="showAdvanced = !showAdvanced">
       {{ showAdvanced ? t('config.actions.collapseAdvanced') : t('config.actions.expandAdvanced') }}
@@ -171,7 +140,7 @@ async function submitSave() {
 <style scoped>
 .config-panel {
   display: grid;
-  gap: 12px;
+  gap: 8px;
   padding: 16px;
   border-radius: 22px;
   border: 1px solid var(--border);
