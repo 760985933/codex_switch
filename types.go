@@ -9,6 +9,18 @@ const (
 	ProxyError    ProxyStatus = "error"
 )
 
+type Profile struct {
+	ID               string            `json:"id"`
+	Name             string            `json:"name"`
+	BaseURL          string            `json:"baseURL"`
+	APIKey           string            `json:"apiKey"`
+	DefaultModel     string            `json:"defaultModel"`
+	RequestTimeoutMs int               `json:"requestTimeoutMs"`
+	MaxRetries       int               `json:"maxRetries"`
+	Mappings         map[string]string `json:"mappings"`
+	Headers          map[string]string `json:"headers"`
+}
+
 type AppConfig struct {
 	ListenHost       string            `json:"listenHost"`
 	ListenPort       int               `json:"listenPort"`
@@ -24,6 +36,9 @@ type AppConfig struct {
 	PluginUnlockEnabled  bool              `json:"pluginUnlockEnabled"`
 	Mappings             map[string]string `json:"mappings"`
 	Headers              map[string]string `json:"headers"`
+
+	CurrentProfileID string              `json:"currentProfileId,omitempty"`
+	Profiles         map[string]*Profile `json:"profiles,omitempty"`
 }
 
 type ProxyStatusPayload struct {

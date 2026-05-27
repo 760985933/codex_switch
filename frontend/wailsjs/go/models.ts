@@ -1,5 +1,33 @@
 export namespace main {
 	
+	export class Profile {
+	    id: string;
+	    name: string;
+	    baseURL: string;
+	    apiKey: string;
+	    defaultModel: string;
+	    requestTimeoutMs: number;
+	    maxRetries: number;
+	    mappings: Record<string, string>;
+	    headers: Record<string, string>;
+	
+	    static createFrom(source: any = {}) {
+	        return new Profile(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.baseURL = source["baseURL"];
+	        this.apiKey = source["apiKey"];
+	        this.defaultModel = source["defaultModel"];
+	        this.requestTimeoutMs = source["requestTimeoutMs"];
+	        this.maxRetries = source["maxRetries"];
+	        this.mappings = source["mappings"];
+	        this.headers = source["headers"];
+	    }
+	}
 	export class AppConfig {
 	    listenHost: string;
 	    listenPort: number;
@@ -15,6 +43,8 @@ export namespace main {
 	    pluginUnlockEnabled: boolean;
 	    mappings: Record<string, string>;
 	    headers: Record<string, string>;
+	    currentProfileId?: string;
+	    profiles?: Record<string, Profile>;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppConfig(source);
@@ -36,7 +66,27 @@ export namespace main {
 	        this.pluginUnlockEnabled = source["pluginUnlockEnabled"];
 	        this.mappings = source["mappings"];
 	        this.headers = source["headers"];
+	        this.currentProfileId = source["currentProfileId"];
+	        this.profiles = this.convertValues(source["profiles"], Profile, true);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class HealthCheckItem {
 	    name: string;
@@ -170,6 +220,7 @@ export namespace main {
 		    return a;
 		}
 	}
+	
 	
 	export class UpdateCheckResult {
 	    currentVersion: string;

@@ -40,6 +40,8 @@ export function RunHealthCheck():Promise<main.HealthCheckResult>;
 
 export function SaveAppConfig(arg1:main.AppConfig):Promise<main.AppConfig>;
 
+export function SetCurrentProfile(arg1:string):Promise<main.AppConfig>;
+
 export function StartProxy():Promise<main.ProxyStatusPayload>;
 
 export function StopProxy():Promise<main.ProxyStatusPayload>;

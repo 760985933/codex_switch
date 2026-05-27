@@ -78,6 +78,10 @@ export function SaveAppConfig(arg1) {
   return window['go']['main']['App']['SaveAppConfig'](arg1);
 }
 
+export function SetCurrentProfile(arg1) {
+  return window['go']['main']['App']['SetCurrentProfile'](arg1);
+}
+
 export function StartProxy() {
   return window['go']['main']['App']['StartProxy']();
 }

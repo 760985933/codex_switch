@@ -271,6 +271,31 @@ func (a *App) SaveAppConfig(cfg AppConfig) (AppConfig, error) {
 	return cfg, nil
 }
 
+func (a *App) SetCurrentProfile(id string) (AppConfig, error) {
+	cfg, err := a.GetAppConfig()
+	if err != nil {
+		return AppConfig{}, err
+	}
+
+	if _, ok := cfg.Profiles[id]; !ok {
+		return AppConfig{}, errors.New("配置 ID 不存在: " + id)
+	}
+
+	cfg.CurrentProfileID = id
+	cfg = normalizeConfig(cfg)
+
+	if err := a.store.Save(cfg); err != nil {
+		return AppConfig{}, err
+	}
+
+	a.mu.Lock()
+	a.config = cfg
+	a.mu.Unlock()
+
+	a.appendLog("info", "app", "已切换到配置: "+cfg.Profiles[id].Name, "")
+	return cfg, nil
+}
+
 func (a *App) ExportConfig() (string, error) {
 	cfg, err := a.GetAppConfig()
 	if err != nil {
@@ -296,7 +321,11 @@ func (a *App) StartProxy() (ProxyStatusPayload, error) {
 	if err != nil {
 		return ProxyStatusPayload{}, err
 	}
-	a.appendLog("info", "app", fmt.Sprintf("收到启动请求: %s:%d -> %s (%s)", cfg.ListenHost, cfg.ListenPort, cfg.DeepseekBaseURL, cfg.DefaultModel), "")
+	profile, ok := cfg.Profiles[cfg.CurrentProfileID]
+	if !ok {
+		return ProxyStatusPayload{}, errors.New("当前配置不存在")
+	}
+	a.appendLog("info", "app", fmt.Sprintf("收到启动请求 [%s]: %s:%d -> %s (%s)", profile.Name, cfg.ListenHost, cfg.ListenPort, profile.BaseURL, profile.DefaultModel), "")
 	if err := validateConfig(cfg, true); err != nil {
 		a.appendLog("warn", "app", "启动前配置校验失败: "+err.Error(), "")
 		return ProxyStatusPayload{}, err
@@ -348,18 +377,24 @@ func (a *App) GetOverviewSnapshot() (OverviewSnapshot, error) {
 		return OverviewSnapshot{}, err
 	}
 
+	profileName := ""
+	if p, ok := cfg.Profiles[cfg.CurrentProfileID]; ok {
+		profileName = p.Name
+	}
+
 	return OverviewSnapshot{
 		Config:     cfg,
 		Status:     a.proxy.Status(),
 		RecentLogs: a.GetLogHistory(6),
 		QuickTips: []string{
-			"先填写 DeepSeek Base URL、API Key 和默认模型。",
+			"先填写 API Base URL、API Key 和默认模型。",
 			"启动后将本地地址填入 Codex Desktop 的服务端点。",
 			"请求失败时先查看最近日志，再进入完整诊断页。",
 		},
 		Defaults: map[string]string{
-			"baseURL": "https://api.deepseek.com/v1",
-			"model":   "deepseek-v4-flash",
+			"baseURL":     "https://api.deepseek.com/v1",
+			"model":       "deepseek-v4-flash",
+			"profileName": profileName,
 		},
 		Features: map[string]bool{
 			"streamingProxy":   true,
@@ -494,22 +529,28 @@ func validateConfig(cfg AppConfig, requireCredentials bool) error {
 	if cfg.ListenPort <= 0 {
 		return errors.New("监听端口必须大于 0")
 	}
-	if strings.TrimSpace(cfg.DeepseekBaseURL) == "" {
-		return errors.New("DeepSeek Base URL 不能为空")
+
+	profile, ok := cfg.Profiles[cfg.CurrentProfileID]
+	if !ok {
+		return errors.New("当前配置不存在")
 	}
-	if parsed, err := url.Parse(strings.TrimSpace(cfg.DeepseekBaseURL)); err == nil && parsed.Host != "" {
+
+	if strings.TrimSpace(profile.BaseURL) == "" {
+		return errors.New("API Base URL 不能为空")
+	}
+	if parsed, err := url.Parse(strings.TrimSpace(profile.BaseURL)); err == nil && parsed.Host != "" {
 		if parsed.Port() != "" {
 			if net.JoinHostPort(parsed.Hostname(), parsed.Port()) == net.JoinHostPort(strings.TrimSpace(cfg.ListenHost), fmt.Sprintf("%d", cfg.ListenPort)) {
-				return errors.New("DeepSeek Base URL 不能指向本代理地址（会导致请求循环）")
+				return errors.New("Base URL 不能指向本代理地址（会导致请求循环）")
 			}
 		} else if parsed.Hostname() == strings.TrimSpace(cfg.ListenHost) {
-			return errors.New("DeepSeek Base URL 不能指向本代理地址（会导致请求循环）")
+			return errors.New("Base URL 不能指向本代理地址（会导致请求循环）")
 		}
 	}
-	if requireCredentials && strings.TrimSpace(cfg.APIKey) == "" {
+	if requireCredentials && strings.TrimSpace(profile.APIKey) == "" {
 		return errors.New("API Key 不能为空")
 	}
-	if strings.TrimSpace(cfg.DefaultModel) == "" {
+	if strings.TrimSpace(profile.DefaultModel) == "" {
 		return errors.New("默认模型不能为空")
 	}
 	return nil

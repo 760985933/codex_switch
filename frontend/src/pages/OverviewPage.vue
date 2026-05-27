@@ -8,7 +8,6 @@ import ConsolePanel from '../components/ConsolePanel.vue'
 import QuickGuideCard from '../components/QuickGuideCard.vue'
 import { useProxyEvents } from '../composables/useProxyEvents'
 import { useAppStore } from '../stores/app'
-import type { AppConfig } from '../types'
 
 const store = useAppStore()
 const message = useMessage()
@@ -53,16 +52,8 @@ async function wrapAction<T>(
   }
 }
 
-async function handleSave(config: AppConfig) {
+async function handleStart() {
   await wrapAction(async () => {
-    await store.saveConfig(config)
-    return store.refreshStatus()
-  }, t('overview.toast.configSaved'))
-}
-
-async function handleStart(config: AppConfig) {
-  await wrapAction(async () => {
-    await store.saveConfig(config)
     return store.startProxy()
   }, t('overview.toast.proxyStarted'), {
     timeoutMs: 5000,
@@ -117,13 +108,7 @@ onMounted(async () => {
     <div class="page-grid">
       <div class="main-column">
         <ConfigPanel
-          :config="store.config"
-          :status="store.status"
-          :loading="busy"
-          @save="handleSave"
-          @start="handleStart"
-          @stop="handleStop"
-          @restart="handleRestart"
+          @save="wrapAction(async () => store.refreshStatus())"
           @copy="copyText"
         />
       </div>
@@ -134,6 +119,9 @@ onMounted(async () => {
           :loading="busy"
           @copy="copyText"
           @health="handleHealth"
+          @start="handleStart"
+          @stop="handleStop"
+          @restart="handleRestart"
         />
         <ConsolePanel
           :status="store.status"

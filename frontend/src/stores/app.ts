@@ -17,6 +17,7 @@ import {
   RestoreCodexConfigTomlFromBackup,
   RestoreCodexConfigToml,
   SaveAppConfig,
+  SetCurrentProfile,
   StartProxy,
   StopProxy,
   WriteCodexConfigTomlRaw,
@@ -24,6 +25,7 @@ import {
 } from '../../wailsjs/go/main/App'
 import type {
   AppConfig,
+  Profile,
   ProxyStatusPayload,
   HealthCheckResult,
   LogEntry,
@@ -45,6 +47,8 @@ const FALLBACK_CONFIG: AppConfig = {
   pluginUnlockEnabled: false,
   mappings: {},
   headers: {},
+  currentProfileId: 'default',
+  profiles: {},
 }
 
 const FALLBACK_STATUS: ProxyStatusPayload = {
@@ -54,6 +58,20 @@ const FALLBACK_STATUS: ProxyStatusPayload = {
   uptimeSeconds: 0,
   lastError: '',
   requestCount: 0,
+}
+
+function makeDefaultProfile(id: string, name: string): Profile {
+  return {
+    id,
+    name,
+    baseURL: 'https://api.deepseek.com/v1',
+    apiKey: '',
+    defaultModel: 'deepseek-v4-flash',
+    requestTimeoutMs: 60000,
+    maxRetries: 1,
+    mappings: {},
+    headers: {},
+  }
 }
 
 export const useAppStore = defineStore('app', {
@@ -66,6 +84,18 @@ export const useAppStore = defineStore('app', {
     isBusy: false,
     lastLoadedAt: '',
   }),
+  getters: {
+    currentProfile(state): Profile | null {
+      const p = state.config.profiles[state.config.currentProfileId]
+      return p ?? null
+    },
+    profileList(state): Profile[] {
+      return Object.values(state.config.profiles)
+    },
+    isRunning(state): boolean {
+      return state.status.status === 'running'
+    },
+  },
   actions: {
     async initialize() {
       const snapshot = (await GetOverviewSnapshot()) as OverviewSnapshot
@@ -81,7 +111,7 @@ export const useAppStore = defineStore('app', {
       this.recentLogs = (await GetLogHistory(limit)) as LogEntry[]
     },
     async saveConfig(config: AppConfig) {
-      this.config = (await SaveAppConfig(config)) as AppConfig
+      this.config = (await SaveAppConfig(config as any)) as AppConfig
       return this.config
     },
     async startProxy() {
@@ -136,6 +166,37 @@ export const useAppStore = defineStore('app', {
     },
     async writeCodexConfigTomlRaw(content: string) {
       return WriteCodexConfigTomlRaw(content)
+    },
+    async setCurrentProfile(id: string) {
+      this.config = (await SetCurrentProfile(id)) as AppConfig
+      return this.config
+    },
+    async addProfile(name: string, template?: Profile) {
+      const id = 'profile_' + Date.now().toString(36)
+      const profile = template
+        ? { ...template, id, name }
+        : { ...makeDefaultProfile(id, name) }
+      const updated = {
+        ...this.config,
+        profiles: {
+          ...this.config.profiles,
+          [id]: profile,
+        },
+      }
+      this.config = (await SaveAppConfig(updated as any)) as AppConfig
+      return this.config
+    },
+    async deleteProfile(id: string) {
+      if (id === this.config.currentProfileId) {
+        // Switch to another profile first
+        const others = Object.keys(this.config.profiles).filter((k) => k !== id)
+        if (others.length === 0) return this.config
+        await this.setCurrentProfile(others[0])
+      }
+      const { [id]: _, ...rest } = this.config.profiles
+      const updated = { ...this.config, profiles: rest }
+      this.config = (await SaveAppConfig(updated as any)) as AppConfig
+      return this.config
     },
     pushLog(entry: LogEntry) {
       this.recentLogs = [...this.recentLogs.slice(-199), entry]

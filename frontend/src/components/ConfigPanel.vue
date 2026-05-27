@@ -1,50 +1,81 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { AppConfig, ProxyStatusPayload } from '../types'
+import { useAppStore } from '../stores/app'
+import type { Profile } from '../types'
 import KeyValueEditor from './KeyValueEditor.vue'
 import { maskSecret } from '../utils/format'
 
-const props = defineProps<{
-  config: AppConfig
-  status: ProxyStatusPayload
-  loading: boolean
-}>()
-
+const store = useAppStore()
 const emit = defineEmits<{
-  save: [value: AppConfig]
-  start: [value: AppConfig]
-  stop: []
-  restart: []
+  save: []
   copy: [value: string]
 }>()
 
-const formValue = ref<AppConfig>({ ...props.config })
+const formProfile = ref<Profile>({ ...store.currentProfile ?? {} as Profile })
 const showAdvanced = ref(false)
 const { t } = useI18n()
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
+const autoSaveScheduled = ref(false)
 
+// Sync form when switching profiles
 watch(
-  () => props.config,
-  (value) => {
-    formValue.value = {
-      ...value,
-      mappings: { ...value.mappings },
-      headers: { ...value.headers },
-    }
-  },
-  { immediate: true, deep: true },
+  () => store.config.currentProfileId,
+  () => syncForm(),
+)
+watch(
+  () => store.config.profiles,
+  () => syncForm(),
+  { deep: true },
 )
 
-const isRunning = computed(() => props.status.status === 'running')
-const maskedApiKey = computed(() => maskSecret(formValue.value.apiKey))
+function syncForm() {
+  const p = store.currentProfile
+  if (p) {
+    formProfile.value = {
+      ...p,
+      mappings: { ...p.mappings },
+      headers: { ...p.headers },
+    }
+  }
+}
+syncForm()
+
+// Auto-save on form changes (debounced)
+watch(
+  formProfile,
+  () => {
+    if (autoSaveTimer) clearTimeout(autoSaveTimer)
+    autoSaveScheduled.value = true
+    autoSaveTimer = setTimeout(() => {
+      submitSave()
+    }, 600)
+  },
+  { deep: true },
+)
+
+const isRunning = computed(() => store.isRunning)
+const maskedApiKey = computed(() => maskSecret(formProfile.value.apiKey))
 const apiKeyHint = computed(() =>
   t('config.fields.apiKeyHint', {
     masked: maskedApiKey.value || t('config.fields.apiKeyMissing'),
   }),
 )
 
-function submitSave() {
-  emit('save', formValue.value)
+async function submitSave() {
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer)
+    autoSaveTimer = null
+  }
+  autoSaveScheduled.value = false
+  const profiles = { ...store.config.profiles }
+  profiles[store.config.currentProfileId] = { ...formProfile.value }
+  const updated = {
+    ...store.config,
+    profiles,
+  }
+  await store.saveConfig(updated)
+  emit('save')
 }
 </script>
 
@@ -53,59 +84,58 @@ function submitSave() {
     <div class="panel-head">
       <div>
         <h3>{{ t('config.title') }}</h3>
-        <p>{{ t('config.desc') }}</p>
+        <p v-if="store.currentProfile">
+          {{ t('config.editing') }}: <strong>{{ store.currentProfile.name }}</strong>
+        </p>
+        <p v-else>{{ t('config.noProfile') }}</p>
       </div>
     </div>
 
-    <n-form label-placement="top" :model="formValue">
+    <n-form label-placement="top" :model="formProfile" size="small">
       <div class="form-grid">
-        <n-form-item label="DeepSeek Base URL">
-          <n-input v-model:value="formValue.deepseekBaseURL" placeholder="https://api.deepseek.com/v1" />
+        <n-form-item :label="t('config.fields.profileName')">
+          <n-input v-model:value="formProfile.name" size="small" />
         </n-form-item>
         <n-form-item :label="t('config.fields.defaultModel')">
-          <n-input v-model:value="formValue.defaultModel" placeholder="deepseek-v4-flash" />
+          <n-input v-model:value="formProfile.defaultModel" placeholder="deepseek-v4-flash" size="small" />
+        </n-form-item>
+        <n-form-item label="API Base URL" class="span-2">
+          <n-input v-model:value="formProfile.baseURL" placeholder="https://api.deepseek.com/v1" size="small" />
         </n-form-item>
         <n-form-item label="API Key" class="span-2">
           <n-input
-            v-model:value="formValue.apiKey"
+            v-model:value="formProfile.apiKey"
             type="password"
             show-password-on="click"
             placeholder="sk-..."
+            size="small"
           />
           <div class="field-hint">{{ apiKeyHint }}</div>
         </n-form-item>
         <n-form-item :label="t('config.fields.listenHost')">
-          <n-input v-model:value="formValue.listenHost" placeholder="127.0.0.1" />
+          <n-input v-model:value="store.config.listenHost" placeholder="127.0.0.1" size="small" />
         </n-form-item>
         <n-form-item :label="t('config.fields.listenPort')">
-          <n-input-number v-model:value="formValue.listenPort" :min="1" :max="65535" />
+          <n-input-number v-model:value="store.config.listenPort" :min="1" :max="65535" size="small" />
         </n-form-item>
         <n-form-item :label="t('config.fields.requestTimeout')">
-          <n-input-number v-model:value="formValue.requestTimeoutMs" :min="1000" :step="1000" />
+          <n-input-number v-model:value="formProfile.requestTimeoutMs" :min="1000" :step="1000" size="small" />
         </n-form-item>
         <n-form-item :label="t('config.fields.maxRetries')">
-          <n-input-number v-model:value="formValue.maxRetries" :min="0" :max="5" />
+          <n-input-number v-model:value="formProfile.maxRetries" :min="0" :max="5" size="small" />
         </n-form-item>
       </div>
     </n-form>
 
     <div class="action-bar">
-      <n-space>
-        <n-button secondary :loading="loading" @click="submitSave">{{ t('config.actions.save') }}</n-button>
-        <n-button type="primary" :disabled="isRunning" :loading="loading" @click="emit('start', formValue)">
-          {{ t('config.actions.start') }}
-        </n-button>
-        <n-button secondary :disabled="!isRunning" :loading="loading" @click="emit('restart')">
-          {{ t('config.actions.restart') }}
-        </n-button>
-        <n-button tertiary type="error" :disabled="!isRunning" :loading="loading" @click="emit('stop')">
-          {{ t('config.actions.stop') }}
-        </n-button>
-      </n-space>
+      <n-button type="primary" :loading="store.isBusy" @click="submitSave">
+        {{ autoSaveScheduled ? t('config.actions.saving') : t('config.actions.save') }}
+      </n-button>
       <n-button
         tertiary
-        :disabled="!status.listenAddress"
-        @click="emit('copy', status.listenAddress)"
+        size="tiny"
+        :disabled="!store.status.listenAddress"
+        @click="emit('copy', store.status.listenAddress)"
       >
         {{ t('config.actions.copyLocal') }}
       </n-button>
@@ -114,18 +144,20 @@ function submitSave() {
     <n-collapse-transition :show="showAdvanced">
       <div class="advanced-panel">
         <KeyValueEditor
-          v-model:model-value="formValue.mappings"
+          v-model:model-value="formProfile.mappings"
           :title="t('config.advanced.modelMapping.title')"
           :description="t('config.advanced.modelMapping.desc')"
           :key-placeholder="t('config.advanced.modelMapping.keyPlaceholder')"
           :value-placeholder="t('config.advanced.modelMapping.valuePlaceholder')"
+          size="small"
         />
         <KeyValueEditor
-          v-model:model-value="formValue.headers"
+          v-model:model-value="formProfile.headers"
           :title="t('config.advanced.headers.title')"
           :description="t('config.advanced.headers.desc')"
           :key-placeholder="t('config.advanced.headers.keyPlaceholder')"
           :value-placeholder="t('config.advanced.headers.valuePlaceholder')"
+          size="small"
         />
       </div>
     </n-collapse-transition>
@@ -139,38 +171,42 @@ function submitSave() {
 <style scoped>
 .config-panel {
   display: grid;
-  gap: 18px;
-  padding: 20px;
+  gap: 12px;
+  padding: 16px;
   border-radius: 22px;
   border: 1px solid var(--border);
   background: var(--surface);
-  box-shadow: 0 12px 34px rgba(14, 30, 68, 0.08);
+  box-shadow: 0 10px 30px rgba(14, 30, 68, 0.08);
 }
 
 .panel-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
 }
 
 .panel-head h3 {
-  margin: 0 0 6px;
-  font-size: 17px;
+  margin: 0 0 2px;
+  font-size: 15px;
   color: var(--text);
 }
 
 .panel-head p {
   margin: 0;
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 11px;
+  line-height: 1.5;
   color: var(--muted);
+}
+
+.panel-head strong {
+  color: var(--text);
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 16px;
+  gap: 2px 12px;
 }
 
 .span-2 {
@@ -178,22 +214,21 @@ function submitSave() {
 }
 
 .field-hint {
-  margin-top: 8px;
-  font-size: 12px;
+  margin-top: 4px;
+  font-size: 11px;
   color: var(--muted);
 }
 
 .action-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
 }
 
 .advanced-panel {
   display: grid;
-  gap: 20px;
-  padding-top: 8px;
+  gap: 14px;
+  padding-top: 4px;
 }
 
 @media (max-width: 920px) {

@@ -145,9 +145,12 @@ export const messages = {
     },
     config: {
       title: '连接配置',
-      desc: '主界面只保留高频字段，高级映射通过折叠区收纳。',
+      desc: '编辑当前选中的连接配置。',
+      editing: '正在编辑',
+      noProfile: '暂无配置',
       actions: {
         save: '保存配置',
+        saving: '保存中…',
         start: '启动代理',
         restart: '重启',
         stop: '停止',
@@ -156,6 +159,7 @@ export const messages = {
         collapseAdvanced: '收起高级配置',
       },
       fields: {
+        profileName: '配置名称',
         defaultModel: '默认模型',
         listenHost: '监听地址',
         listenPort: '监听端口',
@@ -213,6 +217,19 @@ export const messages = {
       },
     },
     common: { delete: '删除' },
+    profile: {
+      add: '+ 添加配置',
+      addTitle: '新建连接配置',
+      confirmAdd: '添加',
+      cancelAdd: '取消',
+      namePlaceholder: '输入配置名称（如 OpenAI、Azure）',
+      switched: '已切换到: {name}',
+      added: '已添加配置: {name}',
+      current: '当前',
+      delete: '删除配置',
+      confirmDelete: '确认删除配置"{name}"？',
+      switchWhileRunning: '代理运行中，请先停止后再切换配置',
+    },
   },
   'en-US': {
     app: {
@@ -258,6 +275,7 @@ export const messages = {
       switches: { autoStart: 'Auto-start proxy', minimizeToTray: 'Hide window on close', compactMode: 'Compact layout' },
       form: { logRetentionDays: 'Log retention (days)' },
       actions: { save: 'Save', exportConfig: 'Export', copyToml: 'Copy TOML', writeFile: 'Write File' },
+        saving: 'Saving…',
       codex: {
         title: 'Codex config.toml',
         desc: 'Make Codex use the local proxy. Supports editing, saving, and auto backup for rollback.',
@@ -311,9 +329,12 @@ export const messages = {
     },
     config: {
       title: 'Connection',
-      desc: 'Keep high-frequency fields here; advanced mappings are in the collapsible section.',
+      desc: 'Edit the currently selected connection profile.',
+      editing: 'Editing',
+      noProfile: 'No profile',
       actions: {
         save: 'Save',
+        saving: 'Saving…',
         start: 'Start proxy',
         restart: 'Restart',
         stop: 'Stop',
@@ -322,6 +343,7 @@ export const messages = {
         collapseAdvanced: 'Hide advanced',
       },
       fields: {
+        profileName: 'Profile name',
         defaultModel: 'Default model',
         listenHost: 'Listen host',
         listenPort: 'Listen port',
@@ -379,6 +401,19 @@ export const messages = {
       },
     },
     common: { delete: 'Delete' },
+    profile: {
+      add: '+ Add profile',
+      addTitle: 'New Connection Profile',
+      confirmAdd: 'Add',
+      cancelAdd: 'Cancel',
+      namePlaceholder: 'Enter profile name (e.g. OpenAI, Azure)',
+      switched: 'Switched to: {name}',
+      added: 'Added profile: {name}',
+      current: 'Current',
+      delete: 'Delete profile',
+      confirmDelete: 'Are you sure you want to delete "{name}"?',
+      switchWhileRunning: 'Proxy is running. Please stop it first to switch profiles.',
+    },
   },
   'ja-JP': {
     app: {

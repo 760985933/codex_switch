@@ -1,5 +1,17 @@
 export type ProxyStatus = 'stopped' | 'starting' | 'running' | 'error'
 
+export interface Profile {
+  id: string
+  name: string
+  baseURL: string
+  apiKey: string
+  defaultModel: string
+  requestTimeoutMs: number
+  maxRetries: number
+  mappings: Record<string, string>
+  headers: Record<string, string>
+}
+
 export interface AppConfig {
   listenHost: string
   listenPort: number
@@ -15,6 +27,8 @@ export interface AppConfig {
   pluginUnlockEnabled: boolean
   mappings: Record<string, string>
   headers: Record<string, string>
+  currentProfileId: string
+  profiles: Record<string, Profile>
 }
 
 export interface ProxyStatusPayload {

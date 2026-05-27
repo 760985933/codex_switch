@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '../stores/app'
 import { useUiStore } from '../stores/ui'
+import type { Profile } from '../types'
 
 const emit = defineEmits<{
   copy: [value: string]
   health: []
+  start: []
+  stop: []
+  restart: []
 }>()
 
 const props = defineProps<{
@@ -24,6 +28,51 @@ const codexBaseURL = computed(() => {
   if (!props.listenAddress) return ''
   return props.listenAddress.replace(/\/+$/, '') + '/v1'
 })
+
+const profileOptions = computed(() =>
+  store.profileList.map((p) => ({
+    label: p.name,
+    value: p.id,
+  })),
+)
+
+const currentProfileId = computed(() => store.config.currentProfileId)
+
+// Add profile dialog
+const showAddDialog = ref(false)
+const adding = ref(false)
+const newProfileName = ref('')
+
+async function handleSwitchProfile(id: string) {
+  if (id === store.config.currentProfileId) return
+  try {
+    await store.setCurrentProfile(id)
+    message.success(t('profile.switched', { name: store.currentProfile?.name ?? id }))
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+async function handleAddProfile() {
+  const name = newProfileName.value.trim()
+  if (!name) return
+  adding.value = true
+  try {
+    await store.addProfile(name)
+    newProfileName.value = ''
+    showAddDialog.value = false
+    message.success(t('profile.added', { name }))
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  } finally {
+    adding.value = false
+  }
+}
+
+function openAddDialog() {
+  newProfileName.value = ''
+  showAddDialog.value = true
+}
 
 async function handleRestoreCodex() {
   try {
@@ -52,17 +101,73 @@ async function handleRestoreCodex() {
     </div>
 
     <div class="steps">
+      <!-- Step 1: Profile selector + proxy controls -->
       <div class="step">
         <div class="step-head">
           <span class="step-badge">Step 1</span>
           <span class="step-title">{{ t('guide.step.one.title') }}</span>
         </div>
         <div class="step-body">
+          <!-- Profile selector -->
+          <div class="profile-bar">
+            <n-select
+              v-model:value="currentProfileId"
+              :options="profileOptions"
+              :disabled="store.isRunning"
+              size="small"
+              class="profile-select"
+              @update:value="handleSwitchProfile"
+            />
+            <n-button size="tiny" secondary @click="openAddDialog">
+              {{ t('profile.add') }}
+            </n-button>
+          </div>
+
+          <!-- Proxy action buttons -->
+          <div class="action-bar">
+            <n-button
+              size="small"
+              type="primary"
+              :disabled="store.isRunning || !currentProfileId"
+              :loading="loading"
+              @click="emit('start')"
+            >
+              {{ t('config.actions.start') }}
+            </n-button>
+            <n-button
+              size="small"
+              secondary
+              :disabled="!store.isRunning"
+              :loading="loading"
+              @click="emit('restart')"
+            >
+              {{ t('config.actions.restart') }}
+            </n-button>
+            <n-button
+              size="small"
+              tertiary
+              type="error"
+              :disabled="!store.isRunning"
+              :loading="loading"
+              @click="emit('stop')"
+            >
+              {{ t('config.actions.stop') }}
+            </n-button>
+          </div>
+
+          <!-- Connection info -->
           <div class="mono">{{ props.listenAddress || t('guide.step.one.notRunning') }}</div>
+          <div v-if="store.currentProfile" class="profile-info">
+            <span class="hint">{{ t('profile.current') }}:</span>
+            <strong class="mono">{{ store.currentProfile.name }}</strong>
+            <span class="hint">→</span>
+            <span class="mono url">{{ store.currentProfile.baseURL }}</span>
+          </div>
           <div class="hint">{{ t('guide.step.one.hint') }}</div>
         </div>
       </div>
 
+      <!-- Step 2: unchanged -->
       <div class="step">
         <div class="step-head">
           <span class="step-badge">Step 2</span>
@@ -85,6 +190,7 @@ async function handleRestoreCodex() {
         </div>
       </div>
 
+      <!-- Step 3: unchanged -->
       <div class="step">
         <div class="step-head">
           <span class="step-badge">Step 3</span>
@@ -92,7 +198,7 @@ async function handleRestoreCodex() {
         </div>
         <div class="step-body">
           <div class="actions">
-            <n-button secondary :loading="props.loading" @click="emit('health')">{{ t('guide.step.three.healthCheck') }}</n-button>
+            <n-button secondary :loading="loading" @click="emit('health')">{{ t('guide.step.three.healthCheck') }}</n-button>
           </div>
           <div class="hint">{{ t('guide.step.three.hint') }}</div>
           <div class="cmd">
@@ -102,6 +208,24 @@ async function handleRestoreCodex() {
         </div>
       </div>
     </div>
+
+    <!-- Add profile dialog -->
+    <n-modal
+      v-model:show="showAddDialog"
+      :title="t('profile.addTitle')"
+      preset="dialog"
+      :positive-text="t('profile.confirmAdd')"
+      :negative-text="t('profile.cancelAdd')"
+      :loading="adding"
+      @positive-click="handleAddProfile"
+      @negative-click="showAddDialog = false"
+    >
+      <n-input
+        v-model:value="newProfileName"
+        :placeholder="t('profile.namePlaceholder')"
+        @keyup.enter="handleAddProfile"
+      />
+    </n-modal>
   </div>
 </template>
 
@@ -185,6 +309,10 @@ async function handleRestoreCodex() {
   color: var(--muted);
 }
 
+.url {
+  color: rgba(22, 119, 255, 0.85);
+}
+
 .kv {
   display: flex;
   justify-content: space-between;
@@ -218,6 +346,35 @@ async function handleRestoreCodex() {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.profile-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.profile-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.action-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.profile-info {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.profile-info strong {
+  color: rgba(11, 18, 32, 0.9);
 }
 
 @media (max-width: 920px) {
