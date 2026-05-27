@@ -27,6 +27,7 @@ type ProviderInfo struct {
 	Name            string            // 显示名称
 	DefaultBaseURL  string            // 默认 API 地址
 	DefaultModel    string            // 默认模型
+	DocsURL         string            // API 文档地址
 	DefaultMappings map[string]string // Codex 模型 → 提供商模型映射
 	HasBalanceAPI   bool              // 是否有公开余额查询接口
 	BalanceCheckFn  func(apiKey, baseURL string) (*UsageBalance, error) // 余额查询函数（nil 表示不支持）
@@ -118,6 +119,7 @@ var registeredProviders = map[string]*ProviderInfo{
 		Name:            "DeepSeek",
 		DefaultBaseURL:  "https://api.deepseek.com/v1",
 		DefaultModel:    "deepseek-v4-flash",
+		DocsURL:         "https://api-docs.deepseek.com/",
 		HasBalanceAPI:   true,
 		BalanceCheckFn:  deepseekBalanceCheck,
 		DefaultMappings: deepseekDefaultMappings(),
@@ -127,6 +129,7 @@ var registeredProviders = map[string]*ProviderInfo{
 		Name:            "阿里通义千问",
 		DefaultBaseURL:  "https://dashscope.aliyuncs.com/compatible-mode/v1",
 		DefaultModel:    "qwen3.6-plus",
+		DocsURL:         "https://help.aliyun.com/zh/model-studio/models",
 		HasBalanceAPI:   false,
 		BalanceCheckFn:  nil,
 		DefaultMappings: alibabaDefaultMappings(),
@@ -136,6 +139,7 @@ var registeredProviders = map[string]*ProviderInfo{
 		Name:            "小米 MiMo",
 		DefaultBaseURL:  "https://api.xiaomimimo.com/v1",
 		DefaultModel:    "mimo-v2.5-pro",
+		DocsURL:         "https://platform.xiaomimimo.com/#/docs/welcome",
 		HasBalanceAPI:   false,
 		BalanceCheckFn:  nil,
 		DefaultMappings: xiaomiDefaultMappings(),
@@ -145,6 +149,7 @@ var registeredProviders = map[string]*ProviderInfo{
 		Name:            "智谱 GLM",
 		DefaultBaseURL:  "https://open.bigmodel.cn/api/paas/v4",
 		DefaultModel:    "glm-4.7-flash",
+		DocsURL:         "https://docs.bigmodel.cn/",
 		HasBalanceAPI:   false,
 		BalanceCheckFn:  nil,
 		DefaultMappings: zhipuDefaultMappings(),
@@ -167,9 +172,9 @@ func deepseekDefaultMappings() map[string]string {
 func alibabaDefaultMappings() map[string]string {
 	return map[string]string{
 		"gpt-5.5":       "qwen3.6-max-preview",
-		"gpt-5.4":       "qwen3.6-plus",
+		"gpt-5.4":       "qwen3.6-max-preview",
 		"gpt-5.4-mini":  "qwen3.6-flash",
-		"gpt-5.3-codex": "qwen3.6-plus",
+		"gpt-5.3-codex": "qwen3.6-max-preview",
 		"gpt-4.1":       "qwen3.6-flash",
 		"gpt-4o":        "qwen3.6-flash",
 		"gpt-4o-mini":   "qwen3.6-flash",
@@ -198,8 +203,8 @@ func zhipuDefaultMappings() map[string]string {
 		"gpt-5.3-codex": "glm-5",
 		"gpt-4.1":       "glm-4.7-flash",
 		"gpt-4o":        "glm-4.7-flash",
-		"gpt-4o-mini":   "glm-4-flash",
-		"o4-mini":       "glm-4-flash",
+		"gpt-4o-mini":   "glm-4.7-flash",
+		"o4-mini":       "glm-4.7-flash",
 	}
 }
 
