@@ -15,7 +15,7 @@ func main() {
 	app := NewApp()
 
 	err := wails.Run(&options.App{
-		Title:     "NetTopo Switch",
+		Title:     "Codex Switch",
 		Width:     1280,
 		Height:    820,
 		MinWidth:  720,
