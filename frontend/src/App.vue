@@ -233,11 +233,11 @@ onMounted(async () => {
         <div class="shell">
           <header class="topbar">
             <div class="brand">
-              <div class="brand-mark">NT</div>
+              <div class="brand-mark">CX</div>
               <div>
-                <p>nettopo.com</p>
+                <p>codex switch</p>
                 <div class="brand-title">
-                  <strong>Nettopo switch</strong>
+                  <strong>codex switch</strong>
                   <span class="app-version">{{ appVersion }}</span>
                 </div>
               </div>

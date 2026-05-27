@@ -270,7 +270,7 @@ async function handleCodexWrite() {
           <div class="hint">{{ t('guide.step.three.hint') }}</div>
           <div class="cmd">
             <div class="cmd-label">{{ t('guide.step.three.quickVerify') }}</div>
-            <div class="mono">curl {{ props.listenAddress || 'http://127.0.0.1:11434' }}/health</div>
+            <div class="mono">浏览器访问 {{ props.listenAddress || 'http://127.0.0.1:11434' }}/health</div>
           </div>
         </div>
       </div>
