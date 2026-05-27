@@ -77,7 +77,8 @@ func defaultConfig() AppConfig {
 		EnableAutoStart:  false,
 		MinimizeToTray:   false,
 		LogRetentionDays: 7,
-		CompactMode:      true,
+		CompactMode:         true,
+		PluginUnlockEnabled: true,
 		Mappings: map[string]string{
 			"gpt-5.5":      "deepseek-v4-pro",
 			"gpt-5.4":      "deepseek-v4-pro",

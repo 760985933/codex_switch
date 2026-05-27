@@ -356,6 +356,7 @@ func (a *App) GetOverviewSnapshot() (OverviewSnapshot, error) {
 			"healthCheck":      true,
 			"logPush":          true,
 			"compactDashboard": cfg.CompactMode,
+			"pluginUnlock":     true,
 		},
 	}, nil
 }

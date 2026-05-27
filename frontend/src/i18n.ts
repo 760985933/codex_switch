@@ -200,7 +200,9 @@ export const messages = {
           apiKey: 'API Key',
           apiKeyNone: '无需配置',
           baseUrlAuto: '启动后自动生成',
-          hint: '推荐用“偏好设置 → Codex config.toml → 写入文件”，自动合并并保留原有 MCP/approvals 配置。',
+          hint: '推荐用”偏好设置 → Codex config.toml → 写入文件”，自动合并并保留原有 MCP/approvals 配置。',
+          pluginUnlock: '插件解锁',
+          pluginUnlockHint: '开启后自动注入解锁脚本，启用 Codex 插件入口',
         },
         three: {
           title: '验证与排障',
@@ -365,6 +367,8 @@ export const messages = {
           apiKeyNone: 'Not required',
           baseUrlAuto: 'Auto-generated after start',
           hint: 'Recommended: Preferences → Codex config.toml → Write File, to merge and keep existing MCP/approvals.',
+          pluginUnlock: 'Plugin Unlock',
+          pluginUnlockHint: 'Auto-inject unlock script to enable Codex plugin entry',
         },
         three: {
           title: 'Verify & troubleshoot',
@@ -521,6 +525,8 @@ export const messages = {
           apiKeyNone: '不要',
           baseUrlAuto: '起動後に自動生成',
           hint: '推奨: 設定 → Codex config.toml → ファイルに書き込み（既存 MCP/approvals を保持してマージ）。',
+          pluginUnlock: 'プラグイン解除',
+          pluginUnlockHint: 'Codexプラグインを有効化する解除スクリプトを自動注入します',
         },
         three: {
           title: '検証とトラブルシュート',
@@ -677,6 +683,8 @@ export const messages = {
           apiKeyNone: '불필요',
           baseUrlAuto: '시작 후 자동 생성',
           hint: '권장: 설정 → Codex config.toml → 파일에 쓰기(기존 MCP/approvals 유지하며 병합).',
+          pluginUnlock: '플러그인 잠금 해제',
+          pluginUnlockHint: 'Codex 플러그인을 활성화하는 해제 스크립트 자동 주입',
         },
         three: {
           title: '검증 및 문제 해결',
@@ -833,6 +841,8 @@ export const messages = {
           apiKeyNone: 'Inutile',
           baseUrlAuto: 'Généré après démarrage',
           hint: 'Recommandé : Préférences → Codex config.toml → Écrire le fichier (fusion).',
+          pluginUnlock: 'Déverrouillage plugin',
+          pluginUnlockHint: 'Injecter automatiquement le script de déverrouillage pour activer les plugins Codex',
         },
         three: {
           title: 'Vérifier & dépanner',
@@ -985,6 +995,8 @@ export const messages = {
           apiKeyNone: 'Nicht nötig',
           baseUrlAuto: 'Nach Start automatisch',
           hint: 'Empfohlen: Einstellungen → Codex config.toml → Datei schreiben (merge).',
+          pluginUnlock: 'Plugin-Entsperrung',
+          pluginUnlockHint: 'Entsperrungsskript automatisch injizieren, um Codex-Plugins zu aktivieren',
         },
         three: {
           title: 'Prüfen & Troubleshooting',
@@ -1137,6 +1149,8 @@ export const messages = {
           apiKeyNone: 'No requiere',
           baseUrlAuto: 'Se genera al iniciar',
           hint: 'Recomendado: Preferencias → Codex config.toml → Escribir archivo (merge).',
+          pluginUnlock: 'Desbloqueo de plugin',
+          pluginUnlockHint: 'Inyectar automáticamente script para habilitar plugins de Codex',
         },
         three: {
           title: 'Verificar y depurar',

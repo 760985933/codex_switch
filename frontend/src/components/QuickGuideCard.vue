@@ -33,6 +33,14 @@ async function handleRestoreCodex() {
     message.error(error instanceof Error ? error.message : String(error))
   }
 }
+
+async function handlePluginUnlockToggle(value: boolean) {
+  try {
+    await store.saveConfig({ ...store.config, pluginUnlockEnabled: value })
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  }
+}
 </script>
 
 <template>
@@ -81,7 +89,15 @@ async function handleRestoreCodex() {
             <span>{{ t('guide.step.two.apiKey') }}</span>
             <strong class="mono">{{ t('guide.step.two.apiKeyNone') }}</strong>
           </div>
+          <div class="kv">
+            <span>{{ t('guide.step.two.pluginUnlock') }}</span>
+            <n-switch
+              :value="store.config.pluginUnlockEnabled"
+              @update:value="handlePluginUnlockToggle"
+            />
+          </div>
           <div class="hint">{{ t('guide.step.two.hint') }}</div>
+          <div class="hint">{{ t('guide.step.two.pluginUnlockHint') }}</div>
         </div>
       </div>
 

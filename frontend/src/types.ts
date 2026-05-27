@@ -12,6 +12,7 @@ export interface AppConfig {
   minimizeToTray: boolean
   logRetentionDays: number
   compactMode: boolean
+  pluginUnlockEnabled: boolean
   mappings: Record<string, string>
   headers: Record<string, string>
 }

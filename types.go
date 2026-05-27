@@ -19,10 +19,11 @@ type AppConfig struct {
 	MaxRetries       int               `json:"maxRetries"`
 	EnableAutoStart  bool              `json:"enableAutoStart"`
 	MinimizeToTray   bool              `json:"minimizeToTray"`
-	LogRetentionDays int               `json:"logRetentionDays"`
-	CompactMode      bool              `json:"compactMode"`
-	Mappings         map[string]string `json:"mappings"`
-	Headers          map[string]string `json:"headers"`
+	LogRetentionDays     int               `json:"logRetentionDays"`
+	CompactMode          bool              `json:"compactMode"`
+	PluginUnlockEnabled  bool              `json:"pluginUnlockEnabled"`
+	Mappings             map[string]string `json:"mappings"`
+	Headers              map[string]string `json:"headers"`
 }
 
 type ProxyStatusPayload struct {
