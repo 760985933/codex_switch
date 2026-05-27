@@ -193,7 +193,7 @@ async function fetchUsageBalance() {
   try {
     usageBalance.value = await GetUsageBalance()
   } catch (err) {
-    usageBalance.value = { availableBalance: '', totalBalance: '', isDepleted: false, error: String(err) }
+    usageBalance.value = { availableBalance: '', totalBalance: '', currency: '', isDepleted: false, error: String(err) }
   } finally {
     usageLoading.value = false
   }

@@ -19,6 +19,10 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+// mainAppCtx is used by platform-specific code (e.g. tray callbacks)
+// that needs access to the Wails context outside of App methods.
+var mainAppCtx context.Context
+
 const appVersion = "0.0.6"
 const updateManifestURL = "https://nettopo.com/nettopo-switch-version.txt"
 const updateDownloadURLTemplate = ""
@@ -50,6 +54,7 @@ func NewApp() *App {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	mainAppCtx = ctx
 
 	cfg, err := a.store.Load()
 	if err != nil {
@@ -71,6 +76,8 @@ func (a *App) startup(ctx context.Context) {
 			}
 		}()
 	}
+
+	a.initPlatformTray()
 }
 
 func (a *App) GetAppVersion() string {
@@ -552,12 +559,14 @@ func (a *App) GetUsageBalance() UsageBalance {
 
 	a.appendLog("debug", "app", fmt.Sprintf("用量查询结果: available=%s total=%s currency=%s", available, total, currency), "")
 
-	return UsageBalance{
+	result := UsageBalance{
 		AvailableBalance: available,
 		TotalBalance:     total,
 		Currency:         currency,
 		IsDepleted:       !balanceResp.IsAvailable,
 	}
+	a.onBalanceUpdate(result)
+	return result
 }
 
 func (a *App) GetLogHistory(limit int) []LogEntry {

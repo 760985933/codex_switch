@@ -263,7 +263,7 @@ export namespace main {
 	export class UsageBalance {
 	    availableBalance: string;
 	    totalBalance: string;
-		        currency: string;
+	    currency: string;
 	    isDepleted: boolean;
 	    error?: string;
 	
@@ -275,7 +275,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.availableBalance = source["availableBalance"];
 	        this.totalBalance = source["totalBalance"];
-		                this.currency = source["currency"];
+	        this.currency = source["currency"];
 	        this.isDepleted = source["isDepleted"];
 	        this.error = source["error"];
 	    }
