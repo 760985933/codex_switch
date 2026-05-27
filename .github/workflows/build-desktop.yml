@@ -58,6 +58,18 @@ jobs:
         shell: bash
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
 
+      - name: Setup ARM64 cross-compiler (Windows)
+        if: matrix.platform == 'windows/arm64'
+        shell: bash
+        run: |
+          # Install Zig as a universal C/C++ cross-compiler for ARM64 Windows target
+          curl -fsSL https://ziglang.org/download/0.13.0/zig-windows-x86_64-0.13.0.zip -o "$RUNNER_TEMP/zig.zip"
+          unzip -q "$RUNNER_TEMP/zig.zip" -d "$RUNNER_TEMP/zig"
+          ZIG_DIR=$(ls -d "$RUNNER_TEMP/zig/zig-"*)
+          echo "$ZIG_DIR" >> "$GITHUB_PATH"
+          echo "CC=zig cc -target aarch64-windows-gnu" >> "$GITHUB_ENV"
+          echo "CXX=zig c++ -target aarch64-windows-gnu" >> "$GITHUB_ENV"
+
       - name: Build desktop package
         shell: bash
         run: |
