@@ -23,34 +23,36 @@ const sponsors = [
     </div>
 
     <div class="contact-grid">
-      <div class="card">
-        <h4 class="card-title">{{ t('contact.contactLabel') }}</h4>
-        <div class="img-wrap">
-          <img :src="contactImg" alt="contact" class="contact-img" />
+      <div class="left-col">
+        <div class="card">
+          <h4 class="card-title">{{ t('contact.contactLabel') }}</h4>
+          <div class="img-wrap">
+            <img :src="contactImg" alt="contact" class="contact-img" />
+          </div>
+        </div>
+
+        <div class="card">
+          <h4 class="card-title">{{ t('contact.sponsorLabel') }}</h4>
+          <div class="sponsor-imgs">
+            <div class="sponsor-item">
+              <img :src="wxImg" alt="WeChat" class="sponsor-img" />
+              <span class="sponsor-label">{{ t('contact.wxLabel') }}</span>
+            </div>
+            <div class="sponsor-item">
+              <img :src="zfbImg" alt="Alipay" class="sponsor-img" />
+              <span class="sponsor-label">{{ t('contact.zfbLabel') }}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="card">
-        <h4 class="card-title">{{ t('contact.sponsorLabel') }}</h4>
-        <div class="sponsor-imgs">
-          <div class="sponsor-item">
-            <img :src="wxImg" alt="WeChat" class="sponsor-img" />
-            <span class="sponsor-label">{{ t('contact.wxLabel') }}</span>
+      <div class="card sponsor-list-card">
+        <h4 class="card-title">{{ t('contact.sponsorList') }}</h4>
+        <div class="sponsor-list">
+          <div v-for="s in sponsors" :key="s.name" class="sponsor-row">
+            <span class="sponsor-name">{{ s.name }}</span>
+            <a v-if="s.url" class="sponsor-url" @click="BrowserOpenURL(s.url)">{{ s.url }}</a>
           </div>
-          <div class="sponsor-item">
-            <img :src="zfbImg" alt="Alipay" class="sponsor-img" />
-            <span class="sponsor-label">{{ t('contact.zfbLabel') }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card sponsor-list-card">
-      <h4 class="card-title">{{ t('contact.sponsorList') }}</h4>
-      <div class="sponsor-list">
-        <div v-for="s in sponsors" :key="s.name" class="sponsor-row">
-          <span class="sponsor-name">{{ s.name }}</span>
-          <a class="sponsor-url" @click="BrowserOpenURL(s.url)">{{ s.url }}</a>
         </div>
       </div>
     </div>
@@ -105,10 +107,16 @@ const sponsors = [
   color: var(--text);
 }
 
+.left-col {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
 .img-wrap {
   display: flex;
   justify-content: center;
-  max-width: 300px;
+  max-width: 180px;
   margin: 0 auto;
 }
 
@@ -123,7 +131,9 @@ const sponsors = [
 .sponsor-imgs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 12px;
+  max-width: 280px;
+  margin: 0 auto;
 }
 
 .sponsor-item {
@@ -146,25 +156,26 @@ const sponsors = [
 .sponsor-list-card {
   display: grid;
   gap: 12px;
+  align-content: start;
 }
 
 .sponsor-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .sponsor-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 10px;
+  padding: 8px 12px;
   border-radius: 14px;
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.82);
 }
 
 .sponsor-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text);
 }
