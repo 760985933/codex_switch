@@ -13,6 +13,7 @@ import {
   ListCodexSessions,
   ListCodexSessionProviders,
   MigrateCodexProviders,
+  MigrateSingleCodexSession,
   RestoreCodexSessions,
 } from '../../wailsjs/go/main/App'
 
@@ -271,6 +272,28 @@ async function confirmDeleteSession(id: string) {
   })
 }
 
+async function confirmMigrateSingleSession(id: string, fromProvider: string) {
+  const toProvider = 'openai'
+  dialog.warning({
+    title: t('sessions.migration.confirmTitle'),
+    content: t('sessions.migration.singleConfirm', { from: fromProvider, to: toProvider }),
+    positiveText: t('sessions.migration.button'),
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        const updated = await MigrateSingleCodexSession(id, toProvider)
+        message.success(t('sessions.migration.singleSuccess'))
+        if (selectedSession.value) {
+          selectedSession.value.session.modelProvider = updated.modelProvider
+        }
+        await loadSessions()
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : String(error))
+      }
+    },
+  })
+}
+
 async function doArchiveSession(id: string) {
   try {
     const updated = await ArchiveCodexSession(id)
@@ -471,6 +494,15 @@ onMounted(() => {
               @click="doArchiveSession(selectedSession.session.id)"
             >
               {{ selectedSession.session.isArchived ? '恢复会话' : '归档会话' }}
+            </n-button>
+            <n-button
+              v-if="selectedSession.session.modelProvider !== 'openai'"
+              size="tiny"
+              secondary
+              type="warning"
+              @click="confirmMigrateSingleSession(selectedSession.session.id, selectedSession.session.modelProvider)"
+            >
+              {{ t('sessions.migration.singleButton') }}
             </n-button>
             <n-button
               size="tiny"

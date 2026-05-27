@@ -507,6 +507,47 @@ func (a *App) MigrateCodexProviders(from, to string) (*MigrationResult, error) {
 	return result, nil
 }
 
+// MigrateSingleCodexSession 迁移单个会话的 model_provider
+func (a *App) MigrateSingleCodexSession(id, to string) (*CodexSession, error) {
+	path, _, err := a.findSessionFile(id)
+	if err != nil {
+		return nil, err
+	}
+
+	session, _, err := parseSessionFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	from := session.ModelProvider
+	if from == to {
+		return nil, fmt.Errorf("该会话的 provider 已经是 %s", to)
+	}
+
+	// 迁移 JSONL 文件
+	changed, err := migrateJSONLFile(path, from, to)
+	if err != nil {
+		return nil, err
+	}
+	if !changed {
+		return nil, fmt.Errorf("迁移失败：无法更新会话文件")
+	}
+
+	// 更新 SQLite
+	if n, err := migrateSQLiteForSession(id, from, to); err != nil {
+		a.appendLog("warn", "app", fmt.Sprintf("会话 %s SQLite 迁移失败: %v", id, err), "")
+	} else if n > 0 {
+		a.appendLog("info", "app", fmt.Sprintf("会话 %s SQLite 迁移 %d 条记录", id, n), "")
+	}
+
+	// 重新解析并返回
+	updated, _, err := parseSessionFile(path)
+	if err != nil {
+		return nil, err
+	}
+	return updated, nil
+}
+
 // ListCodexSessionBackups 列出可用的会话迁移备份文件
 func (a *App) ListCodexSessionBackups() ([]string, error) {
 	backupDir, err := codexBackupDir()
@@ -938,6 +979,58 @@ func migrateSQLiteFile(dbPath, from, to string) (int, error) {
 	}
 	affected, _ := result.RowsAffected()
 	return int(affected), nil
+}
+
+// migrateSQLiteForSession 在所有 state SQLite 文件中更新指定会话的 model_provider
+func migrateSQLiteForSession(id, from, to string) (int, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return 0, err
+	}
+	codexDir := filepath.Join(home, ".codex")
+
+	entries, err := os.ReadDir(codexDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, nil
+		}
+		return 0, err
+	}
+
+	migrated := 0
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasPrefix(entry.Name(), "state_") || !strings.HasSuffix(entry.Name(), ".sqlite") {
+			continue
+		}
+		dbPath := filepath.Join(codexDir, entry.Name())
+		db, err := sql.Open("sqlite3", dbPath)
+		if err != nil {
+			continue
+		}
+
+		var tableCount int
+		if err := db.QueryRow("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='threads'").Scan(&tableCount); err != nil || tableCount != 1 {
+			db.Close()
+			continue
+		}
+
+		var colCount int
+		if err := db.QueryRow("SELECT COUNT(*) FROM pragma_table_info('threads') WHERE name='model_provider'").Scan(&colCount); err != nil || colCount != 1 {
+			db.Close()
+			continue
+		}
+
+		result, err := db.Exec("UPDATE threads SET model_provider=? WHERE id=? AND model_provider=?", to, id, from)
+		if err != nil {
+			db.Close()
+			continue
+		}
+		affected, _ := result.RowsAffected()
+		migrated += int(affected)
+		db.Close()
+	}
+
+	return migrated, nil
 }
 
 // ---------- backup utility ----------

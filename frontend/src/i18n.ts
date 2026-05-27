@@ -105,6 +105,9 @@ export const messages = {
       migration: {
         banner: '检测到 {count} 条旧格式会话（model_provider = “Local”），一键迁移到新格式？',
         button: '一键迁移',
+        singleButton: '迁移到 openai',
+        singleSuccess: '会话已迁移到 openai',
+        singleConfirm: '确认将会话 provider 从 “{from}” 迁移到 “{to}”？',
         success: '成功迁移 {count} 条会话，已在 {path} 创建备份',
         confirmTitle: '确认迁移',
         confirmContent: '将会话的 model_provider 从 “Local” 统一改为 “openai”，确保所有会话在同一分组下可见。迁移前会自动备份。',
@@ -379,6 +382,9 @@ export const messages = {
       migration: {
         banner: 'Found {count} legacy session(s) (model_provider = "Local"). Migrate to new format?',
         button: 'Migrate Now',
+        singleButton: 'Migrate to openai',
+        singleSuccess: 'Session migrated to openai',
+        singleConfirm: 'Migrate session provider from "{from}" to "{to}"?',
         success: 'Migrated {count} sessions, backup at {path}',
         confirmTitle: 'Confirm Migration',
         confirmContent: 'Change model_provider from "Local" to "openai" so all sessions are visible under the same bucket. Backup is created before migration.',
@@ -642,6 +648,9 @@ export const messages = {
       migration: {
         banner: '{count} 件のレガシーセッション（model_provider = "Local"）が見つかりました。移行しますか？',
         button: '今すぐ移行',
+        singleButton: 'openai に移行',
+        singleSuccess: 'セッションを openai に移行しました',
+        singleConfirm: 'セッションの provider を "{from}" から "{to}" に移行しますか？',
         success: '{count} 件のセッションを移行しました。バックアップ: {path}',
         confirmTitle: '移行の確認',
         confirmContent: 'model_provider を "Local" から "openai" に変更し、すべてのセッションを同じバケットで表示できるようにします。移行前に自動バックアップが作成されます。',
@@ -880,6 +889,9 @@ export const messages = {
       migration: {
         banner: '{count}개의 레거시 세션(model_provider = "Local")을 찾았습니다. 마이그레이션하시겠습니까?',
         button: '지금 마이그레이션',
+        singleButton: 'openai로 마이그레이션',
+        singleSuccess: '세션이 openai로 마이그레이션되었습니다',
+        singleConfirm: '세션 provider를 "{from}"에서 "{to}"로 마이그레이션할까요?',
         success: '{count}개 세션 마이그레이션 완료, 백업: {path}',
         confirmTitle: '마이그레이션 확인',
         confirmContent: 'model_provider를 "Local"에서 "openai"로 변경하여 모든 세션을 동일한 버킷에서 볼 수 있게 합니다. 마이그레이션 전에 자동 백업이 생성됩니다.',
@@ -1118,6 +1130,9 @@ export const messages = {
       migration: {
         banner: '{count} session(s) legacy (model_provider = "Local") trouvée(s). Migrer vers le nouveau format ?',
         button: 'Migrer maintenant',
+        singleButton: 'Migrer vers openai',
+        singleSuccess: 'Session migrée vers openai',
+        singleConfirm: 'Migrer le provider de la session de "{from}" à "{to}" ?',
         success: '{count} session(s) migrée(s), sauvegarde : {path}',
         confirmTitle: 'Confirmer la migration',
         confirmContent: 'Changer model_provider de "Local" à "openai" pour que toutes les sessions soient visibles dans le même bucket. Une sauvegarde est créée avant la migration.',
@@ -1356,6 +1371,9 @@ export const messages = {
       migration: {
         banner: '{count} Legacy-Sitzung(en) (model_provider = "Local") gefunden. Migration durchführen?',
         button: 'Jetzt migrieren',
+        singleButton: 'Zu openai migrieren',
+        singleSuccess: 'Sitzung zu openai migriert',
+        singleConfirm: 'Sitzungs-Provider von "{from}" zu "{to}" migrieren?',
         success: '{count} Sitzung(en) migriert, Backup: {path}',
         confirmTitle: 'Migration bestätigen',
         confirmContent: 'Ändert model_provider von "Local" zu "openai", damit alle Sitzungen im selben Bucket sichtbar sind. Vor der Migration wird ein Backup erstellt.',
@@ -1590,6 +1608,9 @@ export const messages = {
       migration: {
         banner: 'Se encontraron {count} sesión(es) legacy (model_provider = "Local"). ¿Migrar?',
         button: 'Migrar ahora',
+        singleButton: 'Migrar a openai',
+        singleSuccess: 'Sesión migrada a openai',
+        singleConfirm: '¿Migrar el provider de la sesión de "{from}" a "{to}"?',
         success: '{count} sesión(es) migrada(s), respaldo: {path}',
         confirmTitle: 'Confirmar migración',
         confirmContent: 'Cambia model_provider de "Local" a "openai" para que todas las sesiones sean visibles en el mismo grupo. Se crea una copia de seguridad antes de la migración.',

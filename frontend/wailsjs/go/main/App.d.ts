@@ -52,6 +52,8 @@ export function ListCodexSessions():Promise<Array<main.CodexSession>>;
 
 export function MigrateCodexProviders(arg1:string,arg2:string):Promise<main.MigrationResult>;
 
+export function MigrateSingleCodexSession(arg1:string,arg2:string):Promise<main.CodexSession>;
+
 export function ReadCodexConfigToml():Promise<string>;
 
 export function RestartProxy():Promise<main.ProxyStatusPayload>;

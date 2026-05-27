@@ -102,6 +102,10 @@ export function MigrateCodexProviders(arg1, arg2) {
   return window['go']['main']['App']['MigrateCodexProviders'](arg1, arg2);
 }
 
+export function MigrateSingleCodexSession(arg1, arg2) {
+  return window['go']['main']['App']['MigrateSingleCodexSession'](arg1, arg2);
+}
+
 export function ReadCodexConfigToml() {
   return window['go']['main']['App']['ReadCodexConfigToml']();
 }
