@@ -4,7 +4,6 @@ import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { ClipboardSetText } from '../../wailsjs/runtime/runtime'
 import ConfigPanel from '../components/ConfigPanel.vue'
-import ConsolePanel from '../components/ConsolePanel.vue'
 import QuickGuideCard from '../components/QuickGuideCard.vue'
 import { useProxyEvents } from '../composables/useProxyEvents'
 import { useAppStore } from '../stores/app'
@@ -115,18 +114,14 @@ onMounted(async () => {
       <div class="side-column">
         <QuickGuideCard
           :listen-address="store.status.listenAddress"
+          :status="store.status"
+          :health="store.healthCheck"
           :loading="busy"
           @copy="copyText"
           @health="handleHealth"
           @start="handleStart"
           @stop="handleStop"
           @restart="handleRestart"
-        />
-        <ConsolePanel
-          :status="store.status"
-          :health="store.healthCheck"
-          :loading="busy"
-          @health="handleHealth"
           @refresh="wrapAction(async () => { await store.refreshStatus(); await store.refreshLogs() })"
         />
       </div>
