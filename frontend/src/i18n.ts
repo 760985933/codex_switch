@@ -207,9 +207,6 @@ export const messages = {
           onRequest: '按需询问',
           never: '从不',
         },
-        placeholder: '在此输入测试消息...',
-        send: '发送',
-        response: '响应',
       },
       step: {
         one: {
@@ -419,9 +416,6 @@ export const messages = {
           onRequest: 'On Request',
           never: 'Never',
         },
-        placeholder: 'Enter a test message...',
-        send: 'Send',
-        response: 'Response',
       },
       step: {
         one: {
@@ -618,9 +612,6 @@ export const messages = {
           onRequest: 'オンデマンド',
           never: 'しない',
         },
-        placeholder: 'テストメッセージを入力...',
-        send: '送信',
-        response: '応答',
       },
       step: {
         one: {
@@ -804,9 +795,6 @@ export const messages = {
           onRequest: '요청 시',
           never: '하지 않음',
         },
-        placeholder: '테스트 메시지를 입력하세요...',
-        send: '보내기',
-        response: '응답',
       },
       step: {
         one: {
@@ -990,9 +978,6 @@ export const messages = {
           onRequest: 'Sur demande',
           never: 'Jamais',
         },
-        placeholder: 'Entrez un message de test...',
-        send: 'Envoyer',
-        response: 'Réponse',
       },
       step: {
         one: {
@@ -1176,9 +1161,6 @@ export const messages = {
           onRequest: 'Auf Anfrage',
           never: 'Nie',
         },
-        placeholder: 'Testnachricht eingeben...',
-        send: 'Senden',
-        response: 'Antwort',
       },
       step: {
         one: { title: 'Proxy starten', notRunning: 'Gestoppt (links "Starten" klicken)', hint: 'Nach dem Start wird lokal /v1 für Codex bereitgestellt.' },
@@ -1358,9 +1340,6 @@ export const messages = {
           onRequest: 'A pedido',
           never: 'Nunca',
         },
-        placeholder: 'Ingrese un mensaje de prueba...',
-        send: 'Enviar',
-        response: 'Respuesta',
       },
       step: {
         one: { title: 'Inicia el proxy', notRunning: 'Detenido (pulsa "Iniciar" a la izquierda)', hint: 'Tras iniciar, expone /v1 local para Codex.' },

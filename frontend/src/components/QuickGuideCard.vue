@@ -113,9 +113,6 @@ async function handleRestoreCodex() {
 
 // ── Sandbox ──
 const showSandbox = ref(false)
-const sandboxInput = ref('')
-const sandboxResponse = ref('')
-const sandboxLoading = ref(false)
 const networkAccess = ref(true)
 const sandboxMode = ref('workspace-write')
 const approvalPolicy = ref('on-request')
@@ -164,30 +161,6 @@ const approvalPolicyOptions = [
 watch(showSandbox, (v) => {
   if (v) loadSandboxConfig()
 })
-
-async function handleSandboxSend() {
-  const msg = sandboxInput.value.trim()
-  if (!msg) return
-  sandboxLoading.value = true
-  sandboxResponse.value = ''
-  try {
-    const base = props.listenAddress.replace(/\/+$/, '')
-    const res = await fetch(`${base}/v1/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: store.currentProfile?.defaultModel || 'deepseek-v4-flash',
-        messages: [{ role: 'user', content: msg }],
-      }),
-    })
-    const data = await res.json()
-    sandboxResponse.value = JSON.stringify(data, null, 2)
-  } catch (error) {
-    sandboxResponse.value = String(error)
-  } finally {
-    sandboxLoading.value = false
-  }
-}
 
 async function handleCodexWrite() {
   try {
@@ -414,29 +387,6 @@ async function handleCodexWrite() {
               @update:value="saveSandboxConfig"
             />
           </div>
-        </div>
-
-        <n-divider />
-
-        <n-input
-          v-model:value="sandboxInput"
-          type="textarea"
-          :placeholder="t('guide.sandbox.placeholder')"
-          :rows="4"
-        />
-        <div class="sandbox-actions">
-          <n-button
-            type="primary"
-            :loading="sandboxLoading"
-            :disabled="!sandboxInput.trim()"
-            @click="handleSandboxSend"
-          >
-            {{ t('guide.sandbox.send') }}
-          </n-button>
-        </div>
-        <div v-if="sandboxResponse" class="sandbox-response">
-          <div class="sandbox-response-label">{{ t('guide.sandbox.response') }}</div>
-          <pre class="mono">{{ sandboxResponse }}</pre>
         </div>
       </div>
     </n-modal>
@@ -724,36 +674,5 @@ async function handleCodexWrite() {
 
 .sandbox-field-select {
   width: 200px;
-}
-
-.sandbox-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.sandbox-response {
-  display: grid;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.82);
-}
-
-.sandbox-response-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(11, 18, 32, 0.72);
-}
-
-.sandbox-response pre {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-break: break-all;
-  color: rgba(11, 18, 32, 0.9);
-  max-height: 400px;
-  overflow: auto;
 }
 </style>

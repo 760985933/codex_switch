@@ -222,6 +222,22 @@ export namespace main {
 	}
 	
 	
+	export class SandboxWorkspaceConfig {
+	    networkAccess: boolean;
+	    sandboxMode: string;
+	    approvalPolicy: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SandboxWorkspaceConfig(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.networkAccess = source["networkAccess"];
+	        this.sandboxMode = source["sandboxMode"];
+	        this.approvalPolicy = source["approvalPolicy"];
+	    }
+	}
 	export class UpdateCheckResult {
 	    currentVersion: string;
 	    latestVersion: string;
@@ -242,23 +258,6 @@ export namespace main {
 	        this.downloadUrl = source["downloadUrl"];
 	        this.notes = source["notes"];
 	        this.checkedAt = source["checkedAt"];
-	    }
-	}
-
-	export class SandboxWorkspaceConfig {
-	    networkAccess: boolean;
-	    sandboxMode: string;
-	    approvalPolicy: string;
-
-	    static createFrom(source: any = {}) {
-	        return new SandboxWorkspaceConfig(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.networkAccess = source["networkAccess"];
-	        this.sandboxMode = source["sandboxMode"];
-	        this.approvalPolicy = source["approvalPolicy"];
 	    }
 	}
 
