@@ -3,6 +3,7 @@ export type ProxyStatus = 'stopped' | 'starting' | 'running' | 'error'
 export interface Profile {
   id: string
   name: string
+  provider: string
   baseURL: string
   apiKey: string
   defaultModel: string

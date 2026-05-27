@@ -26,7 +26,7 @@ func TestTranslateChatCompletionsUsesMapping(t *testing.T) {
 }
 
 func TestUpstreamResourceURLNormalizesBasePath(t *testing.T) {
-	got, err := upstreamResourceURL("https://api.deepseek.com", "chat/completions")
+	got, err := upstreamResourceURL("https://api.deepseek.com/v1", "chat/completions")
 	if err != nil {
 		t.Fatalf("upstreamResourceURL returned error: %v", err)
 	}

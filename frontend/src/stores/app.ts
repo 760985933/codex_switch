@@ -34,13 +34,16 @@ import type {
   OverviewSnapshot,
   SandboxWorkspaceConfig,
 } from '../types'
+import { getDefaultProviderPreset, getProviderPreset } from '../utils/providers'
+
+const defaultPreset = getDefaultProviderPreset()
 
 const FALLBACK_CONFIG: AppConfig = {
   listenHost: '127.0.0.1',
   listenPort: 17419,
-  deepseekBaseURL: 'https://api.deepseek.com/v1',
+  deepseekBaseURL: defaultPreset.defaultBaseURL,
   apiKey: '',
-  defaultModel: 'deepseek-v4-flash',
+  defaultModel: defaultPreset.defaultModel,
   requestTimeoutMs: 60000,
   maxRetries: 1,
   enableAutoStart: false,
@@ -63,13 +66,15 @@ const FALLBACK_STATUS: ProxyStatusPayload = {
   requestCount: 0,
 }
 
-function makeDefaultProfile(id: string, name: string): Profile {
+function makeDefaultProfile(id: string, name: string, provider?: string): Profile {
+  const preset = provider ? getProviderPreset(provider) : undefined
   return {
     id,
     name,
-    baseURL: 'https://api.deepseek.com/v1',
+    provider: provider ?? defaultPreset.id,
+    baseURL: preset?.defaultBaseURL ?? defaultPreset.defaultBaseURL,
     apiKey: '',
-    defaultModel: 'deepseek-v4-flash',
+    defaultModel: preset?.defaultModel ?? defaultPreset.defaultModel,
     requestTimeoutMs: 60000,
     maxRetries: 1,
     mappings: {},
@@ -189,11 +194,11 @@ export const useAppStore = defineStore('app', {
       this.config = (await SetCurrentProfile(id)) as AppConfig
       return this.config
     },
-    async addProfile(name: string, template?: Profile) {
+    async addProfile(name: string, provider?: string, template?: Profile) {
       const id = 'profile_' + Date.now().toString(36)
       const profile = template
         ? { ...template, id, name }
-        : { ...makeDefaultProfile(id, name) }
+        : { ...makeDefaultProfile(id, name, provider) }
       const updated = {
         ...this.config,
         currentProfileId: id,

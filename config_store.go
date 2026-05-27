@@ -66,33 +66,26 @@ func (s *ConfigStore) Save(cfg AppConfig) error {
 }
 
 func defaultConfig() AppConfig {
+	p := GetDefaultProvider()
 	defaultProfile := Profile{
 		ID:               "default",
-		Name:             "DeepSeek",
-		BaseURL:          "https://api.deepseek.com/v1",
+		Name:             p.Name,
+		Provider:         string(p.ID),
+		BaseURL:          p.DefaultBaseURL,
 		APIKey:           "",
-		DefaultModel:     "deepseek-v4-flash",
+		DefaultModel:     p.DefaultModel,
 		RequestTimeoutMs: 60000,
 		MaxRetries:       1,
-		Mappings: map[string]string{
-			"gpt-5.5":       "deepseek-v4-pro",
-			"gpt-5.4":       "deepseek-v4-pro",
-			"gpt-5.4-mini":  "deepseek-v4-flash",
-			"gpt-5.3-codex": "deepseek-v4-pro",
-			"gpt-4.1":       "deepseek-v4-flash",
-			"gpt-4o":        "deepseek-v4-flash",
-			"gpt-4o-mini":   "deepseek-v4-flash",
-			"o4-mini":       "deepseek-v4-flash",
-		},
-		Headers: map[string]string{},
+		Mappings:         copyMap(p.DefaultMappings),
+		Headers:          map[string]string{},
 	}
 
 	return AppConfig{
 		ListenHost:       "127.0.0.1",
 		ListenPort:       17419,
-		DeepseekBaseURL:  "https://api.deepseek.com/v1",
+		DeepseekBaseURL:  p.DefaultBaseURL,
 		APIKey:           "",
-		DefaultModel:     "deepseek-v4-flash",
+		DefaultModel:     p.DefaultModel,
 		RequestTimeoutMs: 60000,
 		MaxRetries:       1,
 		EnableAutoStart:  false,
@@ -100,19 +93,10 @@ func defaultConfig() AppConfig {
 		LogRetentionDays: 7,
 		CompactMode:         true,
 		PluginUnlockEnabled: false,
-		Mappings: map[string]string{
-			"gpt-5.5":       "deepseek-v4-pro",
-			"gpt-5.4":       "deepseek-v4-pro",
-			"gpt-5.4-mini":  "deepseek-v4-flash",
-			"gpt-5.3-codex": "deepseek-v4-pro",
-			"gpt-4.1":       "deepseek-v4-flash",
-			"gpt-4o":        "deepseek-v4-flash",
-			"gpt-4o-mini":   "deepseek-v4-flash",
-			"o4-mini":       "deepseek-v4-flash",
-		},
-		Headers:          map[string]string{},
-		Profiles:         map[string]*Profile{"default": &defaultProfile},
-		CurrentProfileID: "default",
+		Mappings:            copyMap(p.DefaultMappings),
+		Headers:             map[string]string{},
+		Profiles:            map[string]*Profile{"default": &defaultProfile},
+		CurrentProfileID:    "default",
 	}
 }
 
@@ -205,12 +189,28 @@ func normalizeConfig(cfg AppConfig) AppConfig {
 }
 
 func normalizeProfile(p *Profile, defaults AppConfig) {
+	// Default provider to "deepseek" for backward compatibility
+	if strings.TrimSpace(p.Provider) == "" {
+		p.Provider = string(ProviderDeepSeek)
+	}
+
+	// Use provider-specific defaults if available
+	prov := GetProvider(ProviderID(p.Provider))
+
 	p.BaseURL = strings.TrimRight(strings.TrimSpace(p.BaseURL), "/")
 	if p.BaseURL == "" {
-		p.BaseURL = defaults.DeepseekBaseURL
+		if prov != nil {
+			p.BaseURL = prov.DefaultBaseURL
+		} else {
+			p.BaseURL = defaults.DeepseekBaseURL
+		}
 	}
 	if strings.TrimSpace(p.DefaultModel) == "" {
-		p.DefaultModel = defaults.DefaultModel
+		if prov != nil {
+			p.DefaultModel = prov.DefaultModel
+		} else {
+			p.DefaultModel = defaults.DefaultModel
+		}
 	}
 	if p.RequestTimeoutMs <= 0 {
 		p.RequestTimeoutMs = defaults.RequestTimeoutMs
@@ -224,7 +224,12 @@ func normalizeProfile(p *Profile, defaults AppConfig) {
 	if p.Headers == nil {
 		p.Headers = map[string]string{}
 	}
-	for key, value := range defaults.Mappings {
+	// Fill in missing mappings from provider defaults first, then global defaults
+	provMappings := defaults.Mappings
+	if prov != nil && prov.DefaultMappings != nil {
+		provMappings = prov.DefaultMappings
+	}
+	for key, value := range provMappings {
 		if _, ok := p.Mappings[key]; !ok {
 			p.Mappings[key] = value
 		}

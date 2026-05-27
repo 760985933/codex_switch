@@ -173,7 +173,7 @@ export const messages = {
           title: '模型映射',
           desc: '当 Codex 请求中的模型名与目标模型不一致时，在此做静态映射。（可选配置）',
           keyPlaceholder: '如 gpt-4.1',
-          valuePlaceholder: '如 deepseek-v4-flash',
+          valuePlaceholder: '如 gpt-4o',
         },
         headers: {
           title: '附加请求头',
@@ -256,6 +256,7 @@ export const messages = {
       confirmAdd: '添加',
       cancelAdd: '取消',
       namePlaceholder: '输入配置名称（如 OpenAI、Azure）',
+      providerPlaceholder: '选择提供商',
       switched: '已切换到: {name}',
       added: '已添加配置: {name}',
       current: '当前',
@@ -390,7 +391,7 @@ export const messages = {
           title: 'Model mapping',
           desc: 'Static mapping when Codex model names differ from target model names. (Optional)',
           keyPlaceholder: 'e.g. gpt-4.1',
-          valuePlaceholder: 'e.g. deepseek-v4-flash',
+          valuePlaceholder: 'e.g. gpt-4o',
         },
         headers: {
           title: 'Extra headers',
@@ -473,6 +474,7 @@ export const messages = {
       confirmAdd: 'Add',
       cancelAdd: 'Cancel',
       namePlaceholder: 'Enter profile name (e.g. OpenAI, Azure)',
+      providerPlaceholder: 'Select provider',
       switched: 'Switched to: {name}',
       added: 'Added profile: {name}',
       current: 'Current',
@@ -594,7 +596,7 @@ export const messages = {
           title: 'モデルマッピング',
           desc: 'Codex と DeepSeek のモデル名が異なる場合の静的マッピングです。',
           keyPlaceholder: '例: gpt-4.1',
-          valuePlaceholder: '例: deepseek-v4-flash',
+          valuePlaceholder: '例: gpt-4o',
         },
         headers: {
           title: '追加ヘッダー',
@@ -785,7 +787,7 @@ export const messages = {
           title: '모델 매핑',
           desc: 'Codex 모델명과 DeepSeek 모델명이 다를 때 정적 매핑을 설정합니다.',
           keyPlaceholder: '예: gpt-4.1',
-          valuePlaceholder: '예: deepseek-v4-flash',
+          valuePlaceholder: '예: gpt-4o',
         },
         headers: {
           title: '추가 헤더',
@@ -976,7 +978,7 @@ export const messages = {
           title: 'Mapping de modèles',
           desc: 'Mapping statique si les noms de modèles diffèrent.',
           keyPlaceholder: 'ex: gpt-4.1',
-          valuePlaceholder: 'ex: deepseek-v4-flash',
+          valuePlaceholder: 'ex: gpt-4o',
         },
         headers: {
           title: 'En-têtes additionnels',
@@ -1167,7 +1169,7 @@ export const messages = {
           title: 'Modell-Mapping',
           desc: 'Statisches Mapping bei abweichenden Modellnamen.',
           keyPlaceholder: 'z.B. gpt-4.1',
-          valuePlaceholder: 'z.B. deepseek-v4-flash',
+          valuePlaceholder: 'z.B. gpt-4o',
         },
         headers: {
           title: 'Zusätzliche Header',
@@ -1354,7 +1356,7 @@ export const messages = {
           title: 'Mapeo de modelos',
           desc: 'Mapeo estático si el nombre de modelo de Codex difiere del de DeepSeek.',
           keyPlaceholder: 'p.ej. gpt-4.1',
-          valuePlaceholder: 'p.ej. deepseek-v4-flash',
+          valuePlaceholder: 'p.ej. gpt-4o',
         },
         headers: {
           title: 'Headers extra',

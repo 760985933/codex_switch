@@ -12,6 +12,7 @@ const (
 type Profile struct {
 	ID               string            `json:"id"`
 	Name             string            `json:"name"`
+	Provider         string            `json:"provider"`
 	BaseURL          string            `json:"baseURL"`
 	APIKey           string            `json:"apiKey"`
 	DefaultModel     string            `json:"defaultModel"`

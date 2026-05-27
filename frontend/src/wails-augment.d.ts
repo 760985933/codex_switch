@@ -81,6 +81,21 @@ declare namespace main {
  minimizeToTray: boolean
  logRetentionDays: number
  compactMode: boolean
+ pluginUnlockEnabled: boolean
+ mappings: Record<string, string>
+ headers: Record<string, string>
+ currentProfileId: string
+ profiles: Record<string, Profile>
+ }
+ export class Profile {
+ id: string
+ name: string
+ provider: string
+ baseURL: string
+ apiKey: string
+ defaultModel: string
+ requestTimeoutMs: number
+ maxRetries: number
  mappings: Record<string, string>
  headers: Record<string, string>
  }

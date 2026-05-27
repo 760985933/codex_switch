@@ -5,6 +5,7 @@ import { useAppStore } from '../stores/app'
 import type { Profile } from '../types'
 import KeyValueEditor from './KeyValueEditor.vue'
 import { maskSecret } from '../utils/format'
+import { PROVIDER_PRESETS, getProviderPreset } from '../utils/providers'
 
 const store = useAppStore()
 const emit = defineEmits<{
@@ -14,6 +15,11 @@ const emit = defineEmits<{
 const formProfile = ref<Profile>({ ...store.currentProfile ?? {} as Profile })
 const showAdvanced = ref(true)
 const { t } = useI18n()
+
+const providerOptions = PROVIDER_PRESETS.map((p) => ({
+  label: p.label,
+  value: p.id,
+}))
 
 // Sync form when switching profiles
 watch(
@@ -46,6 +52,14 @@ const apiKeyHint = computed(() =>
   }),
 )
 
+function onProviderChange(providerId: string) {
+  const preset = getProviderPreset(providerId)
+  if (preset && providerId !== 'custom') {
+    formProfile.value.baseURL = preset.defaultBaseURL
+    formProfile.value.defaultModel = preset.defaultModel
+  }
+}
+
 async function submitSave() {
   const profiles = { ...store.config.profiles }
   profiles[store.config.currentProfileId] = { ...formProfile.value }
@@ -75,18 +89,35 @@ async function submitSave() {
         <n-form-item :label="t('config.fields.profileName')">
           <n-input v-model:value="formProfile.name" size="small" />
         </n-form-item>
+        <n-form-item label="提供商">
+          <n-select
+            v-model:value="formProfile.provider"
+            :options="providerOptions"
+            :disabled="isRunning"
+            size="small"
+            @update:value="onProviderChange"
+          />
+        </n-form-item>
         <n-form-item :label="t('config.fields.defaultModel')">
-          <n-input v-model:value="formProfile.defaultModel" placeholder="deepseek-v4-flash" size="small" />
+          <n-input
+            v-model:value="formProfile.defaultModel"
+            :placeholder="getProviderPreset(formProfile.provider)?.placeholderModel ?? 'gpt-4o'"
+            size="small"
+          />
         </n-form-item>
         <n-form-item label="API Base URL" class="span-2">
-          <n-input v-model:value="formProfile.baseURL" placeholder="https://api.deepseek.com/v1" size="small" />
+          <n-input
+            v-model:value="formProfile.baseURL"
+            :placeholder="getProviderPreset(formProfile.provider)?.defaultBaseURL ?? 'https://api.deepseek.com/v1'"
+            size="small"
+          />
         </n-form-item>
         <n-form-item label="API Key" class="span-2" required>
           <n-input
             v-model:value="formProfile.apiKey"
             type="password"
             show-password-on="click"
-            placeholder="sk-..."
+            :placeholder="getProviderPreset(formProfile.provider)?.placeholderApiKey ?? 'sk-...'"
             size="small"
           />
           <div class="field-hint">{{ apiKeyHint }}</div>

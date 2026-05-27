@@ -218,7 +218,11 @@ func (b *ProxyRuntime) IsRunning() bool {
 }
 
 func (b *ProxyRuntime) CheckUpstream(cfg AppConfig) error {
-	resourceURL, err := upstreamResourceURL(cfg.DeepseekBaseURL, "models")
+	baseURL := cfg.DeepseekBaseURL
+	if profile, ok := cfg.Profiles[cfg.CurrentProfileID]; ok && strings.TrimSpace(profile.BaseURL) != "" {
+		baseURL = profile.BaseURL
+	}
+	resourceURL, err := upstreamResourceURL(baseURL, "models")
 	if err != nil {
 		return err
 	}
@@ -299,10 +303,6 @@ func (b *ProxyRuntime) handleModels(w http.ResponseWriter, r *http.Request) {
 		"gpt-4o",
 		"gpt-4o-mini",
 		"o4-mini",
-		"deepseek-v4-pro",
-		"deepseek-v4-flash",
-		"deepseek-v4-flash",
-		"deepseek-v4-flash",
 	} {
 		addModel(id)
 	}
@@ -827,7 +827,7 @@ func truncateForLog(value string, max int) string {
 	return value[:max] + "...(truncated)"
 }
 
-// handleMessages converts Anthropic Messages API (/v1/messages) to DeepSeek Chat Completions.
+// handleMessages converts Anthropic Messages API (/v1/messages) to Chat Completions.
 func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 	cfg := b.snapshotConfig()
 	requestID := fmt.Sprintf("req_%d", time.Now().UnixNano())
@@ -2567,17 +2567,10 @@ func upstreamResourceURL(base string, resource string) (string, error) {
 		return "", err
 	}
 	if parsed.Scheme == "" || parsed.Host == "" {
-		return "", errors.New("DeepSeek Base URL 格式不正确")
+		return "", errors.New("上游 Base URL 格式不正确")
 	}
 
-	path := strings.TrimRight(parsed.Path, "/")
-	if path == "" {
-		path = "/v1"
-	}
-	if !strings.HasSuffix(path, "/v1") {
-		path = path + "/v1"
-	}
-	parsed.Path = path + "/" + resource
+	parsed.Path = strings.TrimRight(parsed.Path, "/") + "/" + resource
 	return parsed.String(), nil
 }
 

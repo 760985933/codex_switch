@@ -6,6 +6,7 @@ import { useAppStore } from '../stores/app'
 import { useUiStore } from '../stores/ui'
 import { GetUsageBalance } from '../../wailsjs/go/main/App'
 import type { Profile, ProxyStatusPayload, HealthCheckResult, UsageBalance } from '../types'
+import { PROVIDER_PRESETS, getProviderPreset } from '../utils/providers'
 
 const emit = defineEmits<{
   copy: [value: string]
@@ -71,6 +72,11 @@ const currentProfileId = computed(() => store.config.currentProfileId)
 const showAddDialog = ref(false)
 const adding = ref(false)
 const newProfileName = ref('')
+const newProfileProvider = ref('deepseek')
+const addProfileProviderOptions = PROVIDER_PRESETS.map((p) => ({
+  label: p.label,
+  value: p.id,
+}))
 
 async function handleSwitchProfile(id: string) {
   if (id === store.config.currentProfileId) return
@@ -87,7 +93,7 @@ async function handleAddProfile() {
   if (!name) return
   adding.value = true
   try {
-    await store.addProfile(name)
+    await store.addProfile(name, newProfileProvider.value)
     newProfileName.value = ''
     showAddDialog.value = false
     message.success(t('profile.added', { name }))
@@ -100,6 +106,7 @@ async function handleAddProfile() {
 
 function openAddDialog() {
   newProfileName.value = ''
+  newProfileProvider.value = 'deepseek'
   showAddDialog.value = true
 }
 
@@ -430,11 +437,18 @@ async function handleCodexWrite() {
       @positive-click="handleAddProfile"
       @negative-click="showAddDialog = false"
     >
-      <n-input
-        v-model:value="newProfileName"
-        :placeholder="t('profile.namePlaceholder')"
-        @keyup.enter="handleAddProfile"
-      />
+      <div style="display: grid; gap: 12px;">
+        <n-input
+          v-model:value="newProfileName"
+          :placeholder="t('profile.namePlaceholder')"
+          @keyup.enter="handleAddProfile"
+        />
+        <n-select
+          v-model:value="newProfileProvider"
+          :options="addProfileProviderOptions"
+          :placeholder="t('profile.providerPlaceholder')"
+        />
+      </div>
     </n-modal>
 
     <!-- Sandbox modal -->

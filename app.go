@@ -385,8 +385,22 @@ func (a *App) GetOverviewSnapshot() (OverviewSnapshot, error) {
 	}
 
 	profileName := ""
+	defaultBaseURL := "https://api.deepseek.com/v1"
+	defaultModel := "deepseek-v4-flash"
 	if p, ok := cfg.Profiles[cfg.CurrentProfileID]; ok {
 		profileName = p.Name
+		prov := GetProvider(ProviderID(p.Provider))
+		if prov != nil {
+			defaultBaseURL = prov.DefaultBaseURL
+			defaultModel = prov.DefaultModel
+		} else {
+			if p.BaseURL != "" {
+				defaultBaseURL = p.BaseURL
+			}
+			if p.DefaultModel != "" {
+				defaultModel = p.DefaultModel
+			}
+		}
 	}
 
 	return OverviewSnapshot{
@@ -399,8 +413,8 @@ func (a *App) GetOverviewSnapshot() (OverviewSnapshot, error) {
 			"请求失败时先查看最近日志，再进入完整诊断页。",
 		},
 		Defaults: map[string]string{
-			"baseURL":     "https://api.deepseek.com/v1",
-			"model":       "deepseek-v4-flash",
+			"baseURL":     defaultBaseURL,
+			"model":       defaultModel,
 			"profileName": profileName,
 		},
 		Features: map[string]bool{
@@ -458,13 +472,13 @@ func (a *App) RunHealthCheck() (HealthCheckResult, error) {
 	if upstreamErr != nil {
 		result.OK = false
 		result.Checks = append(result.Checks, HealthCheckItem{
-			Name:    "DeepSeek 上游接口",
+			Name:    "上游接口",
 			OK:      false,
 			Message: upstreamErr.Error(),
 		})
 	} else {
 		result.Checks = append(result.Checks, HealthCheckItem{
-			Name:    "DeepSeek 上游接口",
+			Name:    "上游接口",
 			OK:      true,
 			Message: "上游接口可访问",
 		})
@@ -477,7 +491,7 @@ func (a *App) RunHealthCheck() (HealthCheckResult, error) {
 			hint += " " + strings.TrimSpace(msg)
 		}
 		result.Checks = append(result.Checks, HealthCheckItem{
-			Name:    "DeepSeek 余额/额度",
+			Name:    "上游余额/额度",
 			OK:      false,
 			Message: hint,
 		})
@@ -501,67 +515,18 @@ func (a *App) GetUsageBalance() UsageBalance {
 		return UsageBalance{Error: "API Key 未配置"}
 	}
 
-	baseURL := strings.TrimRight(profile.BaseURL, "/")
-	parsed, err := url.Parse(baseURL)
-	if err != nil {
-		return UsageBalance{Error: "Base URL 格式错误"}
+	prov := GetProvider(ProviderID(profile.Provider))
+	if prov == nil || !prov.HasBalanceAPI || prov.BalanceCheckFn == nil {
+		return UsageBalance{Error: "该提供商不支持余额查询"}
 	}
 
-	// Build balance URL from scheme + host (strip path like /v1)
-	balanceURL := fmt.Sprintf("%s://%s/user/balance", parsed.Scheme, parsed.Host)
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	req, err := http.NewRequest(http.MethodGet, balanceURL, nil)
-	if err != nil {
-		return UsageBalance{Error: err.Error()}
-	}
-	req.Header.Set("Authorization", "Bearer "+profile.APIKey)
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := client.Do(req)
+	result, err := prov.BalanceCheckFn(profile.APIKey, profile.BaseURL)
 	if err != nil {
 		a.appendLog("error", "app", "用量查询请求失败: "+err.Error(), "")
 		return UsageBalance{Error: err.Error()}
 	}
-	defer resp.Body.Close()
-
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-
-	if resp.StatusCode != http.StatusOK {
-		return UsageBalance{Error: fmt.Sprintf("API 返回状态 %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))}
-	}
-
-	var balanceResp struct {
-		IsAvailable  bool `json:"is_available"`
-		BalanceInfos []struct {
-			Currency        string `json:"currency"`
-			TotalBalance    string `json:"total_balance"`
-			GrantedBalance  string `json:"granted_balance"`
-			ToppedUpBalance string `json:"topped_up_balance"`
-		} `json:"balance_infos"`
-	}
-	if err := json.Unmarshal(body, &balanceResp); err != nil {
-		return UsageBalance{Error: "解析响应失败: " + err.Error()}
-	}
-
-	available := ""
-	total := ""
-	currency := ""
-	if len(balanceResp.BalanceInfos) > 0 {
-		info := balanceResp.BalanceInfos[0]
-		available = info.ToppedUpBalance
-		total = info.TotalBalance
-		currency = info.Currency
-	}
-
-	result := UsageBalance{
-		AvailableBalance: available,
-		TotalBalance:     total,
-		Currency:         currency,
-		IsDepleted:       !balanceResp.IsAvailable,
-	}
-	a.onBalanceUpdate(result)
-	return result
+	a.onBalanceUpdate(*result)
+	return *result
 }
 
 func (a *App) GetLogHistory(limit int) []LogEntry {
