@@ -373,10 +373,11 @@ onMounted(() => {
           </n-button>
         </div>
 
-        <div v-if="loading" class="panel-loading">
-          <n-spin :size="24" />
-        </div>
-        <template v-else-if="filteredSessions.length > 0">
+        <div class="left-panel-body">
+          <div v-if="loading" class="panel-loading">
+            <n-spin :size="24" />
+          </div>
+          <template v-else-if="filteredSessions.length > 0">
           <div
             v-for="s in filteredSessions"
             :key="s.id"
@@ -410,6 +411,7 @@ onMounted(() => {
         <div v-else class="panel-empty">
           <n-empty :description="searchQuery ? '无匹配结果' : t('sessions.empty')" :size="'small'" />
         </div>
+        </div><!-- /left-panel-body -->
       </div>
 
       <!-- Right: Session detail -->
@@ -653,7 +655,13 @@ onMounted(() => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 310px);
+  min-height: 0;
+}
+
+.left-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .left-panel-head {
@@ -774,9 +782,11 @@ onMounted(() => {
   border: 1px solid var(--border);
   border-radius: 18px;
   background: var(--surface);
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   padding: 16px;
-  max-height: calc(100vh - 310px);
+  min-height: 0;
 }
 
 .right-panel-placeholder {
@@ -942,16 +952,20 @@ onMounted(() => {
 
 /* Messages */
 .detail-content {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0;
+  min-height: 0;
+  flex: 1;
 }
 
 .messages-list {
   display: grid;
   gap: 14px;
-  max-height: calc(100vh - 380px);
   overflow-y: auto;
   padding: 4px 0;
+  min-height: 0;
+  flex-shrink: 1;
 }
 
 .message-row {
@@ -1085,5 +1099,30 @@ onMounted(() => {
   .right-panel {
     max-height: none;
   }
+}
+/* Scrollbar styles */
+.left-panel-body::-webkit-scrollbar,
+.right-panel::-webkit-scrollbar,
+.messages-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.left-panel-body::-webkit-scrollbar-track,
+.right-panel::-webkit-scrollbar-track,
+.messages-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.left-panel-body::-webkit-scrollbar-thumb,
+.right-panel::-webkit-scrollbar-thumb,
+.messages-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.left-panel-body::-webkit-scrollbar-thumb:hover,
+.right-panel::-webkit-scrollbar-thumb:hover,
+.messages-list::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }
 </style>
