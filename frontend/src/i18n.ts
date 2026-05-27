@@ -223,7 +223,8 @@ export const messages = {
           baseUrlAuto: '启动后自动生成',
           hint: '推荐用”偏好设置 → Codex config.toml → 写入文件”，自动合并并保留原有 MCP/approvals 配置。',
           pluginUnlock: '插件解锁',
-          pluginUnlockHint: '需用终端启动 Codex：/Applications/Codex.app/Contents/MacOS/Codex --remote-debugging-port=9229 --remote-allow-origins=http://127.0.0.1:9229',
+          pluginUnlockEnabled: '插件解锁已开启',
+          pluginUnlockDisabled: '插件解锁已关闭',
         },
         three: {
           title: '验证与排障',
@@ -433,7 +434,8 @@ export const messages = {
           baseUrlAuto: 'Auto-generated after start',
           hint: 'Recommended: Preferences → Codex config.toml → Write File, to merge and keep existing MCP/approvals.',
           pluginUnlock: 'Plugin Unlock',
-          pluginUnlockHint: 'Auto-inject unlock script to enable Codex plugin entry',
+          pluginUnlockEnabled: 'Plugin unlock enabled',
+          pluginUnlockDisabled: 'Plugin unlock disabled',
         },
         three: {
           title: 'Verify & troubleshoot',
@@ -630,7 +632,8 @@ export const messages = {
           baseUrlAuto: '起動後に自動生成',
           hint: '推奨: 設定 → Codex config.toml → ファイルに書き込み（既存 MCP/approvals を保持してマージ）。',
           pluginUnlock: 'プラグイン解除',
-          pluginUnlockHint: 'Codexプラグインを有効化する解除スクリプトを自動注入します',
+          pluginUnlockEnabled: 'プラグイン解除を有効化',
+          pluginUnlockDisabled: 'プラグイン解除を無効化',
         },
         three: {
           title: '検証とトラブルシュート',
@@ -814,7 +817,8 @@ export const messages = {
           baseUrlAuto: '시작 후 자동 생성',
           hint: '권장: 설정 → Codex config.toml → 파일에 쓰기(기존 MCP/approvals 유지하며 병합).',
           pluginUnlock: '플러그인 잠금 해제',
-          pluginUnlockHint: 'Codex 플러그인을 활성화하는 해제 스크립트 자동 주입',
+          pluginUnlockEnabled: '플러그인 잠금 해제 켜짐',
+          pluginUnlockDisabled: '플러그인 잠금 해제 꺼짐',
         },
         three: {
           title: '검증 및 문제 해결',
@@ -998,7 +1002,8 @@ export const messages = {
           baseUrlAuto: 'Généré après démarrage',
           hint: 'Recommandé : Préférences → Codex config.toml → Écrire le fichier (fusion).',
           pluginUnlock: 'Déverrouillage plugin',
-          pluginUnlockHint: 'Injecter automatiquement le script de déverrouillage pour activer les plugins Codex',
+          pluginUnlockEnabled: 'Déverrouillage activé',
+          pluginUnlockDisabled: 'Déverrouillage désactivé',
         },
         three: {
           title: 'Vérifier & dépanner',
@@ -1178,7 +1183,8 @@ export const messages = {
           baseUrlAuto: 'Nach Start automatisch',
           hint: 'Empfohlen: Einstellungen → Codex config.toml → Datei schreiben (merge).',
           pluginUnlock: 'Plugin-Entsperrung',
-          pluginUnlockHint: 'Entsperrungsskript automatisch injizieren, um Codex-Plugins zu aktivieren',
+          pluginUnlockEnabled: 'Plugin-Entsperrung aktiviert',
+          pluginUnlockDisabled: 'Plugin-Entsperrung deaktiviert',
         },
         three: {
           title: 'Prüfen & Troubleshooting',
@@ -1358,7 +1364,8 @@ export const messages = {
           baseUrlAuto: 'Se genera al iniciar',
           hint: 'Recomendado: Preferencias → Codex config.toml → Escribir archivo (merge).',
           pluginUnlock: 'Desbloqueo de plugin',
-          pluginUnlockHint: 'Inyectar automáticamente script para habilitar plugins de Codex',
+          pluginUnlockEnabled: 'Desbloqueo activado',
+          pluginUnlockDisabled: 'Desbloqueo desactivado',
         },
         three: {
           title: 'Verificar y depurar',

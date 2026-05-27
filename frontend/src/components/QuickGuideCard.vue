@@ -111,6 +111,15 @@ async function handleRestoreCodex() {
   }
 }
 
+async function handlePluginUnlockChange(val: boolean) {
+  try {
+    await store.saveConfig({ ...store.config, pluginUnlockEnabled: val })
+    message.success(val ? t('guide.step.two.pluginUnlockEnabled') : t('guide.step.two.pluginUnlockDisabled'))
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  }
+}
+
 // ── Sandbox ──
 const showSandbox = ref(false)
 const networkAccess = ref(true)
@@ -276,6 +285,16 @@ async function handleCodexWrite() {
             <n-button tertiary @click="handleRestoreCodex">{{ t('guide.actions.restoreDefault') }}</n-button>
             <n-button tertiary @click="showSandbox = true">{{ t('guide.actions.sandbox') }}</n-button>
           </div>
+          <div class="toggle-row">
+            <div class="toggle-row-left">
+              <span class="toggle-label">{{ t('guide.step.two.pluginUnlock') }}</span>
+            </div>
+            <n-switch
+              v-model:value="store.config.pluginUnlockEnabled"
+              @update:value="handlePluginUnlockChange"
+            />
+          </div>
+          <div class="restart-hint">{{ t('guide.sandbox.configHint') }}</div>
         </div>
       </div>
 
@@ -395,6 +414,7 @@ async function handleCodexWrite() {
             />
           </div>
         </div>
+        <div class="restart-hint">{{ t('guide.sandbox.configHint') }}</div>
       </div>
     </n-modal>
   </div>
@@ -517,6 +537,38 @@ async function handleCodexWrite() {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--border);
+}
+
+.toggle-row-left {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.toggle-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(11, 18, 32, 0.88);
+}
+
+.restart-hint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--warning);
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(216, 150, 20, 0.08);
 }
 
 .profile-bar {
