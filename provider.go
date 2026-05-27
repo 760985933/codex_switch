@@ -18,6 +18,11 @@ const (
 	ProviderAlibaba  ProviderID = "alibaba"
 	ProviderXiaomi   ProviderID = "xiaomi"
 	ProviderZhipu    ProviderID = "zhipu"
+	ProviderBaidu    ProviderID = "baidu"
+	ProviderVolcano  ProviderID = "volcano"
+	ProviderTencent  ProviderID = "tencent"
+	ProviderSilicon  ProviderID = "silicon"
+	ProviderKimi     ProviderID = "kimi"
 	ProviderCustom   ProviderID = "custom"
 )
 
@@ -154,6 +159,56 @@ var registeredProviders = map[string]*ProviderInfo{
 		BalanceCheckFn:  nil,
 		DefaultMappings: zhipuDefaultMappings(),
 	},
+	string(ProviderBaidu): {
+		ID:              ProviderBaidu,
+		Name:            "百度千帆",
+		DefaultBaseURL:  "https://qianfan.baidubce.com/v2",
+		DefaultModel:    "ernie-5.1",
+		DocsURL:         "https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu",
+		HasBalanceAPI:   false,
+		BalanceCheckFn:  nil,
+		DefaultMappings: baiduDefaultMappings(),
+	},
+	string(ProviderVolcano): {
+		ID:              ProviderVolcano,
+		Name:            "火山引擎豆包",
+		DefaultBaseURL:  "https://ark.cn-beijing.volces.com/api/v3",
+		DefaultModel:    "doubao-seed-2-0-lite-260215",
+		DocsURL:         "https://www.volcengine.com/docs/82379/1330310",
+		HasBalanceAPI:   false,
+		BalanceCheckFn:  nil,
+		DefaultMappings: volcanoDefaultMappings(),
+	},
+	string(ProviderTencent): {
+		ID:              ProviderTencent,
+		Name:            "腾讯混元",
+		DefaultBaseURL:  "https://api.hunyuan.cloud.tencent.com/v1",
+		DefaultModel:    "hunyuan-2.0-thinking-20251109",
+		DocsURL:         "https://cloud.tencent.com/document/product/1729/104753",
+		HasBalanceAPI:   false,
+		BalanceCheckFn:  nil,
+		DefaultMappings: tencentDefaultMappings(),
+	},
+	string(ProviderSilicon): {
+		ID:              ProviderSilicon,
+		Name:            "硅基流动",
+		DefaultBaseURL:  "https://api.siliconflow.cn/v1",
+		DefaultModel:    "deepseek-ai/DeepSeek-V4-Flash",
+		DocsURL:         "https://docs.siliconflow.cn/",
+		HasBalanceAPI:   false,
+		BalanceCheckFn:  nil,
+		DefaultMappings: siliconDefaultMappings(),
+	},
+	string(ProviderKimi): {
+		ID:              ProviderKimi,
+		Name:            "Kimi",
+		DefaultBaseURL:  "https://api.moonshot.cn/v1",
+		DefaultModel:    "kimi-k2.6",
+		DocsURL:         "https://platform.moonshot.cn/docs",
+		HasBalanceAPI:   false,
+		BalanceCheckFn:  nil,
+		DefaultMappings: kimiDefaultMappings(),
+	},
 }
 
 func deepseekDefaultMappings() map[string]string {
@@ -205,6 +260,71 @@ func zhipuDefaultMappings() map[string]string {
 		"gpt-4o":        "glm-4.7-flash",
 		"gpt-4o-mini":   "glm-4.7-flash",
 		"o4-mini":       "glm-4.7-flash",
+	}
+}
+
+func baiduDefaultMappings() map[string]string {
+	return map[string]string{
+		"gpt-5.5":       "ernie-5.1",
+		"gpt-5.4":       "ernie-5.1",
+		"gpt-5.4-mini":  "ernie-4.5-turbo-128k-preview",
+		"gpt-5.3-codex": "ernie-5.1",
+		"gpt-4.1":       "ernie-speed-128k",
+		"gpt-4o":        "ernie-speed-128k",
+		"gpt-4o-mini":   "ernie-lite-8k",
+		"o4-mini":       "ernie-5.0-thinking-preview",
+	}
+}
+
+func volcanoDefaultMappings() map[string]string {
+	return map[string]string{
+		"gpt-5.5":       "doubao-seed-2-0-pro-260215",
+		"gpt-5.4":       "doubao-seed-2-0-pro-260215",
+		"gpt-5.4-mini":  "doubao-seed-2-0-lite-260215",
+		"gpt-5.3-codex": "doubao-seed-2-0-code-preview-260215",
+		"gpt-4.1":       "doubao-seed-2-0-lite-260215",
+		"gpt-4o":        "doubao-seed-2-0-lite-260215",
+		"gpt-4o-mini":   "doubao-seed-2-0-mini-260215",
+		"o4-mini":       "doubao-seed-2-0-mini-260215",
+	}
+}
+
+func tencentDefaultMappings() map[string]string {
+	return map[string]string{
+		"gpt-5.5":       "hunyuan-2.0-thinking-20251109",
+		"gpt-5.4":       "hunyuan-2.0-instruct-20251111",
+		"gpt-5.4-mini":  "hunyuan-turbos-latest",
+		"gpt-5.3-codex": "hunyuan-2.0-thinking-20251109",
+		"gpt-4.1":       "hunyuan-lite",
+		"gpt-4o":        "hunyuan-lite",
+		"gpt-4o-mini":   "hunyuan-lite",
+		"o4-mini":       "hunyuan-t1-latest",
+	}
+}
+
+func siliconDefaultMappings() map[string]string {
+	return map[string]string{
+		"gpt-5.5":       "Pro/zai-org/GLM-5.1",
+		"gpt-5.4":       "deepseek-ai/DeepSeek-V4-Flash",
+		"gpt-5.4-mini":  "Qwen/Qwen3.6-35B-A3B",
+		"gpt-5.3-codex": "deepseek-ai/DeepSeek-V4-Flash",
+		"gpt-4.1":       "Qwen/Qwen3.6-27B",
+		"gpt-4o":        "deepseek-ai/DeepSeek-V4-Flash",
+		"gpt-4o-mini":   "Qwen/Qwen3.6-35B-A3B",
+		"o4-mini":       "deepseek-ai/DeepSeek-V4-Flash",
+	}
+}
+
+func kimiDefaultMappings() map[string]string {
+	return map[string]string{
+		"gpt-5.5":       "kimi-k2.6",
+		"gpt-5.4":       "kimi-k2.6",
+		"gpt-5.4-mini":  "kimi-k2.6",
+		"gpt-5.3-codex": "kimi-k2.6",
+		"gpt-4.1":       "kimi-k2.6",
+		"gpt-4o":        "kimi-k2.6",
+		"gpt-4o-mini":   "kimi-k2.6",
+		"o4-mini":       "kimi-k2.6-thinking",
 	}
 }
 
