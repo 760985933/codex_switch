@@ -309,6 +309,7 @@ onMounted(async () => {
   min-height: 100vh;
   padding: 20px;
   gap: 18px;
+  scrollbar-gutter: stable;
 }
 
 .topbar {
@@ -382,7 +383,7 @@ onMounted(async () => {
   border-radius: 999px;
   color: var(--muted);
   text-decoration: none;
-  transition: all 160ms ease;
+  transition: background 160ms ease, color 160ms ease;
 }
 
 .nav-link:hover,

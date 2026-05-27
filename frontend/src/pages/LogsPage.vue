@@ -64,7 +64,9 @@ onMounted(async () => {
         <div class="msg">{{ entry.message }}</div>
       </div>
     </div>
-    <n-empty v-else :description="t('logs.empty.noLogs')" />
+    <div v-else class="logs-empty">
+      <n-empty :description="t('logs.empty.noLogs')" />
+    </div>
   </div>
 </template>
 
@@ -161,6 +163,16 @@ onMounted(async () => {
   line-height: 1.6;
   color: rgba(11, 18, 32, 0.88);
   word-break: break-word;
+}
+
+.logs-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: var(--surface);
 }
 
 @media (max-width: 920px) {
