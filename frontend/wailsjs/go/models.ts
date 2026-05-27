@@ -113,7 +113,7 @@ export namespace main {
 	        this.messageCount = source["messageCount"];
 	        this.createdAt = source["createdAt"];
 	        this.isArchived = source["isArchived"];
-	    this.cwd = source["cwd"];
+	        this.cwd = source["cwd"];
 	    }
 	}
 	export class HealthCheckItem {

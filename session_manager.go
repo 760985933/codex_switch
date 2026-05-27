@@ -249,9 +249,50 @@ func extractPartsText(raw json.RawMessage) string {
 }
 // ---------- Wails bindings ----------
 
+// loadModelMap 从 SQLite state_*.sqlite 中查询所有线程的 model 名称
+// 返回 map[threadID]modelName
+func loadModelMap() map[string]string {
+	modelMap := make(map[string]string)
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return modelMap
+	}
+	codexDir := filepath.Join(home, ".codex")
+	entries, err := os.ReadDir(codexDir)
+	if err != nil {
+		return modelMap
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasPrefix(entry.Name(), "state_") || !strings.HasSuffix(entry.Name(), ".sqlite") {
+			continue
+		}
+		dbPath := filepath.Join(codexDir, entry.Name())
+		cmd := exec.Command("sqlite3", "-separator", "|", dbPath,
+			"SELECT id, model FROM threads WHERE model IS NOT NULL AND model != '';")
+		output, err := cmd.Output()
+		if err != nil {
+			continue
+		}
+		for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+			parts := strings.SplitN(line, "|", 2)
+			if len(parts) == 2 && parts[1] != "" {
+				modelMap[parts[0]] = parts[1]
+			}
+		}
+	}
+	return modelMap
+}
+
 // ListCodexSessions 扫描 sessions 和 archived_sessions 目录，返回所有会话列表
 func (a *App) ListCodexSessions() ([]CodexSession, error) {
 	sessions := make([]CodexSession, 0)
+
+	// 预加载 SQLite 中的模型名
+	modelMap := loadModelMap()
 
 	// 扫描 sessions 目录（嵌套子目录，递归搜索）
 	if dir, err := codexSessionsDir(); err == nil {
@@ -262,6 +303,10 @@ func (a *App) ListCodexSessions() ([]CodexSession, error) {
 			session, _, err := parseSessionFile(path)
 			if err != nil {
 				return nil
+			}
+			// 从 SQLite 中查找真正的模型名
+			if m, ok := modelMap[session.ID]; ok {
+				session.Model = m
 			}
 			sessions = append(sessions, *session)
 			return nil
@@ -284,6 +329,10 @@ func (a *App) ListCodexSessions() ([]CodexSession, error) {
 				session, _, err := parseSessionFile(path)
 				if err != nil {
 					continue
+				}
+				// 从 SQLite 中查找真正的模型名
+				if m, ok := modelMap[session.ID]; ok {
+					session.Model = m
 				}
 				sessions = append(sessions, *session)
 			}
