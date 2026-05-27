@@ -157,7 +157,7 @@ func normalizeConfig(cfg AppConfig) AppConfig {
 	// --- Multi-profile migration & sync ---
 
 	// Migration: if no profiles exist, create one from old flat fields
-	if cfg.Profiles == nil || len(cfg.Profiles) == 0 {
+	if len(cfg.Profiles) == 0 {
 		profile := &Profile{
 			ID:               "default",
 			Name:             "DeepSeek",
