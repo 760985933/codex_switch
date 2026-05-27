@@ -301,8 +301,8 @@ func (b *ProxyRuntime) handleModels(w http.ResponseWriter, r *http.Request) {
 		"o4-mini",
 		"deepseek-v4-pro",
 		"deepseek-v4-flash",
-		"deepseek-chat",
-		"deepseek-reasoner",
+		"deepseek-v4-flash",
+		"deepseek-v4-flash",
 	} {
 		addModel(id)
 	}

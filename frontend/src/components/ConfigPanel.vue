@@ -63,7 +63,7 @@ function submitSave() {
           <n-input v-model:value="formValue.deepseekBaseURL" placeholder="https://api.deepseek.com/v1" />
         </n-form-item>
         <n-form-item :label="t('config.fields.defaultModel')">
-          <n-input v-model:value="formValue.defaultModel" placeholder="deepseek-chat" />
+          <n-input v-model:value="formValue.defaultModel" placeholder="deepseek-v4-flash" />
         </n-form-item>
         <n-form-item label="API Key" class="span-2">
           <n-input

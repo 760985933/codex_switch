@@ -7,7 +7,7 @@ import (
 
 func TestTranslateChatCompletionsUsesMapping(t *testing.T) {
 	cfg := defaultConfig()
-	cfg.Mappings["gpt-4.1"] = "deepseek-chat"
+	cfg.Mappings["gpt-4.1"] = "deepseek-v4-flash"
 
 	body := []byte(`{"model":"gpt-4.1","messages":[{"role":"user","content":"hello"}],"stream":true}`)
 	translated, err := translateChatCompletions(body, cfg)
@@ -20,8 +20,8 @@ func TestTranslateChatCompletionsUsesMapping(t *testing.T) {
 		t.Fatalf("unmarshal translated body failed: %v", err)
 	}
 
-	if payload["model"] != "deepseek-chat" {
-		t.Fatalf("expected mapped model deepseek-chat, got %v", payload["model"])
+	if payload["model"] != "deepseek-v4-flash" {
+		t.Fatalf("expected mapped model deepseek-v4-flash, got %v", payload["model"])
 	}
 }
 
@@ -39,7 +39,7 @@ func TestUpstreamResourceURLNormalizesBasePath(t *testing.T) {
 
 func TestTranslateResponsesToChatCompletionsMapsToolsAndToolOutputs(t *testing.T) {
 	cfg := defaultConfig()
-	cfg.Mappings["gpt-4.1"] = "deepseek-chat"
+	cfg.Mappings["gpt-4.1"] = "deepseek-v4-flash"
 
 	body := []byte(`{
 		"model":"gpt-4.1",
@@ -65,8 +65,8 @@ func TestTranslateResponsesToChatCompletionsMapsToolsAndToolOutputs(t *testing.T
 		t.Fatalf("unmarshal translated body failed: %v", err)
 	}
 
-	if payload["model"] != "deepseek-chat" {
-		t.Fatalf("expected mapped model deepseek-chat, got %v", payload["model"])
+	if payload["model"] != "deepseek-v4-flash" {
+		t.Fatalf("expected mapped model deepseek-v4-flash, got %v", payload["model"])
 	}
 	if payload["tool_choice"] != "auto" {
 		t.Fatalf("expected tool_choice auto, got %v", payload["tool_choice"])
@@ -125,7 +125,7 @@ func TestTranslateChatCompletionToResponsesMapsToolCalls(t *testing.T) {
 		"usage":{"prompt_tokens":1,"completion_tokens":2,"total_tokens":3}
 	}`)
 
-	resp, err := translateChatCompletionToResponses(body, "deepseek-chat")
+	resp, err := translateChatCompletionToResponses(body, "deepseek-v4-flash")
 	if err != nil {
 		t.Fatalf("translateChatCompletionToResponses returned error: %v", err)
 	}

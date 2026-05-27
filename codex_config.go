@@ -370,7 +370,7 @@ func mergeCodexConfigToml(existing []byte, baseURL string, defaultModel string) 
 	if strings.TrimSpace(defaultModel) != "" {
 		doc["model"] = defaultModel
 	} else if _, ok := doc["model"]; !ok {
-		doc["model"] = "deepseek-chat"
+		doc["model"] = "deepseek-v4-flash"
 	}
 
 	modelProviders := ensureTomlMap(doc, "model_providers")
@@ -389,7 +389,7 @@ func mergeCodexConfigToml(existing []byte, baseURL string, defaultModel string) 
 	if model, ok := doc["model"].(string); ok && strings.TrimSpace(model) != "" {
 		profile["model"] = model
 	} else {
-		profile["model"] = "deepseek-chat"
+		profile["model"] = "deepseek-v4-flash"
 	}
 	profile["openai_base_url"] = strings.TrimRight(baseURL, "/") + "/"
 	delete(profile, "model_catalog_json")

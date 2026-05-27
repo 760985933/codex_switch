@@ -307,6 +307,16 @@ func (a *App) StartProxy() (ProxyStatusPayload, error) {
 	}
 	status := a.proxy.Status()
 	a.appendLog("info", "app", "启动命令已提交: "+status.ListenAddress, "")
+
+	// Plugin unlock injection (non-blocking)
+	if cfg.PluginUnlockEnabled {
+		go func() {
+			if err := TryPluginUnlock(a.appendLog); err != nil {
+				a.appendLog("warn", "plugin", "插件解锁失败: "+err.Error(), "")
+			}
+		}()
+	}
+
 	return status, nil
 }
 
@@ -349,7 +359,7 @@ func (a *App) GetOverviewSnapshot() (OverviewSnapshot, error) {
 		},
 		Defaults: map[string]string{
 			"baseURL": "https://api.deepseek.com/v1",
-			"model":   "deepseek-chat",
+			"model":   "deepseek-v4-flash",
 		},
 		Features: map[string]bool{
 			"streamingProxy":   true,

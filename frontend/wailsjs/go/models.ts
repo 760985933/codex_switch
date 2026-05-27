@@ -12,6 +12,7 @@ export namespace main {
 	    minimizeToTray: boolean;
 	    logRetentionDays: number;
 	    compactMode: boolean;
+	    pluginUnlockEnabled: boolean;
 	    mappings: Record<string, string>;
 	    headers: Record<string, string>;
 	
@@ -32,6 +33,7 @@ export namespace main {
 	        this.minimizeToTray = source["minimizeToTray"];
 	        this.logRetentionDays = source["logRetentionDays"];
 	        this.compactMode = source["compactMode"];
+	        this.pluginUnlockEnabled = source["pluginUnlockEnabled"];
 	        this.mappings = source["mappings"];
 	        this.headers = source["headers"];
 	    }

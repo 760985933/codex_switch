@@ -35,7 +35,7 @@ base_url = "https://example.com/v1"
 env_key = "KEEP_ME"
 wire_api = "chat"
 `)
-	merged, err := mergeCodexConfigToml(existing, "http://127.0.0.1:11434/v1", "deepseek-chat")
+	merged, err := mergeCodexConfigToml(existing, "http://127.0.0.1:11434/v1", "deepseek-v4-flash")
 	if err != nil {
 		t.Fatalf("mergeCodexConfigToml returned error: %v", err)
 	}

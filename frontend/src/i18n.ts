@@ -169,7 +169,7 @@ export const messages = {
           title: '模型映射',
           desc: '当 Codex 请求中的模型名与 DeepSeek 模型不一致时，在此做静态映射。',
           keyPlaceholder: '如 gpt-4.1',
-          valuePlaceholder: '如 deepseek-chat',
+          valuePlaceholder: '如 deepseek-v4-flash',
         },
         headers: {
           title: '附加请求头',
@@ -335,7 +335,7 @@ export const messages = {
           title: 'Model mapping',
           desc: 'Static mapping when Codex model names differ from DeepSeek model names.',
           keyPlaceholder: 'e.g. gpt-4.1',
-          valuePlaceholder: 'e.g. deepseek-chat',
+          valuePlaceholder: 'e.g. deepseek-v4-flash',
         },
         headers: {
           title: 'Extra headers',
@@ -493,7 +493,7 @@ export const messages = {
           title: 'モデルマッピング',
           desc: 'Codex と DeepSeek のモデル名が異なる場合の静的マッピングです。',
           keyPlaceholder: '例: gpt-4.1',
-          valuePlaceholder: '例: deepseek-chat',
+          valuePlaceholder: '例: deepseek-v4-flash',
         },
         headers: {
           title: '追加ヘッダー',
@@ -651,7 +651,7 @@ export const messages = {
           title: '모델 매핑',
           desc: 'Codex 모델명과 DeepSeek 모델명이 다를 때 정적 매핑을 설정합니다.',
           keyPlaceholder: '예: gpt-4.1',
-          valuePlaceholder: '예: deepseek-chat',
+          valuePlaceholder: '예: deepseek-v4-flash',
         },
         headers: {
           title: '추가 헤더',
@@ -809,7 +809,7 @@ export const messages = {
           title: 'Mapping de modèles',
           desc: 'Mapping statique si les noms de modèles diffèrent.',
           keyPlaceholder: 'ex: gpt-4.1',
-          valuePlaceholder: 'ex: deepseek-chat',
+          valuePlaceholder: 'ex: deepseek-v4-flash',
         },
         headers: {
           title: 'En-têtes additionnels',
@@ -967,7 +967,7 @@ export const messages = {
           title: 'Modell-Mapping',
           desc: 'Statisches Mapping bei abweichenden Modellnamen.',
           keyPlaceholder: 'z.B. gpt-4.1',
-          valuePlaceholder: 'z.B. deepseek-chat',
+          valuePlaceholder: 'z.B. deepseek-v4-flash',
         },
         headers: {
           title: 'Zusätzliche Header',
@@ -1121,7 +1121,7 @@ export const messages = {
           title: 'Mapeo de modelos',
           desc: 'Mapeo estático si el nombre de modelo de Codex difiere del de DeepSeek.',
           keyPlaceholder: 'p.ej. gpt-4.1',
-          valuePlaceholder: 'p.ej. deepseek-chat',
+          valuePlaceholder: 'p.ej. deepseek-v4-flash',
         },
         headers: {
           title: 'Headers extra',
