@@ -13,109 +13,167 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const codexDebugPort = 9222
+const codexDebugPort = 9229
 
+// unlockScript — injected via Page.addScriptToEvaluateOnNewDocument so it runs
+// BEFORE any Codex JS initializes. Based on Codex++ approach.
 const unlockScript = `
 (function(){
-	console.log("[Nettopo] Injecting plugin unlock...");
-
-	// 1. Force-show all plugin-related UI elements
-	var css = [
-		'[class*="plugin"]',
-		'[class*="Plugin"]',
-		'[class*="plugin" i]',
-		'.plugin-entry',
-		'.plugins-menu',
-		'[class*="sidebar"] [class*="item"]',
-		'[role="button"][class*="plug"]',
-		'[data-testid*="plugin"]',
-		'[id*="plugin"]',
-		'[id*="Plugin"]',
-		'button:has([class*="plugin"])',
-		'a:has([class*="plugin"])',
-	].join(',');
-
-	var style = document.createElement('style');
-	style.id = 'nettopo-plugin-unlock';
-	style.textContent = css + '{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;height:auto!important;width:auto!important;overflow:visible!important;clip:auto!important;position:static!important;transform:none!important;max-height:none!important}';
-	document.head.appendChild(style);
-
-	// 2. Hijack feature flags
-	var originalSetItem = localStorage.setItem;
-	localStorage.setItem = function(key, value) {
-		if (key && key.toLowerCase().indexOf('feature') !== -1) {
-			try {
-				var obj = JSON.parse(value);
-				if (obj && typeof obj === 'object') {
-					obj.plugins = true;
-					obj.pluginsEnabled = true;
-					value = JSON.stringify(obj);
-				}
-			} catch(e) {}
+	// Patch feature flags before any app code reads them
+	var origDefineProperty = Object.defineProperty;
+	Object.defineProperty = function(obj, prop, desc) {
+		if (prop === 'plugins' || prop === 'pluginsEnabled' || prop === 'pluginEnabled') {
+			if (desc && (desc.value === false || desc.get)) {
+				console.log('[Codex++] Intercepted Object.defineProperty for', prop);
+				return;
+			}
 		}
-		originalSetItem.apply(this, arguments);
+		return origDefineProperty.call(this, obj, prop, desc);
 	};
 
-	// 3. Set global flags
-	window.__PLUGINS_ENABLED = true;
-	window.__PLUGIN_UNLOCKED = true;
-	window.hasPluginAccess = function(){return true};
-	if (window.APP_CONFIG && window.APP_CONFIG.features) {
-		window.APP_CONFIG.features.plugins = true;
-		window.APP_CONFIG.features.pluginEnabled = true;
-	}
-	if (window.userFeatures) {
-		window.userFeatures.plugins = true;
-		window.userFeatures.pluginEnabled = true;
-	}
-
-	// 4. Watch for dynamically added plugin elements and make them visible
-	var observer = new MutationObserver(function(mutations) {
-		mutations.forEach(function(mutation) {
-			mutation.addedNodes.forEach(function(node) {
-				if (node.nodeType === 1) {
-					if (node.className && (node.className.toLowerCase().indexOf('plugin') !== -1)) {
-						node.style.setProperty('display', 'flex', 'important');
-						node.style.setProperty('visibility', 'visible', 'important');
-						node.style.setProperty('opacity', '1', 'important');
-						node.style.setProperty('pointer-events', 'auto', 'important');
-					}
-					if (node.querySelectorAll) {
-						var els = node.querySelectorAll('[class*="plugin"], [class*="Plugin"]');
-						els.forEach(function(el) {
-							el.style.setProperty('display', 'flex', 'important');
-							el.style.setProperty('visibility', 'visible', 'important');
-							el.style.setProperty('opacity', '1', 'important');
-							el.style.setProperty('pointer-events', 'auto', 'important');
+	// Intercept fetch to patch feature responses
+	var origFetch = window.fetch;
+	window.fetch = function(url, options) {
+		var urlStr = typeof url === 'string' ? url : (url && url.url ? url.url : '');
+		return origFetch.apply(this, arguments).then(function(resp) {
+			var ct = resp.headers.get('content-type') || '';
+			if (ct.indexOf('json') !== -1) {
+				var cloned = resp.clone();
+				cloned.json().then(function(data) {
+					var changed = false;
+					function deepPatch(obj) {
+						if (!obj || typeof obj !== 'object') return;
+						if (Array.isArray(obj)) { obj.forEach(deepPatch); return; }
+						Object.keys(obj).forEach(function(k) {
+							var lk = k.toLowerCase();
+							if (lk === 'plugins' || lk === 'pluginsenabled' || lk === 'pluginenabled') {
+								if (typeof obj[k] === 'boolean' || obj[k] === null || obj[k] === undefined) {
+									obj[k] = true; changed = true;
+								}
+							}
+							if (lk === 'features' || lk === 'entitlements' || lk === 'featureflags') {
+								if (obj[k] && typeof obj[k] === 'object') {
+									obj[k].plugins = true;
+									obj[k].pluginsEnabled = true;
+									obj[k].pluginEnabled = true;
+									changed = true;
+								}
+							}
+							if (typeof obj[k] === 'object') deepPatch(obj[k]);
 						});
 					}
-				}
-			});
-		});
-	});
-	observer.observe(document.documentElement, {childList: true, subtree: true});
-
-	// 5. Patch fetch/API responses that check plugin access
-	var originalFetch = window.fetch;
-	window.fetch = function() {
-		return originalFetch.apply(this, arguments).then(function(response) {
-			var cloned = response.clone();
-			var url = arguments[0] && typeof arguments[0] === 'string' ? arguments[0] : (arguments[0] && arguments[0].url || '');
-			if (url.toLowerCase().indexOf('feature') !== -1 || url.toLowerCase().indexOf('entitlement') !== -1) {
-				cloned.json().then(function(data) {
-					if (data && typeof data === 'object') {
-						data.plugins = true;
-						data.pluginsEnabled = true;
-					}
+					deepPatch(data);
 				}).catch(function(){});
 			}
-			return response;
-		}).catch(function() {
-			return Promise.reject(arguments[0]);
-		});
+			return resp;
+		}).catch(function(e) { return Promise.reject(e); });
 	};
 
-	console.log("[Nettopo] Plugin unlock injected successfully");
+	// Intercept WebSocket for real-time feature updates
+	var OrigWebSocket = window.WebSocket;
+	window.WebSocket = function(url, protocols) {
+		var ws = new OrigWebSocket(url, protocols);
+		var desc = Object.getOwnPropertyDescriptor(ws.constructor.prototype, 'onmessage');
+		if (!desc) {
+			desc = Object.getOwnPropertyDescriptor(ws, 'onmessage');
+		}
+		var realHandler = null;
+		try {
+			Object.defineProperty(ws, 'onmessage', {
+				get: function() { return realHandler; },
+				set: function(fn) {
+					realHandler = function(event) {
+						try {
+							if (typeof event.data === 'string') {
+								var data = JSON.parse(event.data);
+								if (data && typeof data === 'object') {
+									if (data.type === 'features' || data.type === 'entitlements') {
+										data.plugins = true; data.pluginsEnabled = true;
+									}
+									event = new MessageEvent('message', {data: JSON.stringify(data), origin: event.origin});
+								}
+							}
+						} catch(e) {}
+						return fn.call(this, event);
+					};
+				},
+				configurable: true
+			});
+		} catch(e) {}
+		return ws;
+	};
+
+	// Intercept Storage APIs
+	var origSetItem = Storage.prototype.setItem;
+	Storage.prototype.setItem = function(key, value) {
+		try {
+			var k = (key||'').toLowerCase();
+			if (k.indexOf('feature')!==-1 || k.indexOf('plugin')!==-1 || k.indexOf('entitle')!==-1) {
+				var o = JSON.parse(value);
+				if (o && typeof o === 'object') { o.plugins=true; o.pluginsEnabled=true; value=JSON.stringify(o); }
+			}
+		} catch(e) {}
+		return origSetItem.call(this, key, value);
+	};
+
+	// Intercept IPC calls (Electron)
+	try {
+		var apiKeys = Object.keys(window).filter(function(k) {
+			try { return window[k] && typeof window[k] === 'object' && typeof window[k].invoke === 'function'; } catch(e) {}
+		});
+		apiKeys.forEach(function(k) {
+			var api = window[k];
+			var origInvoke = api.invoke.bind(api);
+			api.invoke = function() {
+				return origInvoke.apply(this, arguments).then(function(r) {
+					if (r && typeof r === 'object') {
+						function deepPatch(obj) {
+							if (!obj || typeof obj !== 'object') return;
+							if (Array.isArray(obj)) { obj.forEach(deepPatch); return; }
+							Object.keys(obj).forEach(function(k) {
+								var lk = k.toLowerCase();
+								if (lk === 'plugins' || lk === 'pluginsenabled') { obj[k]=true; }
+								if (lk === 'features' || lk === 'entitlements') {
+									if (obj[k] && typeof obj[k] === 'object') { obj[k].plugins=true; obj[k].pluginsEnabled=true; }
+								}
+								if (typeof obj[k] === 'object') deepPatch(obj[k]);
+							});
+						}
+						deepPatch(r);
+					}
+					return r;
+				}).catch(function(e) { return Promise.reject(e); });
+			};
+		});
+	} catch(e) {}
+
+	// Set globals before any app code runs
+	Object.defineProperty(window, '__PLUGINS_ENABLED', {value:true, writable:false, configurable:false});
+	Object.defineProperty(window, 'hasPluginAccess', {value:function(){return true}, writable:false, configurable:false});
+
+	// Periodic CSS/direct patching for late-loading elements
+	function patchOnce() {
+		// CSS
+		if (!document.getElementById('codexpp-unlock-css')) {
+			var style = document.createElement('style');
+			style.id = 'codexpp-unlock-css';
+			style.textContent = '[class*="plugin"],[class*="Plugin"]{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}[class*="overlay"]:has([class*="plugin"]){display:none!important}[class*="plugin"] [disabled]{pointer-events:auto!important;opacity:1!important}';
+			document.head.appendChild(style);
+		}
+		// Button/click enabler
+		document.querySelectorAll('[class*="plugin"] [disabled],[class*="Plugin"] [disabled]').forEach(function(el){
+			el.removeAttribute('disabled');
+		});
+		document.querySelectorAll('[aria-disabled="true"]').forEach(function(el){
+			if (el.className && typeof el.className === 'string' && el.className.toLowerCase().indexOf('plugin') !== -1) {
+				el.setAttribute('aria-disabled','false');
+			}
+		});
+	}
+	document.addEventListener('DOMContentLoaded', function(){ patchOnce(); setTimeout(patchOnce, 1000); setTimeout(patchOnce, 5000); });
+	if (document.readyState !== 'loading') { patchOnce(); setTimeout(patchOnce, 1000); setTimeout(patchOnce, 5000); }
+
+	console.log('[Codex++] Plugin unlock injected via addScriptToEvaluateOnNewDocument');
 })();
 `
 
@@ -132,7 +190,6 @@ func findCodexPath() string {
 		}
 		return ""
 	}
-
 	if runtime.GOOS == "windows" {
 		paths := []string{
 			os.Getenv("LOCALAPPDATA") + "\\Programs\\Codex\\Codex.exe",
@@ -146,7 +203,6 @@ func findCodexPath() string {
 		}
 		return ""
 	}
-
 	return ""
 }
 
@@ -157,8 +213,6 @@ type cdpTarget struct {
 	Type                 string `json:"type"`
 }
 
-// getCodexTargets fetches all CDP targets and returns page-type targets,
-// preferring the Codex main window.
 func getCodexTargets() []cdpTarget {
 	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/json/list", codexDebugPort))
 	if err != nil {
@@ -171,106 +225,124 @@ func getCodexTargets() []cdpTarget {
 		return nil
 	}
 
-	// Filter to page targets (skip service workers, extensions, etc.)
 	var pages []cdpTarget
 	for _, t := range all {
 		if t.WebSocketDebuggerURL == "" {
 			continue
 		}
-		// Accept page type or any target that isn't clearly background
 		if t.Type == "page" || t.Type == "" {
 			pages = append(pages, t)
 		}
 	}
 
-	// Sort: prefer targets whose title contains "Codex" or that have a file:// URL
 	var codexPages, otherPages []cdpTarget
 	for _, p := range pages {
-		if strings.Contains(strings.ToLower(p.Title), "codex") ||
-			strings.HasPrefix(p.URL, "file://") {
+		if strings.Contains(strings.ToLower(p.Title), "codex") || strings.HasPrefix(p.URL, "file://") {
 			codexPages = append(codexPages, p)
 		} else {
 			otherPages = append(otherPages, p)
 		}
 	}
-
-	result := append(codexPages, otherPages...)
-	return result
+	return append(codexPages, otherPages...)
 }
 
-func injectViaWebSocket(wsURL string) error {
-	dialer := websocket.Dialer{
-		HandshakeTimeout: 5 * time.Second,
-	}
+// injectUnlockScript connects via CDP WebSocket and uses
+// Page.addScriptToEvaluateOnNewDocument to register the injection
+// BEFORE any page JS runs. Then navigates to trigger execution.
+func injectUnlockScript(logFn func(level, source, msg, requestID string), wsURL string) error {
+	dialer := websocket.Dialer{HandshakeTimeout: 5 * time.Second}
 	conn, _, err := dialer.Dial(wsURL, nil)
 	if err != nil {
 		return fmt.Errorf("WebSocket 连接失败: %w", err)
 	}
 	defer conn.Close()
 
+	// Enable Page domain
+	conn.WriteJSON(map[string]interface{}{"id": 1, "method": "Page.enable"})
+	conn.SetReadDeadline(time.Now().Add(3 * time.Second))
+	var res map[string]interface{}
+	for i := 0; i < 3; i++ {
+		if err := conn.ReadJSON(&res); err != nil {
+			break
+		}
+		if _, ok := res["result"]; ok {
+			break
+		}
+	}
+	logFn("info", "plugin", "CDP Page.enable 完成", "")
+
+	// Register script to evaluate on new document BEFORE any page JS
 	msg := map[string]interface{}{
-		"id":     1,
+		"id":     2,
+		"method": "Page.addScriptToEvaluateOnNewDocument",
+		"params": map[string]interface{}{
+			"source": unlockScript,
+		},
+	}
+	if err := conn.WriteJSON(msg); err != nil {
+		return fmt.Errorf("addScriptToEvaluateOnNewDocument 失败: %w", err)
+	}
+
+	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	if err := conn.ReadJSON(&res); err != nil {
+		return fmt.Errorf("读取结果失败: %w", err)
+	}
+	if errInfo, ok := res["error"]; ok {
+		return fmt.Errorf("addScriptToEvaluateOnNewDocument 异常: %v", errInfo)
+	}
+	scriptID, _ := res["result"].(map[string]interface{})["identifier"].(string)
+	logFn("info", "plugin", fmt.Sprintf("注入脚本已注册 (scriptID=%s)，将在页面加载前执行", scriptID), "")
+
+	// Also evaluate immediately in current page context
+	conn.WriteJSON(map[string]interface{}{
+		"id":     3,
 		"method": "Runtime.evaluate",
 		"params": map[string]interface{}{
 			"expression":    unlockScript,
 			"returnByValue": true,
 		},
-	}
-
-	if err := conn.WriteJSON(msg); err != nil {
-		return fmt.Errorf("发送注入命令失败: %w", err)
-	}
-
+	})
 	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
-	var result map[string]interface{}
-	if err := conn.ReadJSON(&result); err != nil {
-		return fmt.Errorf("读取注入结果失败: %w", err)
-	}
-
-	if errInfo, ok := result["error"]; ok {
-		return fmt.Errorf("注入执行异常: %v", errInfo)
-	}
+	conn.ReadJSON(&res)
 
 	return nil
 }
 
 // TryPluginUnlock attempts to inject the plugin unlock script into Codex.
-// If Codex is not running with a debug port, it tries to launch it.
 func TryPluginUnlock(logFn func(level, source, msg, requestID string)) error {
 	// Step 1: try existing Codex with debug port
 	targets := getCodexTargets()
 	if len(targets) > 0 {
-		logFn("info", "plugin", fmt.Sprintf("检测到 Codex 调试端口（%d 个页面），注入解锁脚本...", len(targets)), "")
+		logFn("info", "plugin", fmt.Sprintf("检测到 Codex 调试端口（%d 个页面）", len(targets)), "")
 
 		var lastErr error
 		successCount := 0
 		for _, t := range targets {
 			logFn("info", "plugin", fmt.Sprintf("注入目标: %s (%s)", t.Title, t.URL), "")
-			if err := injectViaWebSocket(t.WebSocketDebuggerURL); err != nil {
+			if err := injectUnlockScript(logFn, t.WebSocketDebuggerURL); err != nil {
 				lastErr = err
-				logFn("warn", "plugin", fmt.Sprintf("目标 %s 注入失败: %v", t.Title, err), "")
+				logFn("warn", "plugin", fmt.Sprintf("目标 %s: %v", t.Title, err), "")
 			} else {
 				successCount++
 			}
 		}
-
 		if successCount > 0 {
-			logFn("info", "plugin", fmt.Sprintf("插件解锁脚本已注入 %d 个页面", successCount), "")
+			logFn("info", "plugin", fmt.Sprintf("插件解锁已注入 %d 个页面（addScriptToEvaluateOnNewDocument）", successCount), "")
 			return nil
 		}
 		if lastErr != nil {
-			return fmt.Errorf("所有目标注入失败，最后错误: %w", lastErr)
+			return fmt.Errorf("注入失败: %w", lastErr)
 		}
-		return fmt.Errorf("未找到可注入的 Codex 页面")
+		return fmt.Errorf("未找到 Codex 页面")
 	}
 
-	// Step 2: try to launch Codex with debug flag
+	// Step 2: launch Codex with debug flags
 	codexPath := findCodexPath()
 	if codexPath == "" {
-		return fmt.Errorf("未找到 Codex 安装路径，请确认已安装 Codex Desktop")
+		return fmt.Errorf("未找到 Codex 安装路径")
 	}
 
-	logFn("info", "plugin", fmt.Sprintf("正在启动 Codex（路径: %s）...", codexPath), "")
+	logFn("info", "plugin", fmt.Sprintf("启动 Codex: %s", codexPath), "")
 
 	if runtime.GOOS == "windows" {
 		exec.Command("taskkill", "/F", "/IM", "Codex.exe").Run()
@@ -279,36 +351,37 @@ func TryPluginUnlock(logFn func(level, source, msg, requestID string)) error {
 	}
 	time.Sleep(800 * time.Millisecond)
 
-	cmd := exec.Command(codexPath, fmt.Sprintf("--remote-debugging-port=%d", codexDebugPort))
+	cmd := exec.Command(codexPath,
+		fmt.Sprintf("--remote-debugging-port=%d", codexDebugPort),
+		fmt.Sprintf("--remote-allow-origins=http://127.0.0.1:%d", codexDebugPort),
+	)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
 
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("启动 Codex 失败: %w", err)
+		return fmt.Errorf("启动失败: %w", err)
 	}
 
-	// Step 3: wait for Codex to start and expose debug port
-	logFn("info", "plugin", "等待 Codex 启动并连接调试端口...", "")
+	// Step 3: wait and inject
+	logFn("info", "plugin", "等待 Codex 调试端口...", "")
 	for i := 0; i < 30; i++ {
 		time.Sleep(1 * time.Second)
 		targets = getCodexTargets()
 		if len(targets) > 0 {
-			logFn("info", "plugin", fmt.Sprintf("已连接 Codex（%d 个页面），注入解锁脚本...", len(targets)), "")
 			successCount := 0
 			for _, t := range targets {
-				if err := injectViaWebSocket(t.WebSocketDebuggerURL); err != nil {
-					logFn("warn", "plugin", fmt.Sprintf("目标 %s 注入失败: %v", t.Title, err), "")
+				if err := injectUnlockScript(logFn, t.WebSocketDebuggerURL); err != nil {
+					logFn("warn", "plugin", fmt.Sprintf("%s: %v", t.Title, err), "")
 				} else {
 					successCount++
 				}
 			}
 			if successCount > 0 {
-				logFn("info", "plugin", fmt.Sprintf("插件解锁脚本已注入 %d 个页面", successCount), "")
+				logFn("info", "plugin", fmt.Sprintf("插件解锁已注入 %d 个页面", successCount), "")
 				return nil
 			}
 		}
 	}
-
-	return fmt.Errorf("等待 Codex 启动超时，请手动启动 Codex 并添加 --remote-debugging-port=%d 参数", codexDebugPort)
+	return fmt.Errorf("Codex 启动超时")
 }
