@@ -139,6 +139,7 @@ async function saveSandboxConfig() {
       sandboxMode: sandboxMode.value,
       approvalPolicy: approvalPolicy.value,
     })
+    message.info(t('guide.sandbox.configHint'))
   } catch (err) {
     message.error(String(err))
   } finally {

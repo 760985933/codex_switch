@@ -375,7 +375,7 @@ func mergeCodexConfigToml(existing []byte, baseURL string, defaultModel string) 
 
 	modelProviders := ensureTomlMap(doc, "model_providers")
 	provider := ensureTomlMap(modelProviders, codexProviderID)
-	provider["name"] = "Local Proxy (DeepSeek)"
+	provider["name"] = "Local"
 	provider["base_url"] = baseURL
 	provider["wire_api"] = "responses"
 	delete(provider, "env_key")

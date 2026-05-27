@@ -207,6 +207,7 @@ export const messages = {
           onRequest: '按需询问',
           never: '从不',
         },
+        configHint: '配置已更新，请重新写入 config.toml 并重启 Codex 以生效',
       },
       step: {
         one: {
@@ -416,6 +417,7 @@ export const messages = {
           onRequest: 'On Request',
           never: 'Never',
         },
+        configHint: 'Config updated. Please re-write config.toml and restart Codex.',
       },
       step: {
         one: {
@@ -612,6 +614,7 @@ export const messages = {
           onRequest: 'オンデマンド',
           never: 'しない',
         },
+        configHint: '設定が更新されました。config.toml を再書き込みして Codex を再起動してください。',
       },
       step: {
         one: {
@@ -795,6 +798,7 @@ export const messages = {
           onRequest: '요청 시',
           never: '하지 않음',
         },
+        configHint: '설정이 업데이트되었습니다. config.toml을 다시 쓰고 Codex를 다시 시작하세요.',
       },
       step: {
         one: {
@@ -978,6 +982,7 @@ export const messages = {
           onRequest: 'Sur demande',
           never: 'Jamais',
         },
+        configHint: 'Configuration mise à jour. Veuillez réécrire config.toml et redémarrer Codex.',
       },
       step: {
         one: {
@@ -1161,6 +1166,7 @@ export const messages = {
           onRequest: 'Auf Anfrage',
           never: 'Nie',
         },
+        configHint: 'Konfiguration aktualisiert. Bitte config.toml neu schreiben und Codex neu starten.',
       },
       step: {
         one: { title: 'Proxy starten', notRunning: 'Gestoppt (links "Starten" klicken)', hint: 'Nach dem Start wird lokal /v1 für Codex bereitgestellt.' },
@@ -1340,6 +1346,7 @@ export const messages = {
           onRequest: 'A pedido',
           never: 'Nunca',
         },
+        configHint: 'Configuración actualizada. Vuelva a escribir config.toml y reinicie Codex.',
       },
       step: {
         one: { title: 'Inicia el proxy', notRunning: 'Detenido (pulsa "Iniciar" a la izquierda)', hint: 'Tras iniciar, expone /v1 local para Codex.' },
