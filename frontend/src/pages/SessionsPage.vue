@@ -502,12 +502,14 @@ onMounted(() => {
               :data-role="msg.role"
             >
               <div class="message-role">
-                <span class="message-role-label">{{
-                  msg.role === 'user' ? t('sessions.detail.roleUser') : t('sessions.detail.roleAssistant')
+                <span class="message-role-label" :class="{ 'role-tool': msg.role === 'tool' }">{{
+                  msg.role === 'user' ? t('sessions.detail.roleUser') :
+                  msg.role === 'tool' ? t('sessions.detail.roleTool') :
+                  t('sessions.detail.roleAssistant')
                 }}</span>
                 <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
               </div>
-              <div class="message-content" v-html="formatMessageContent(msg.content)"></div>
+              <div class="message-content" :class="{ 'content-tool': msg.role === 'tool' }" v-html="formatMessageContent(msg.content)"></div>
             </div>
             <div v-if="selectedSession.messages && selectedSession.messages.length === 0" class="no-messages">
               <n-text depth="3">{{ t('sessions.detail.noContent') }}</n-text>
@@ -1086,6 +1088,15 @@ onMounted(() => {
 .message-row[data-role='assistant'] {
   background: rgba(22, 119, 255, 0.04);
   border-color: rgba(22, 119, 255, 0.12);
+}
+
+.message-row[data-role='tool'] {
+  background: rgba(0, 200, 83, 0.03);
+  border-color: rgba(0, 200, 83, 0.1);
+}
+
+.message-role .role-tool {
+  color: #00a854;
 }
 
 .message-role {

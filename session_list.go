@@ -69,26 +69,55 @@ func parseSessionFile(path string) (*CodexSession, []SessionMessage, error) {
 			if err := json.Unmarshal(cl.Payload, &rp); err != nil {
 				continue
 			}
-			if rp.Type != "message" {
-				continue
-			}
-			if rp.Role != "user" && rp.Role != "assistant" {
-				continue
-			}
-			text := extractPartsText(rp.Content)
-			if text == "" {
-				continue
-			}
-			if strings.Contains(text, "<environment_context>") {
-				continue
-			}
-			if text == lastContent && rp.Role == lastRole {
-				continue
-			}
-			messages = append(messages, SessionMessage{Role: rp.Role, Content: text, Timestamp: cl.Timestamp})
-			lastRole, lastContent = rp.Role, text
-			if rp.Role == "user" && firstUserText == "" {
-				firstUserText = text
+			switch rp.Type {
+			case "message":
+				if rp.Role != "user" && rp.Role != "assistant" {
+					continue
+				}
+				text := extractPartsText(rp.Content)
+				if text == "" {
+					continue
+				}
+				if strings.Contains(text, "<environment_context>") {
+					continue
+				}
+				if text == lastContent && rp.Role == lastRole {
+					continue
+				}
+				messages = append(messages, SessionMessage{Role: rp.Role, Content: text, Timestamp: cl.Timestamp})
+				lastRole, lastContent = rp.Role, text
+				if rp.Role == "user" && firstUserText == "" {
+					firstUserText = text
+				}
+
+			case "function_call":
+				var fc functionCallPayload
+				if err := json.Unmarshal(cl.Payload, &fc); err != nil {
+					continue
+				}
+				content := formatFunctionCall(fc)
+				if content == "" {
+					continue
+				}
+				if content == lastContent && "assistant" == lastRole {
+					continue
+				}
+				messages = append(messages, SessionMessage{Role: "assistant", Content: content, Timestamp: cl.Timestamp})
+				lastRole, lastContent = "assistant", content
+
+			case "function_call_output":
+				var fo functionCallOutputPayload
+				if err := json.Unmarshal(cl.Payload, &fo); err != nil {
+					continue
+				}
+				if fo.Output == "" {
+					continue
+				}
+				if fo.Output == lastContent && ("tool" == lastRole || "assistant" == lastRole) {
+					continue
+				}
+				messages = append(messages, SessionMessage{Role: "tool", Content: fo.Output, Timestamp: cl.Timestamp})
+				lastRole, lastContent = "tool", fo.Output
 			}
 
 		case "event_msg":
@@ -132,6 +161,11 @@ func parseSessionFile(path string) (*CodexSession, []SessionMessage, error) {
 	if firstUserText != "" {
 		title = firstUserText
 	}
+	// 截断过长的标题，优先按 rune 截断以支持中文
+	runes := []rune(title)
+	if len(runes) > 60 {
+		title = string(runes[:60]) + "…"
+	}
 
 	session := &CodexSession{
 		ID:            payload.ID,
@@ -173,6 +207,28 @@ func extractPartsText(raw json.RawMessage) string {
 		}
 	}
 	return b.String()
+}
+
+// formatFunctionCall 格式化 function_call 为可读的 assistant 消息内容
+func formatFunctionCall(fc functionCallPayload) string {
+	if fc.Name == "" {
+		return ""
+	}
+
+	// 尝试提取 exec_command 的命令内容
+	if fc.Name == "exec_command" {
+		var args map[string]any
+		if err := json.Unmarshal([]byte(fc.Arguments), &args); err == nil {
+			if cmd, ok := args["cmd"].(string); ok && cmd != "" {
+				if justification, ok := args["justification"].(string); ok && justification != "" {
+					return "[" + fc.Name + "] " + justification + "\n" + cmd
+				}
+				return "[" + fc.Name + "] " + cmd
+			}
+		}
+	}
+
+	return "[" + fc.Name + "] " + fc.Arguments
 }
 
 // ---------- model map from SQLite ----------

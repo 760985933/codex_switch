@@ -72,6 +72,21 @@ type eventPayload struct {
 	Message string `json:"message,omitempty"`
 }
 
+// functionCallPayload 是 response_item type="function_call" 行的 payload 结构
+type functionCallPayload struct {
+	Type      string `json:"type"`
+	Name      string `json:"name"`
+	Arguments string `json:"arguments"`
+	CallID    string `json:"call_id"`
+}
+
+// functionCallOutputPayload 是 response_item type="function_call_output" 行的 payload 结构
+type functionCallOutputPayload struct {
+	Type   string `json:"type"`
+	CallID string `json:"call_id"`
+	Output string `json:"output"`
+}
+
 // ---------- sync / status types ----------
 
 // ProviderCounts maps provider ID to session count
