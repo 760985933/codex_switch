@@ -3,7 +3,6 @@ import { onMounted, reactive } from 'vue'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '../stores/app'
-import { getProviderPreset } from '../utils/providers'
 import { GetUsageBalance } from '../../wailsjs/go/main/App'
 import type { Profile, UsageBalance } from '../types'
 
@@ -19,7 +18,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   edit: [id: string]
   delete: [id: string]
-  monitor: [id: string]
   stop: []
   pluginLogin: [id: string]
   noaccountLogin: [id: string]
@@ -63,10 +61,6 @@ function handleDelete(id: string) {
   emit('delete', id)
 }
 
-function handleMonitor(id: string) {
-  emit('monitor', id)
-}
-
 function isLoginDisabled(id: string, action: 'plugin' | 'noaccount') {
   if (props.loginProfileId === null) return false
   if (props.loginProfileId !== id) return true
@@ -87,7 +81,6 @@ function isLoginDisabled(id: string, action: 'plugin' | 'noaccount') {
           <div class="profile-item-name-row">
             <span v-if="profile.name" class="profile-item-label">{{ t('config.fields.profileName') }}:</span>
             <span class="profile-item-name">{{ profile.name }}</span>
-            <span class="profile-item-provider">{{ getProviderPreset(profile.provider)?.label ?? profile.provider }}</span>
           </div>
           <span v-if="profile.baseURL" class="profile-item-meta">
             <span class="profile-item-label">API:</span> {{ profile.baseURL }}
@@ -100,11 +93,13 @@ function isLoginDisabled(id: string, action: 'plugin' | 'noaccount') {
           <template v-if="proxyRunning && profile.id === currentProfileId">
             <n-button
               size="small"
-              tertiary
               type="error"
               :loading="loading"
               @click="emit('stop')"
             >
+              <template #icon>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+              </template>
               {{ t('config.actions.stop') }}
             </n-button>
           </template>
@@ -134,25 +129,22 @@ function isLoginDisabled(id: string, action: 'plugin' | 'noaccount') {
           <n-button size="small" tertiary @click="handleEdit(profile.id)">
             {{ t('guide.step.one.edit') }}
           </n-button>
-          <n-button size="small" tertiary @click="handleMonitor(profile.id)">
-            {{ t('guide.step.one.monitor') }}
-          </n-button>
           <n-button size="small" tertiary type="error" @click="handleDelete(profile.id)">
             {{ t('common.delete') }}
           </n-button>
         </div>
-        <div v-if="usageData[profile.id]" class="profile-item-usage" @click.stop>
-          <template v-if="usageData[profile.id]?.error">
-            <span class="usage-error">{{ usageData[profile.id]?.error }}</span>
-          </template>
-          <template v-else>
-            <span>{{ t('guide.usage.available') }}: {{ usageData[profile.id]?.availableBalance }} {{ usageData[profile.id]?.currency }}</span>
-            <span class="usage-sep">/</span>
-            <span>{{ t('guide.usage.total') }}: {{ usageData[profile.id]?.totalBalance }} {{ usageData[profile.id]?.currency }}</span>
-            <span v-if="usageData[profile.id]?.isDepleted" class="usage-depleted">{{ t('guide.usage.depleted') }}</span>
-          </template>
-          <n-button v-if="usageLoadingMap[profile.id]" text size="tiny" loading />
-        </div>
+      </div>
+      <div v-if="usageData[profile.id]" class="profile-item-usage" @click.stop>
+        <template v-if="usageData[profile.id]?.error">
+          <span class="usage-error">{{ usageData[profile.id]?.error }}</span>
+        </template>
+        <template v-else>
+          <span>{{ t('guide.usage.available') }}: {{ usageData[profile.id]?.availableBalance }} {{ usageData[profile.id]?.currency }}</span>
+          <span class="usage-sep">/</span>
+          <span>{{ t('guide.usage.total') }}: {{ usageData[profile.id]?.totalBalance }} {{ usageData[profile.id]?.currency }}</span>
+          <span v-if="usageData[profile.id]?.isDepleted" class="usage-depleted">{{ t('guide.usage.depleted') }}</span>
+        </template>
+        <n-button v-if="usageLoadingMap[profile.id]" text size="tiny" loading />
       </div>
     </div>
   </div>
