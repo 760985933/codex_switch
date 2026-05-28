@@ -23,23 +23,19 @@ const { t } = useI18n()
 
 // Local editing state — avoids focus loss from computed rebuilding on every keystroke
 const localItems = ref<PairItem[]>([])
+// Tracks the last JSON we emitted to avoid the emit → parent → watch → reset loop
+const lastEmitted = ref('')
 
 watch(
   () => props.modelValue,
   (val) => {
-    const fromProp = Object.entries(val ?? {}).map(([k, v]) => ({ key: k, value: v }))
-    // Only reset when external data actually differs (not when we emitted it)
-    if (!entriesEqual(localItems.value, fromProp)) {
-      localItems.value = fromProp
+    const incoming = JSON.stringify(val ?? {})
+    if (incoming !== lastEmitted.value) {
+      localItems.value = Object.entries(val ?? {}).map(([k, v]) => ({ key: k, value: v }))
     }
   },
   { deep: true, immediate: true },
 )
-
-function entriesEqual(a: PairItem[], b: PairItem[]) {
-  if (a.length !== b.length) return false
-  return a.every((item, i) => item.key === b[i].key && item.value === b[i].value)
-}
 
 // Append an empty row for the "add new" affordance
 const displayItems = computed<PairItem[]>(() => [...localItems.value, { key: '', value: '' }])
@@ -51,6 +47,7 @@ function syncToParent() {
     const v = item.value.trim()
     if (k && v) normalized[k] = v
   }
+  lastEmitted.value = JSON.stringify(normalized)
   emit('update:modelValue', normalized)
 }
 
