@@ -234,6 +234,10 @@ export const messages = {
           valuePlaceholder: '如 codex-desktop',
         },
       },
+      toast: {
+        savedAndRestarted: '已保存并重启代理: {name}',
+        savedRestartFailed: '已保存，但重启代理失败: {error}',
+      },
     },
     console: {
       title: '控制台',
@@ -309,6 +313,7 @@ export const messages = {
       namePlaceholder: '输入配置名称（如 OpenAI、Azure）',
       providerPlaceholder: '选择提供商',
       switched: '已切换到: {name}',
+      switchedWithRestart: '已切换并重启代理: {name}',
       added: '已添加配置: {name}',
       deleted: '已删除配置: {name}',
       current: '当前',
@@ -503,6 +508,10 @@ export const messages = {
           valuePlaceholder: 'e.g. codex-desktop',
         },
       },
+      toast: {
+        savedAndRestarted: 'Saved and restarted proxy: {name}',
+        savedRestartFailed: 'Saved, but proxy restart failed: {error}',
+      },
     },
     console: {
       title: 'Console',
@@ -578,6 +587,7 @@ export const messages = {
       namePlaceholder: 'Enter profile name (e.g. OpenAI, Azure)',
       providerPlaceholder: 'Select provider',
       switched: 'Switched to: {name}',
+      switchedWithRestart: 'Switched and restarted proxy: {name}',
       added: 'Added profile: {name}',
       deleted: 'Deleted profile: {name}',
       current: 'Current',

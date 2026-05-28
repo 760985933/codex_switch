@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useMessage } from 'naive-ui'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '../stores/app'
@@ -16,6 +17,7 @@ const emit = defineEmits<{
 const formProfile = ref<Profile>({ ...store.currentProfile ?? {} as Profile })
 const showAdvanced = ref(true)
 const { t } = useI18n()
+const message = useMessage()
 
 const providerOptions = PROVIDER_PRESETS.map((p) => ({
   label: p.label,
@@ -45,7 +47,6 @@ function syncForm() {
 }
 syncForm()
 
-const isRunning = computed(() => store.isRunning)
 const maskedApiKey = computed(() => maskSecret(formProfile.value.apiKey))
 const apiKeyHint = computed(() =>
   t('config.fields.apiKeyHint', {
@@ -69,6 +70,14 @@ async function submitSave() {
     profiles,
   }
   await store.saveConfig(updated)
+  if (store.isRunning) {
+    try {
+      await store.restartProxy()
+      message.success(t('config.toast.savedAndRestarted', { name: formProfile.value.name }))
+    } catch (e) {
+      message.warning(t('config.toast.savedRestartFailed', { error: String(e) }))
+    }
+  }
   emit('save')
 }
 </script>
@@ -95,7 +104,6 @@ async function submitSave() {
             <n-select
               v-model:value="formProfile.provider"
               :options="providerOptions"
-              :disabled="isRunning"
               size="small"
               @update:value="onProviderChange"
             />

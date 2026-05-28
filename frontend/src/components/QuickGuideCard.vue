@@ -11,9 +11,7 @@ import { PROVIDER_PRESETS, getProviderPreset } from '../utils/providers'
 const emit = defineEmits<{
   copy: [value: string]
   health: []
-  start: []
   stop: []
-  restart: []
   refresh: []
 }>()
 
@@ -80,9 +78,15 @@ const addProfileProviderOptions = PROVIDER_PRESETS.map((p) => ({
 
 async function handleSwitchProfile(id: string) {
   if (id === store.config.currentProfileId) return
+  const wasRunning = store.isRunning
   try {
     await store.setCurrentProfile(id)
-    message.success(t('profile.switched', { name: store.currentProfile?.name ?? id }))
+    if (wasRunning) {
+      await store.restartProxy()
+      message.success(t('profile.switchedWithRestart', { name: store.currentProfile?.name ?? id }))
+    } else {
+      message.success(t('profile.switched', { name: store.currentProfile?.name ?? id }))
+    }
   } catch (error) {
     message.error(error instanceof Error ? error.message : String(error))
   }
@@ -90,6 +94,7 @@ async function handleSwitchProfile(id: string) {
 
 const showDeleteConfirm = ref(false)
 const deleting = ref(false)
+const activeLoginAction = ref<'plugin' | 'noaccount' | null>(null)
 
 async function handleDeleteProfile() {
   const profile = store.currentProfile
@@ -138,6 +143,7 @@ async function handleRestoreCodex() {
 }
 
 async function handlePluginUnlockLogin() {
+  activeLoginAction.value = 'plugin'
   try {
     if (!store.isRunning) {
       await store.startProxy()
@@ -147,10 +153,13 @@ async function handlePluginUnlockLogin() {
     message.success(t('app.toast.codexTomlWritten', { path: path || hintPath }))
   } catch (error) {
     message.error(error instanceof Error ? error.message : String(error))
+  } finally {
+    activeLoginAction.value = null
   }
 }
 
 async function handleNoAccountLogin() {
+  activeLoginAction.value = 'noaccount'
   try {
     if (!store.isRunning) {
       await store.startProxy()
@@ -160,6 +169,8 @@ async function handleNoAccountLogin() {
     message.success(t('app.toast.codexTomlWritten', { path: path || hintPath }))
   } catch (error) {
     message.error(error instanceof Error ? error.message : String(error))
+  } finally {
+    activeLoginAction.value = null
   }
 }
 
@@ -292,7 +303,6 @@ onBeforeUnmount(() => {
             <n-select
               v-model:value="currentProfileId"
               :options="profileOptions"
-              :disabled="store.isRunning"
               size="small"
               class="profile-select"
               @update:value="handleSwitchProfile"
@@ -313,43 +323,37 @@ onBeforeUnmount(() => {
 
           <!-- Proxy action buttons -->
           <div class="action-bar">
-            <n-button
-              size="small"
-              type="primary"
-              :disabled="!currentProfileId"
-              :loading="loading"
-              @click="handlePluginUnlockLogin"
-            >
-              {{ t('guide.actions.pluginUnlockLogin') }}
-            </n-button>
-            <n-button
-              size="small"
-              secondary
-              :disabled="!currentProfileId"
-              :loading="loading"
-              @click="handleNoAccountLogin"
-            >
-              {{ t('guide.actions.noAccountLogin') }}
-            </n-button>
-            <n-button
-              size="small"
-              tertiary
-              :disabled="!store.isRunning"
-              :loading="loading"
-              @click="emit('restart')"
-            >
-              {{ t('config.actions.restart') }}
-            </n-button>
-            <n-button
-              size="small"
-              tertiary
-              type="error"
-              :disabled="!store.isRunning"
-              :loading="loading"
-              @click="emit('stop')"
-            >
-              {{ t('config.actions.stop') }}
-            </n-button>
+            <template v-if="store.isRunning">
+              <n-button
+                size="small"
+                tertiary
+                type="error"
+                :loading="loading"
+                @click="emit('stop')"
+              >
+                {{ t('config.actions.stop') }}
+              </n-button>
+            </template>
+            <template v-else>
+              <n-button
+                size="small"
+                type="primary"
+                :disabled="!currentProfileId || activeLoginAction === 'noaccount'"
+                :loading="activeLoginAction === 'plugin'"
+                @click="handlePluginUnlockLogin"
+              >
+                {{ t('guide.actions.pluginUnlockLogin') }}
+              </n-button>
+              <n-button
+                size="small"
+                secondary
+                :disabled="!currentProfileId || activeLoginAction === 'plugin'"
+                :loading="activeLoginAction === 'noaccount'"
+                @click="handleNoAccountLogin"
+              >
+                {{ t('guide.actions.noAccountLogin') }}
+              </n-button>
+            </template>
           </div>
 
           <!-- Connection info -->

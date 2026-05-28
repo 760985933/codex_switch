@@ -53,27 +53,8 @@ async function wrapAction<T>(
   }
 }
 
-async function handleStart() {
-  await wrapAction(async () => {
-    return store.startProxy()
-  }, t('overview.toast.proxyStarted'), {
-    timeoutMs: 5000,
-    onTimeout: async () => {
-      try {
-        await store.stopProxy()
-      } finally {
-        await store.refreshStatus()
-      }
-    },
-  })
-}
-
 async function handleStop() {
   await wrapAction(async () => store.stopProxy(), t('overview.toast.proxyStopped'))
-}
-
-async function handleRestart() {
-  await wrapAction(async () => store.restartProxy(), t('overview.toast.proxyRestarted'))
 }
 
 async function handleHealth() {
@@ -121,9 +102,7 @@ onMounted(async () => {
           :loading="busy"
           @copy="copyText"
           @health="handleHealth"
-          @start="handleStart"
           @stop="handleStop"
-          @restart="handleRestart"
           @refresh="wrapAction(async () => { await store.refreshStatus(); await store.refreshLogs() })"
         />
       </div>
