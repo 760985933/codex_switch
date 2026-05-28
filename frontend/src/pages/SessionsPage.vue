@@ -5,14 +5,11 @@ import { useI18n } from 'vue-i18n'
 import type { main } from '../../wailsjs/go/models'
 import {
   ArchiveCodexSession,
-  CountLegacySessions,
   DeleteCodexSession,
   DeleteCodexSessionBackup,
   GetCodexSessionContent,
   ListCodexSessionBackups,
   ListCodexSessions,
-  ListCodexSessionProviders,
-  MigrateCodexProviders,
   MigrateSingleCodexSession,
   RestoreCodexSessions,
   RunSync,
@@ -25,8 +22,6 @@ const dialog = useDialog()
 
 const loading = ref(false)
 const sessions = ref<main.CodexSession[]>([])
-const legacyCount = ref(0)
-const migrating = ref(false)
 
 const selectedSession = ref<main.SessionDetail | null>(null)
 const selectedId = ref<string | null>(null)
@@ -36,10 +31,6 @@ const backups = ref<string[]>([])
 const restoringBackup = ref(false)
 const deletingBackup = ref(false)
 const showBackupModal = ref(false)
-const providers = ref<string[]>([])
-const fromProvider = ref('')
-const toProvider = ref('')
-
 // Diagnostic status
 const showStatusModal = ref(false)
 const syncStatus = ref<main.SyncStatusResult | null>(null)
@@ -99,7 +90,6 @@ async function loadSessions() {
   loading.value = true
   try {
     sessions.value = (await ListCodexSessions()) ?? []
-    legacyCount.value = await CountLegacySessions()
   } catch (error) {
     message.error(error instanceof Error ? error.message : String(error))
   } finally {
@@ -192,43 +182,6 @@ async function loadSyncStatus() {
     message.error(error instanceof Error ? error.message : String(error))
   } finally {
     statusLoading.value = false
-  }
-}
-
-async function confirmMigrate() {
-  providers.value = (await ListCodexSessionProviders()) ?? []
-  if (providers.value.length < 2) {
-    message.info('没有发现需要迁移的会话（仅有一个 provider）')
-    return
-  }
-  fromProvider.value = providers.value.find(p => p !== 'openai') || providers.value[0]
-  toProvider.value = 'openai'
-
-  dialog.warning({
-    title: t('sessions.migration.confirmTitle'),
-    content: `将会话从 "${fromProvider.value}" 迁移到 "${toProvider.value}"`,
-    positiveText: t('sessions.migration.button'),
-    negativeText: '取消',
-    onPositiveClick: async () => {
-      await doMigrate()
-    },
-  })
-}
-
-async function doMigrate() {
-  migrating.value = true
-  try {
-    const result = await MigrateCodexProviders(fromProvider.value, toProvider.value)
-    if (result.error) {
-      message.error(result.error)
-      return
-    }
-    message.success(t('sessions.migration.success', { count: result.migratedCount, path: result.backupPath }))
-    await loadSessions()
-  } catch (error) {
-    message.error(error instanceof Error ? error.message : String(error))
-  } finally {
-    migrating.value = false
   }
 }
 
@@ -367,17 +320,6 @@ onMounted(() => {
 
 <template>
   <div class="sessions-page">
-    <!-- Migration banner -->
-    <div v-if="legacyCount > 0" class="migration-banner">
-      <div class="migration-content">
-        <span class="migration-icon">⚠️</span>
-        <span>{{ t('sessions.migration.banner', { count: legacyCount }) }}</span>
-      </div>
-      <n-button type="warning" :loading="migrating" @click="confirmMigrate">
-        {{ t('sessions.migration.button') }}
-      </n-button>
-    </div>
-
     <!-- Toolbar: search (toggled), backup -->
     <div class="toolbar">
       <n-input
@@ -792,29 +734,6 @@ onMounted(() => {
 @keyframes head-icon-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
-}
-
-.migration-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 18px;
-  border-radius: 18px;
-  border: 1px solid rgba(216, 150, 20, 0.3);
-  background: rgba(216, 150, 20, 0.06);
-}
-
-.migration-content {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--text);
-}
-
-.migration-icon {
-  font-size: 18px;
 }
 
 /* Toolbar */
@@ -1271,11 +1190,6 @@ onMounted(() => {
 
 @media (max-width: 920px) {
   .page-head {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .migration-banner {
     flex-direction: column;
     align-items: stretch;
   }
