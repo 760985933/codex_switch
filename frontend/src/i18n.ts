@@ -39,7 +39,7 @@ export function detectInitialLocale(): SupportedLocale {
 export const messages = {
   'zh-CN': {
     app: {
-      nav: { overview: '主工作台', logs: '最近日志', sessions: '会话管理', contact: '联系与赞助' },
+      nav: { overview: '主工作台', monitoring: '监控统计', logs: '最近日志', sessions: '会话管理', contact: '联系与赞助' },
       status: { running: '运行中', starting: '启动中', error: '异常', stopped: '未启动' },
       actions: { preferences: '偏好设置' },
       toast: {
@@ -89,6 +89,26 @@ export const messages = {
         bad: '健康检查存在异常，请查看控制台详情',
       },
     },
+  monitoring: {
+    title: '监控统计',
+    today: '今日',
+    week: '本周',
+    month: '本月',
+    year: '本年',
+    requests: '请求次数',
+    tokens: 'Token 消耗',
+    promptTokens: '提示 Tokens',
+    completionTokens: '生成 Tokens',
+    totalTokens: '总 Tokens',
+    successRate: '成功率',
+    avgDuration: '平均耗时',
+    noData: '暂无统计数据',
+    requestCount: '请求数',
+    successCount: '成功',
+    failureCount: '失败',
+    ms: '毫秒',
+  },
+
     logs: {
       title: '最近日志',
       desc: '用于快速定位”启动/请求/健康检查”等关键事件。',
@@ -318,7 +338,7 @@ export const messages = {
   },
   'en-US': {
     app: {
-      nav: { overview: 'Dashboard', logs: 'Recent Logs', sessions: 'Sessions', contact: 'Contact & Sponsor' },
+      nav: { overview: 'Dashboard', monitoring: 'Monitoring', logs: 'Recent Logs', sessions: 'Sessions', contact: 'Contact & Sponsor' },
       status: { running: 'Running', starting: 'Starting', error: 'Error', stopped: 'Stopped' },
       actions: { preferences: 'Preferences' },
       toast: {
@@ -366,6 +386,26 @@ export const messages = {
         bad: 'Health check reported issues. See console for details.',
       },
     },
+  monitoring: {
+    title: 'Monitoring',
+    today: 'Today',
+    week: 'This Week',
+    month: 'This Month',
+    year: 'This Year',
+    requests: 'Requests',
+    tokens: 'Token Usage',
+    promptTokens: 'Prompt Tokens',
+    completionTokens: 'Completion Tokens',
+    totalTokens: 'Total Tokens',
+    successRate: 'Success Rate',
+    avgDuration: 'Avg Duration',
+    noData: 'No statistics yet',
+    requestCount: 'Requests',
+    successCount: 'Success',
+    failureCount: 'Failed',
+    ms: 'ms',
+  },
+
     logs: {
       title: 'Recent Logs',
       desc: 'Quickly locate key events like start/requests/health checks.',
@@ -586,7 +626,7 @@ export const messages = {
   },
   'ja-JP': {
     app: {
-      nav: { overview: 'ダッシュボード', logs: '最近のログ', sessions: 'セッション', contact: '連絡とスポンサー' },
+      nav: { overview: 'ダッシュボード', monitoring: 'モニタリング', logs: '最近のログ', sessions: 'セッション', contact: '連絡とスポンサー' },
       status: { running: '稼働中', starting: '起動中', error: 'エラー', stopped: '停止中' },
       actions: { preferences: '設定' },
       toast: {
@@ -631,6 +671,26 @@ export const messages = {
       },
       health: { ok: 'ヘルスチェック成功', bad: 'ヘルスチェックに問題があります。詳細はコンソールを確認してください。' },
     },
+  monitoring: {
+    title: '\u30e2\u30cb\u30bf\u30ea\u30f3\u30b0',
+    today: '\u4eca\u65e5',
+    week: '\u4eca\u9031',
+    month: '\u4eca\u6708',
+    year: '\u4eca\u5e74',
+    requests: '\u30ea\u30af\u30a8\u30b9\u30c8\u6570',
+    tokens: '\u30c8\u30fc\u30af\u30f3\u4f7f\u7528\u91cf',
+    promptTokens: '\u30d7\u30ed\u30f3\u30d7\u30c8\u30c8\u30fc\u30af\u30f3',
+    completionTokens: '\u751f\u6210\u30c8\u30fc\u30af\u30f3',
+    totalTokens: '\u7dcf\u30c8\u30fc\u30af\u30f3',
+    successRate: '\u6210\u529f\u7387',
+    avgDuration: '\u5e73\u5747\u6642\u9593',
+    noData: '\u7d71\u8a08\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093',
+    requestCount: '\u30ea\u30af\u30a8\u30b9\u30c8\u6570',
+    successCount: '\u6210\u529f',
+    failureCount: '\u5931\u6557',
+    ms: '\u30df\u30ea\u79d2',
+  },
+
     logs: {
       title: '最近のログ',
       desc: '起動/リクエスト/ヘルスチェックなどの重要イベントを素早く確認できます。',
@@ -821,7 +881,7 @@ export const messages = {
   },
   'ko-KR': {
     app: {
-      nav: { overview: '대시보드', logs: '최근 로그', sessions: '세션', contact: '연락 및 후원' },
+      nav: { overview: '대시보드', monitoring: '모니터링', logs: '최근 로그', sessions: '세션', contact: '연락 및 후원' },
       status: { running: '실행 중', starting: '시작 중', error: '오류', stopped: '중지됨' },
       actions: { preferences: '설정' },
       toast: {
@@ -866,6 +926,26 @@ export const messages = {
       },
       health: { ok: '헬스 체크 통과', bad: '헬스 체크에 문제가 있습니다. 콘솔에서 확인하세요.' },
     },
+  monitoring: {
+    title: '\ubaac\ub9ac\ud130\ub9c1',
+    today: '\uc624\ub298',
+    week: '\uc774\ubc88 \uc8fc',
+    month: '\uc774\ubc88 \ub2ec',
+    year: '\uc62c\ud574',
+    requests: '\uc694\uccad \ud69f\uc218',
+    tokens: '\ud1a0\ud070 \uc0ac\uc6a9\ub7c9',
+    promptTokens: '\ud504\ub86c\ud504\ud2b8 \ud1a0\ud070',
+    completionTokens: '\uc0dd\uc131 \ud1a0\ud070',
+    totalTokens: '\ucd1d \ud1a0\ud070',
+    successRate: '\uc131\uacf5\ub960',
+    avgDuration: '\ud3c9\uade0 \uc2dc\uac04',
+    noData: '\ud1b5\uacc4 \ub370\uc774\ud130 \uc5c6\uc74c',
+    requestCount: '\uc694\uccad \uc218',
+    successCount: '\uc131\uacf5',
+    failureCount: '\uc2e4\ud328',
+    ms: '\ubc00\ub9ac\ucd08',
+  },
+
     logs: {
       title: '최근 로그',
       desc: '시작/요청/헬스 체크 등 핵심 이벤트를 빠르게 확인합니다.',
@@ -1056,7 +1136,7 @@ export const messages = {
   },
   'fr-FR': {
     app: {
-      nav: { overview: 'Tableau', logs: 'Journaux', sessions: 'Sessions', contact: 'Contact & Sponsor' },
+      nav: { overview: 'Tableau', monitoring: 'Surveillance', logs: 'Journaux', sessions: 'Sessions', contact: 'Contact & Sponsor' },
       status: { running: 'En cours', starting: 'Démarrage', error: 'Erreur', stopped: 'Arrêté' },
       actions: { preferences: 'Préférences' },
       toast: {
@@ -1101,6 +1181,26 @@ export const messages = {
       },
       health: { ok: 'Contrôle OK', bad: 'Problèmes détectés. Voir la console.' },
     },
+  monitoring: {
+    title: 'Surveillance',
+    today: "Aujourd'hui",
+    week: 'Cette semaine',
+    month: 'Ce mois',
+    year: "Cette ann\u00e9e",
+    requests: 'Requ\u00eates',
+    tokens: 'Consommation de tokens',
+    promptTokens: "Tokens d'invite",
+    completionTokens: 'Tokens de g\u00e9n\u00e9ration',
+    totalTokens: 'Tokens totaux',
+    successRate: 'Taux de succ\u00e8s',
+    avgDuration: 'Dur\u00e9e moyenne',
+    noData: 'Aucune statistique',
+    requestCount: 'Requ\u00eates',
+    successCount: 'Succ\u00e8s',
+    failureCount: '\u00c9chec',
+    ms: 'ms',
+  },
+
     logs: {
       title: 'Journaux récents',
       desc: 'Repérez rapidement les événements clés (démarrage/requêtes/santé).',
@@ -1291,7 +1391,7 @@ export const messages = {
   },
   'de-DE': {
     app: {
-      nav: { overview: 'Übersicht', logs: 'Logs', sessions: 'Sitzungen', contact: 'Kontakt & Sponsoring' },
+      nav: { overview: 'Übersicht', monitoring: 'Überwachung', logs: 'Logs', sessions: 'Sitzungen', contact: 'Kontakt & Sponsoring' },
       status: { running: 'Läuft', starting: 'Startet', error: 'Fehler', stopped: 'Gestoppt' },
       actions: { preferences: 'Einstellungen' },
       toast: {
@@ -1336,6 +1436,26 @@ export const messages = {
       },
       health: { ok: 'Health-Check ok', bad: 'Probleme erkannt. Details in der Konsole.' },
     },
+  monitoring: {
+    title: '\u00dcberwachung',
+    today: 'Heute',
+    week: 'Diese Woche',
+    month: 'Diesen Monat',
+    year: 'Dieses Jahr',
+    requests: 'Anfragen',
+    tokens: 'Token-Verbrauch',
+    promptTokens: 'Prompt-Tokens',
+    completionTokens: 'Generierungs-Tokens',
+    totalTokens: 'Gesamt-Tokens',
+    successRate: 'Erfolgsrate',
+    avgDuration: 'Durchschn. Dauer',
+    noData: 'Keine Statistiken',
+    requestCount: 'Anfragen',
+    successCount: 'Erfolg',
+    failureCount: 'Fehlschlag',
+    ms: 'ms',
+  },
+
     logs: {
       title: 'Aktuelle Logs',
       desc: 'Wichtige Ereignisse wie Start/Requests/Health-Checks schnell finden.',
@@ -1522,7 +1642,7 @@ export const messages = {
   },
   'es-AR': {
     app: {
-      nav: { overview: 'Panel', logs: 'Registros', sessions: 'Sesiones', contact: 'Contacto y Patrocinio' },
+      nav: { overview: 'Panel', monitoring: 'Monitoreo', logs: 'Registros', sessions: 'Sesiones', contact: 'Contacto y Patrocinio' },
       status: { running: 'En ejecución', starting: 'Iniciando', error: 'Error', stopped: 'Detenido' },
       actions: { preferences: 'Preferencias' },
       toast: {
@@ -1567,6 +1687,26 @@ export const messages = {
       },
       health: { ok: 'Salud OK', bad: 'Se detectaron problemas. Ver consola.' },
     },
+  monitoring: {
+    title: 'Monitoreo',
+    today: 'Hoy',
+    week: 'Esta semana',
+    month: 'Este mes',
+    year: 'Este a\u00f1o',
+    requests: 'Solicitudes',
+    tokens: 'Consumo de tokens',
+    promptTokens: 'Tokens de consulta',
+    completionTokens: 'Tokens de generaci\u00f3n',
+    totalTokens: 'Tokens totales',
+    successRate: 'Tasa de \u00e9xito',
+    avgDuration: 'Duraci\u00f3n promedio',
+    noData: 'Sin estad\u00edsticas',
+    requestCount: 'Solicitudes',
+    successCount: '\u00c9xito',
+    failureCount: 'Fallo',
+    ms: 'ms',
+  },
+
     logs: {
       title: 'Registros recientes',
       desc: 'Localiza rápidamente eventos clave como inicio/solicitudes/salud.',

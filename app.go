@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	goRuntime "runtime"
 	"strconv"
 	"strings"
@@ -28,9 +29,10 @@ const updateManifestURL = "https://nettopo.com/nettopo-switch-version.txt"
 const updateDownloadURLTemplate = ""
 
 type App struct {
-	ctx   context.Context
-	store *ConfigStore
-	proxy *ProxyRuntime
+	ctx        context.Context
+	store      *ConfigStore
+	proxy      *ProxyRuntime
+	usageStore *UsageStore
 
 	mu     sync.RWMutex
 	config AppConfig
@@ -48,6 +50,15 @@ func NewApp() *App {
 	app := &App{
 		store: store,
 	}
+
+	configDir := filepath.Dir(store.Path())
+	usageStore, err := NewUsageStore(configDir)
+	if err != nil {
+		fmt.Printf("初始化用量数据库失败: %v\n", err)
+	} else {
+		app.usageStore = usageStore
+	}
+
 	app.proxy = NewProxyRuntime(app)
 	return app
 }
@@ -537,6 +548,34 @@ func (a *App) GetUsageBalance() UsageBalance {
 	}
 	a.onBalanceUpdate(*result)
 	return *result
+}
+
+func (a *App) recordUsage(provider, profileName, model, endpoint string, promptTokens, completionTokens, totalTokens int64, success bool, statusCode int, durationMs int64) {
+	if a.usageStore == nil {
+		return
+	}
+	record := &UsageRecord{
+		ID:               fmt.Sprintf("%d", time.Now().UnixNano()),
+		Provider:         provider,
+		ProfileName:      profileName,
+		Model:            model,
+		Endpoint:         endpoint,
+		PromptTokens:     promptTokens,
+		CompletionTokens: completionTokens,
+		TotalTokens:      totalTokens,
+		Success:          success,
+		StatusCode:       statusCode,
+		DurationMs:       durationMs,
+		CreatedAt:        time.Now(),
+	}
+	go a.usageStore.Insert(record)
+}
+
+func (a *App) GetUsageStats() (UsageStatsResponse, error) {
+	if a.usageStore == nil {
+		return UsageStatsResponse{}, errors.New("用量存储未初始化")
+	}
+	return a.usageStore.QueryStats()
 }
 
 func (a *App) GetLogHistory(limit int) []LogEntry {

@@ -226,6 +226,26 @@ func (b *ProxyRuntime) IsRunning() bool {
 	return b.status == ProxyRunning && b.server != nil
 }
 
+func extractModelFromBody(body []byte) string {
+	var payload struct {
+		Model string `json:"model"`
+	}
+	if err := json.Unmarshal(body, &payload); err == nil {
+		return payload.Model
+	}
+	return ""
+}
+
+func (b *ProxyRuntime) recordUsage(cfg AppConfig, model, endpoint string, promptTokens, completionTokens, totalTokens int64, statusCode int, durationMs int64, success bool) {
+	provider := "unknown"
+	profileName := ""
+	if profile, ok := cfg.Profiles[cfg.CurrentProfileID]; ok {
+		provider = profile.Provider
+		profileName = profile.Name
+	}
+	b.app.recordUsage(provider, profileName, model, endpoint, promptTokens, completionTokens, totalTokens, success, statusCode, durationMs)
+}
+
 func (b *ProxyRuntime) CheckUpstream(cfg AppConfig) error {
 	baseURL := cfg.DeepseekBaseURL
 	if profile, ok := cfg.Profiles[cfg.CurrentProfileID]; ok && strings.TrimSpace(profile.BaseURL) != "" {
@@ -357,6 +377,7 @@ func (b *ProxyRuntime) handleChatCompletions(w http.ResponseWriter, r *http.Requ
 		b.writeProxyError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	model := extractModelFromBody(translatedBody)
 
 	resourceURL, err := upstreamResourceURL(cfg.DeepseekBaseURL, "chat/completions")
 	if err != nil {
@@ -409,9 +430,67 @@ func (b *ProxyRuntime) handleChatCompletions(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(resp.StatusCode)
 
 	if streaming {
-		b.streamResponse(w, resp.Body)
+		var pt, ct, tt int64
+		flusher, ok := w.(http.Flusher)
+		if ok {
+			scanner := bufio.NewScanner(resp.Body)
+			scanner.Buffer(make([]byte, 0, 64*1024), 2*1024*1024)
+			for scanner.Scan() {
+				line := scanner.Text()
+				if strings.TrimSpace(line) == "" {
+					_, _ = fmt.Fprintf(w, "\n")
+					flusher.Flush()
+					continue
+				}
+				_, _ = fmt.Fprintf(w, "%s\n", line)
+				flusher.Flush()
+
+				if strings.HasPrefix(line, "data: ") {
+					data := strings.TrimPrefix(line, "data: ")
+					if data == "[DONE]" {
+						break
+					}
+					var chunk struct {
+						Usage *struct {
+							PromptTokens     int64 `json:"prompt_tokens"`
+							CompletionTokens int64 `json:"completion_tokens"`
+							TotalTokens      int64 `json:"total_tokens"`
+						} `json:"usage"`
+					}
+					if json.Unmarshal([]byte(data), &chunk) == nil && chunk.Usage != nil {
+						pt = chunk.Usage.PromptTokens
+						ct = chunk.Usage.CompletionTokens
+						tt = chunk.Usage.TotalTokens
+					}
+				}
+			}
+		} else {
+			_, _ = io.Copy(w, resp.Body)
+		}
+		durationMs := time.Since(startedAt).Milliseconds()
+		b.recordUsage(cfg, model, "chat/completions", pt, ct, tt, resp.StatusCode, durationMs, true)
 	} else {
-		_, _ = io.Copy(w, resp.Body)
+		bodyBytes, readErr := io.ReadAll(io.LimitReader(resp.Body, 10<<20))
+		if readErr != nil {
+			_, _ = io.Copy(w, resp.Body)
+		} else {
+			_, _ = w.Write(bodyBytes)
+			var pt, ct, tt int64
+			var usageResp struct {
+				Usage *struct {
+					PromptTokens     int64 `json:"prompt_tokens"`
+					CompletionTokens int64 `json:"completion_tokens"`
+					TotalTokens      int64 `json:"total_tokens"`
+				} `json:"usage"`
+			}
+			if json.Unmarshal(bodyBytes, &usageResp) == nil && usageResp.Usage != nil {
+				pt = usageResp.Usage.PromptTokens
+				ct = usageResp.Usage.CompletionTokens
+				tt = usageResp.Usage.TotalTokens
+			}
+			durationMs := time.Since(startedAt).Milliseconds()
+			b.recordUsage(cfg, model, "chat/completions", pt, ct, tt, resp.StatusCode, durationMs, true)
+		}
 	}
 
 	duration := time.Since(startedAt).Milliseconds()
@@ -523,6 +602,7 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 				msg = fmt.Sprintf("上游返回 %d: %s", resp.StatusCode, msg)
 			}
 			b.setLastUpstreamFailure(resp.StatusCode, msg)
+			b.recordUsage(cfg, model, "responses", 0, 0, 0, resp.StatusCode, time.Since(startedAt).Milliseconds(), false)
 			b.streamResponsesFailed(w, "bad_gateway", msg)
 			message := fmt.Sprintf("POST /v1/responses (stream) -> %d (%dms)", resp.StatusCode, time.Since(startedAt).Milliseconds())
 			if reqSummary != "" {
@@ -541,8 +621,9 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 
 		b.clearLastUpstreamFailure()
 		textLen, toolNames := b.streamChatToResponses(w, resp.Body, model)
-		duration := time.Since(startedAt).Milliseconds()
-		message := fmt.Sprintf("POST /v1/responses (stream) -> 200 (%dms)", duration)
+		durationMs := time.Since(startedAt).Milliseconds()
+		b.recordUsage(cfg, model, "responses", 0, 0, 0, 200, durationMs, true)
+		message := fmt.Sprintf("POST /v1/responses (stream) -> 200 (%dms)", durationMs)
 		if reqSummary != "" {
 			message += " " + reqSummary
 		}
@@ -588,17 +669,33 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 			b.copyHeaders(w.Header(), resp.Header)
 			w.WriteHeader(resp.StatusCode)
 			_, _ = w.Write(upstreamRaw)
+			b.recordUsage(cfg, model, "responses", 0, 0, 0, resp.StatusCode, time.Since(startedAt).Milliseconds(), false)
 		} else {
 			b.clearLastUpstreamFailure()
 			if reasoning := strings.TrimSpace(extractChatCompletionReasoningFromBody(upstreamRaw)); reasoning != "" {
 				b.setLastReasoning(reasoning)
 			}
+			var pt, ct, tt int64
+			var usageData struct {
+				Usage *struct {
+					PromptTokens     int64 `json:"prompt_tokens"`
+					CompletionTokens int64 `json:"completion_tokens"`
+					TotalTokens      int64 `json:"total_tokens"`
+				} `json:"usage"`
+			}
+			if json.Unmarshal(upstreamRaw, &usageData) == nil && usageData.Usage != nil {
+				pt = usageData.Usage.PromptTokens
+				ct = usageData.Usage.CompletionTokens
+				tt = usageData.Usage.TotalTokens
+			}
 			response, err := translateChatCompletionToResponses(upstreamRaw, model)
 			if err != nil {
 				b.app.appendLog("error", "proxy", "responses 响应转换失败: "+err.Error(), requestID)
 				b.writeProxyError(w, http.StatusBadGateway, err.Error())
+				b.recordUsage(cfg, model, "responses", pt, ct, tt, resp.StatusCode, time.Since(startedAt).Milliseconds(), false)
 			} else {
 				b.writeJSON(w, resp.StatusCode, response)
+				b.recordUsage(cfg, model, "responses", pt, ct, tt, resp.StatusCode, time.Since(startedAt).Milliseconds(), true)
 			}
 		}
 	}
@@ -755,7 +852,9 @@ func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request)
 
 	b.clearLastUpstreamFailure()
 	textLen, toolNames := b.streamChatToResponsesWS(conn, resp.Body, model)
-	duration := time.Since(startedAt).Milliseconds()
+	durationMs := time.Since(startedAt).Milliseconds()
+	b.recordUsage(cfg, model, "responses", 0, 0, 0, 200, durationMs, true)
+	duration := durationMs
 	message := fmt.Sprintf("WS /v1/responses -> 200 (%dms)", duration)
 	reqSummary := summarizeResponsesRequest(body)
 	if reqSummary != "" {
@@ -1080,8 +1179,17 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 
 	if streaming {
 		b.streamChatToMessages(w, resp.Body, model)
+		durationMs := time.Since(startedAt).Milliseconds()
+		b.recordUsage(cfg, model, "messages", 0, 0, 0, 200, durationMs, true)
 	} else {
 		upstreamRaw, _ := io.ReadAll(io.LimitReader(resp.Body, 10<<20))
+		var pt, ct, tt int64
+		if usageMap, ok := extractUsage(upstreamRaw); ok {
+			pt = usageMap["prompt_tokens"]
+			ct = usageMap["completion_tokens"]
+			tt = usageMap["total_tokens"]
+		}
+		b.recordUsage(cfg, model, "messages", pt, ct, tt, resp.StatusCode, time.Since(startedAt).Milliseconds(), resp.StatusCode < http.StatusBadRequest)
 		response, err := translateChatCompletionToMessages(upstreamRaw, model)
 		if err != nil {
 			b.app.appendLog("error", "proxy", "messages 响应转换失败: "+err.Error(), requestID)
@@ -2657,6 +2765,24 @@ func extractChatCompletionReasoningFromBody(body []byte) string {
 		return ""
 	}
 	return extractChatCompletionReasoning(payload)
+}
+
+func extractUsage(body []byte) (map[string]int64, bool) {
+	var payload struct {
+		Usage *struct {
+			PromptTokens     int64 `json:"prompt_tokens"`
+			CompletionTokens int64 `json:"completion_tokens"`
+			TotalTokens      int64 `json:"total_tokens"`
+		} `json:"usage"`
+	}
+	if err := json.Unmarshal(body, &payload); err == nil && payload.Usage != nil {
+		return map[string]int64{
+			"prompt_tokens":     payload.Usage.PromptTokens,
+			"completion_tokens": payload.Usage.CompletionTokens,
+			"total_tokens":      payload.Usage.TotalTokens,
+		}, true
+	}
+	return nil, false
 }
 
 func extractChatCompletionText(payload map[string]any) string {

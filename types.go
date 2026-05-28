@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 type ProxyStatus string
 
 const (
@@ -101,4 +103,37 @@ type UsageBalance struct {
 	Currency         string `json:"currency"`
 	IsDepleted       bool   `json:"isDepleted"`
 	Error            string `json:"error,omitempty"`
+}
+
+type UsageRecord struct {
+	ID               string    `json:"id"`
+	Provider         string    `json:"provider"`
+	ProfileName      string    `json:"profileName"`
+	Model            string    `json:"model"`
+	Endpoint         string    `json:"endpoint"`
+	PromptTokens     int64     `json:"promptTokens"`
+	CompletionTokens int64     `json:"completionTokens"`
+	TotalTokens      int64     `json:"totalTokens"`
+	Success          bool      `json:"success"`
+	StatusCode       int       `json:"statusCode"`
+	DurationMs       int64     `json:"durationMs"`
+	CreatedAt        time.Time `json:"createdAt"`
+}
+
+type UsageStats struct {
+	Provider         string  `json:"provider"`
+	RequestCount     int64   `json:"requestCount"`
+	SuccessCount     int64   `json:"successCount"`
+	FailureCount     int64   `json:"failureCount"`
+	TotalTokens      int64   `json:"totalTokens"`
+	PromptTokens     int64   `json:"promptTokens"`
+	CompletionTokens int64   `json:"completionTokens"`
+	AvgDurationMs    float64 `json:"avgDurationMs"`
+}
+
+type UsageStatsResponse struct {
+	Today     []UsageStats `json:"today"`
+	ThisWeek  []UsageStats `json:"thisWeek"`
+	ThisMonth []UsageStats `json:"thisMonth"`
+	ThisYear  []UsageStats `json:"thisYear"`
 }

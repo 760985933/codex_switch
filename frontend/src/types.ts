@@ -174,3 +174,21 @@ export interface SyncResult {
   sqlitePresent: boolean
   encryptedContentWarning?: string
 }
+
+export interface UsageStats {
+  provider: string
+  requestCount: number
+  successCount: number
+  failureCount: number
+  totalTokens: number
+  promptTokens: number
+  completionTokens: number
+  avgDurationMs: number
+}
+
+export interface UsageStatsResponse {
+  today: UsageStats[]
+  thisWeek: UsageStats[]
+  thisMonth: UsageStats[]
+  thisYear: UsageStats[]
+}

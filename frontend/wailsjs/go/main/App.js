@@ -82,6 +82,10 @@ export function GetUsageBalance() {
   return window['go']['main']['App']['GetUsageBalance']();
 }
 
+export function GetUsageStats() {
+  return window['go']['main']['App']['GetUsageStats']();
+}
+
 export function HasLegacySessions() {
   return window['go']['main']['App']['HasLegacySessions']();
 }

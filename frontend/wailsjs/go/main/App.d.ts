@@ -42,6 +42,8 @@ export function GetSyncStatus():Promise<main.SyncStatusResult>;
 
 export function GetUsageBalance():Promise<main.UsageBalance>;
 
+export function GetUsageStats():Promise<main.UsageStatsResponse>;
+
 export function HasLegacySessions():Promise<boolean>;
 
 export function ImportConfig(arg1:string):Promise<main.AppConfig>;

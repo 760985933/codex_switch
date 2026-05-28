@@ -10,6 +10,7 @@ import {
   GetCodexConfigPath,
   GetLogHistory,
   GetOverviewSnapshot,
+  GetUsageStats,
   GetSandboxConfig,
   ImportConfig,
   ListCodexConfigBackups,
@@ -36,6 +37,7 @@ import type {
   LogEntry,
   OverviewSnapshot,
   SandboxWorkspaceConfig,
+  UsageStatsResponse,
 } from '../types'
 import { getDefaultProviderPreset, getProviderPreset } from '../utils/providers'
 
@@ -101,6 +103,7 @@ export const useAppStore = defineStore('app', {
     recentLogs: [] as LogEntry[],
     healthCheck: null as HealthCheckResult | null,
     quickTips: [] as string[],
+    usageStats: null as UsageStatsResponse | null,
     isBusy: false,
     lastLoadedAt: '',
   }),
@@ -236,6 +239,11 @@ export const useAppStore = defineStore('app', {
     },
     pushLog(entry: LogEntry) {
       this.recentLogs = [...this.recentLogs.slice(-199), entry]
+    },
+    async getUsageStats(): Promise<UsageStatsResponse> {
+      const stats = (await GetUsageStats()) as UsageStatsResponse
+      this.usageStats = stats
+      return stats
     },
     applyStatus(status: ProxyStatusPayload) {
       this.status = status

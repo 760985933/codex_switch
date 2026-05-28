@@ -3,6 +3,7 @@ import OverviewPage from '../pages/OverviewPage.vue'
 import LogsPage from '../pages/LogsPage.vue'
 import SessionsPage from '../pages/SessionsPage.vue'
 import ContactPage from '../pages/ContactPage.vue'
+import MonitoringPage from '../pages/MonitoringPage.vue'
 
 export const router = createRouter({
   history: createWebHashHistory(),
@@ -25,6 +26,11 @@ export const router = createRouter({
       path: '/sessions',
       name: 'sessions',
       component: SessionsPage,
+    },
+    {
+      path: '/monitoring',
+      name: 'monitoring',
+      component: MonitoringPage,
     },
     {
       path: '/contact',

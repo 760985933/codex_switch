@@ -548,6 +548,68 @@ export namespace main {
 	        this.error = source["error"];
 	    }
 	}
+	export class UsageStats {
+	    provider: string;
+	    requestCount: number;
+	    successCount: number;
+	    failureCount: number;
+	    totalTokens: number;
+	    promptTokens: number;
+	    completionTokens: number;
+	    avgDurationMs: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new UsageStats(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.provider = source["provider"];
+	        this.requestCount = source["requestCount"];
+	        this.successCount = source["successCount"];
+	        this.failureCount = source["failureCount"];
+	        this.totalTokens = source["totalTokens"];
+	        this.promptTokens = source["promptTokens"];
+	        this.completionTokens = source["completionTokens"];
+	        this.avgDurationMs = source["avgDurationMs"];
+	    }
+	}
+	export class UsageStatsResponse {
+	    today: UsageStats[];
+	    thisWeek: UsageStats[];
+	    thisMonth: UsageStats[];
+	    thisYear: UsageStats[];
+	
+	    static createFrom(source: any = {}) {
+	        return new UsageStatsResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.today = this.convertValues(source["today"], UsageStats);
+	        this.thisWeek = this.convertValues(source["thisWeek"], UsageStats);
+	        this.thisMonth = this.convertValues(source["thisMonth"], UsageStats);
+	        this.thisYear = this.convertValues(source["thisYear"], UsageStats);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 
 }
 
