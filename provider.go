@@ -213,118 +213,127 @@ var registeredProviders = map[string]*ProviderInfo{
 
 func deepseekDefaultMappings() map[string]string {
 	return map[string]string{
-		"gpt-5.5":       "deepseek-v4-pro",
-		"gpt-5.4":       "deepseek-v4-pro",
-		"gpt-5.4-mini":  "deepseek-v4-flash",
-		"gpt-5.3-codex": "deepseek-v4-pro",
-		"gpt-4.1":       "deepseek-v4-flash",
-		"gpt-4o":        "deepseek-v4-flash",
-		"gpt-4o-mini":   "deepseek-v4-flash",
-		"o4-mini":       "deepseek-v4-flash",
+		"gpt-5.5":                "deepseek-v4-pro",
+		"gpt-5.4":                "deepseek-v4-pro",
+		"gpt-5.4-mini":           "deepseek-v4-flash",
+		"gpt-5.3-codex":          "deepseek-v4-pro",
+		"gpt-4.1":                "deepseek-v4-flash",
+		"gpt-4o":                 "deepseek-v4-flash",
+		"gpt-4o-mini":            "deepseek-v4-flash",
+		"o4-mini":                "deepseek-v4-flash",
+		"codex-auto-review":      "deepseek-v4-flash",
 	}
 }
 
 func alibabaDefaultMappings() map[string]string {
 	return map[string]string{
-		"gpt-5.5":       "qwen3.6-max-preview",
-		"gpt-5.4":       "qwen3.6-max-preview",
-		"gpt-5.4-mini":  "qwen3.6-flash",
-		"gpt-5.3-codex": "qwen3.6-max-preview",
-		"gpt-4.1":       "qwen3.6-flash",
-		"gpt-4o":        "qwen3.6-flash",
-		"gpt-4o-mini":   "qwen3.6-flash",
-		"o4-mini":       "qwq-plus",
+		"gpt-5.5":                "qwen3.6-max-preview",
+		"gpt-5.4":                "qwen3.6-max-preview",
+		"gpt-5.4-mini":           "qwen3.6-flash",
+		"gpt-5.3-codex":          "qwen3.6-max-preview",
+		"gpt-4.1":                "qwen3.6-flash",
+		"gpt-4o":                 "qwen3.6-flash",
+		"gpt-4o-mini":            "qwen3.6-flash",
+		"o4-mini":                "qwq-plus",
+		"codex-auto-review":      "qwen3.6-flash",
 	}
 }
 
 func xiaomiDefaultMappings() map[string]string {
 	return map[string]string{
-		"gpt-5.5":       "mimo-v2.5-pro",
-		"gpt-5.4":       "mimo-v2.5-pro",
-		"gpt-5.4-mini":  "mimo-v2-flash",
-		"gpt-5.3-codex": "mimo-v2.5-pro",
-		"gpt-4.1":       "mimo-v2-flash",
-		"gpt-4o":        "mimo-v2-flash",
-		"gpt-4o-mini":   "mimo-v2-flash",
-		"o4-mini":       "mimo-v2-flash",
+		"gpt-5.5":                "mimo-v2.5-pro",
+		"gpt-5.4":                "mimo-v2.5-pro",
+		"gpt-5.4-mini":           "mimo-v2-flash",
+		"gpt-5.3-codex":          "mimo-v2.5-pro",
+		"gpt-4.1":                "mimo-v2-flash",
+		"gpt-4o":                 "mimo-v2-flash",
+		"gpt-4o-mini":            "mimo-v2-flash",
+		"o4-mini":                "mimo-v2-flash",
+		"codex-auto-review":      "mimo-v2-flash",
 	}
 }
 
 func zhipuDefaultMappings() map[string]string {
 	return map[string]string{
-		"gpt-5.5":       "glm-5",
-		"gpt-5.4":       "glm-5",
-		"gpt-5.4-mini":  "glm-4.7-flash",
-		"gpt-5.3-codex": "glm-5",
-		"gpt-4.1":       "glm-4.7-flash",
-		"gpt-4o":        "glm-4.7-flash",
-		"gpt-4o-mini":   "glm-4.7-flash",
-		"o4-mini":       "glm-4.7-flash",
+		"gpt-5.5":                "glm-5",
+		"gpt-5.4":                "glm-5",
+		"gpt-5.4-mini":           "glm-4.7-flash",
+		"gpt-5.3-codex":          "glm-5",
+		"gpt-4.1":                "glm-4.7-flash",
+		"gpt-4o":                 "glm-4.7-flash",
+		"gpt-4o-mini":            "glm-4.7-flash",
+		"o4-mini":                "glm-4.7-flash",
+		"codex-auto-review":      "glm-4.7-flash",
 	}
 }
 
 func baiduDefaultMappings() map[string]string {
 	return map[string]string{
-		"gpt-5.5":       "ernie-5.1",
-		"gpt-5.4":       "ernie-5.1",
-		"gpt-5.4-mini":  "ernie-4.5-turbo-128k-preview",
-		"gpt-5.3-codex": "ernie-5.1",
-		"gpt-4.1":       "ernie-speed-128k",
-		"gpt-4o":        "ernie-speed-128k",
-		"gpt-4o-mini":   "ernie-lite-8k",
-		"o4-mini":       "ernie-5.0-thinking-preview",
+		"gpt-5.5":                "ernie-5.1",
+		"gpt-5.4":                "ernie-5.1",
+		"gpt-5.4-mini":           "ernie-4.5-turbo-128k-preview",
+		"gpt-5.3-codex":          "ernie-5.1",
+		"gpt-4.1":                "ernie-speed-128k",
+		"gpt-4o":                 "ernie-speed-128k",
+		"gpt-4o-mini":            "ernie-lite-8k",
+		"o4-mini":                "ernie-5.0-thinking-preview",
+		"codex-auto-review":      "ernie-speed-128k",
 	}
 }
 
 func volcanoDefaultMappings() map[string]string {
 	return map[string]string{
-		"gpt-5.5":       "doubao-seed-2-0-pro-260215",
-		"gpt-5.4":       "doubao-seed-2-0-pro-260215",
-		"gpt-5.4-mini":  "doubao-seed-2-0-lite-260215",
-		"gpt-5.3-codex": "doubao-seed-2-0-code-preview-260215",
-		"gpt-4.1":       "doubao-seed-2-0-lite-260215",
-		"gpt-4o":        "doubao-seed-2-0-lite-260215",
-		"gpt-4o-mini":   "doubao-seed-2-0-mini-260215",
-		"o4-mini":       "doubao-seed-2-0-mini-260215",
+		"gpt-5.5":                "doubao-seed-2-0-pro-260215",
+		"gpt-5.4":                "doubao-seed-2-0-pro-260215",
+		"gpt-5.4-mini":           "doubao-seed-2-0-lite-260215",
+		"gpt-5.3-codex":          "doubao-seed-2-0-code-preview-260215",
+		"gpt-4.1":                "doubao-seed-2-0-lite-260215",
+		"gpt-4o":                 "doubao-seed-2-0-lite-260215",
+		"gpt-4o-mini":            "doubao-seed-2-0-mini-260215",
+		"o4-mini":                "doubao-seed-2-0-mini-260215",
+		"codex-auto-review":      "doubao-seed-2-0-lite-260215",
 	}
 }
 
 func tencentDefaultMappings() map[string]string {
 	return map[string]string{
-		"gpt-5.5":       "hunyuan-2.0-thinking-20251109",
-		"gpt-5.4":       "hunyuan-2.0-instruct-20251111",
-		"gpt-5.4-mini":  "hunyuan-turbos-latest",
-		"gpt-5.3-codex": "hunyuan-2.0-thinking-20251109",
-		"gpt-4.1":       "hunyuan-lite",
-		"gpt-4o":        "hunyuan-lite",
-		"gpt-4o-mini":   "hunyuan-lite",
-		"o4-mini":       "hunyuan-t1-latest",
+		"gpt-5.5":                "hunyuan-2.0-thinking-20251109",
+		"gpt-5.4":                "hunyuan-2.0-instruct-20251111",
+		"gpt-5.4-mini":           "hunyuan-turbos-latest",
+		"gpt-5.3-codex":          "hunyuan-2.0-thinking-20251109",
+		"gpt-4.1":                "hunyuan-lite",
+		"gpt-4o":                 "hunyuan-lite",
+		"gpt-4o-mini":            "hunyuan-lite",
+		"o4-mini":                "hunyuan-t1-latest",
+		"codex-auto-review":      "hunyuan-lite",
 	}
 }
 
 func siliconDefaultMappings() map[string]string {
 	return map[string]string{
-		"gpt-5.5":       "Pro/zai-org/GLM-5.1",
-		"gpt-5.4":       "deepseek-ai/DeepSeek-V4-Flash",
-		"gpt-5.4-mini":  "Qwen/Qwen3.6-35B-A3B",
-		"gpt-5.3-codex": "deepseek-ai/DeepSeek-V4-Flash",
-		"gpt-4.1":       "Qwen/Qwen3.6-27B",
-		"gpt-4o":        "deepseek-ai/DeepSeek-V4-Flash",
-		"gpt-4o-mini":   "Qwen/Qwen3.6-35B-A3B",
-		"o4-mini":       "deepseek-ai/DeepSeek-V4-Flash",
+		"gpt-5.5":                "Pro/zai-org/GLM-5.1",
+		"gpt-5.4":                "deepseek-ai/DeepSeek-V4-Flash",
+		"gpt-5.4-mini":           "Qwen/Qwen3.6-35B-A3B",
+		"gpt-5.3-codex":          "deepseek-ai/DeepSeek-V4-Flash",
+		"gpt-4.1":                "Qwen/Qwen3.6-27B",
+		"gpt-4o":                 "deepseek-ai/DeepSeek-V4-Flash",
+		"gpt-4o-mini":            "Qwen/Qwen3.6-35B-A3B",
+		"o4-mini":                "deepseek-ai/DeepSeek-V4-Flash",
+		"codex-auto-review":      "deepseek-ai/DeepSeek-V4-Flash",
 	}
 }
 
 func kimiDefaultMappings() map[string]string {
 	return map[string]string{
-		"gpt-5.5":       "kimi-k2.6",
-		"gpt-5.4":       "kimi-k2.6",
-		"gpt-5.4-mini":  "kimi-k2.6",
-		"gpt-5.3-codex": "kimi-k2.6",
-		"gpt-4.1":       "kimi-k2.6",
-		"gpt-4o":        "kimi-k2.6",
-		"gpt-4o-mini":   "kimi-k2.6",
-		"o4-mini":       "kimi-k2.6-thinking",
+		"gpt-5.5":                "kimi-k2.6",
+		"gpt-5.4":                "kimi-k2.6",
+		"gpt-5.4-mini":           "kimi-k2.6",
+		"gpt-5.3-codex":          "kimi-k2.6",
+		"gpt-4.1":                "kimi-k2.6",
+		"gpt-4o":                 "kimi-k2.6",
+		"gpt-4o-mini":            "kimi-k2.6",
+		"o4-mini":                "kimi-k2.6-thinking",
+		"codex-auto-review":      "kimi-k2.6",
 	}
 }
 
