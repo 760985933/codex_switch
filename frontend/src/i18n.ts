@@ -107,6 +107,11 @@ export const messages = {
     successCount: '成功',
     failureCount: '失败',
     ms: '毫秒',
+    tokenStats: 'Token 统计',
+    avgTokensPerRequest: '平均 Tokens/请求',
+    tokenShare: '占比',
+    promptCompletionSplit: '拆分',
+
   },
 
     logs: {
@@ -285,9 +290,17 @@ export const messages = {
         total: '总余额',
         depleted: '余额已用尽，请及时充值',
       },
+      monitor: {
+        title: 'API 用量',
+        viewing: '查看当前配置: {name}',
+        placeholder: '更多监控功能即将推出',
+        noKey: '请为此配置设置 API Key',
+      },
       step: {
         one: {
           title: '启动代理服务',
+          edit: '编辑',
+          monitor: '用量',
           notRunning: '未启动（请点击「插件解决登录」或「无帐号登录」）',
           hint: '启动成功后会在本机监听一个地址，Codex 会通过它访问 /v1 接口。',
         },
@@ -404,6 +417,11 @@ export const messages = {
     successCount: 'Success',
     failureCount: 'Failed',
     ms: 'ms',
+    tokenStats: 'Token Statistics',
+    avgTokensPerRequest: 'Avg Tokens/Req',
+    tokenShare: 'Share',
+    promptCompletionSplit: 'Split',
+
   },
 
     logs: {
@@ -573,9 +591,17 @@ export const messages = {
         total: 'Total',
         depleted: 'Balance depleted, please top up',
       },
+      monitor: {
+        title: 'API Usage',
+        viewing: 'Viewing: {name}',
+        placeholder: 'More monitoring features coming soon',
+        noKey: 'Please set an API Key for this profile',
+      },
       step: {
         one: {
           title: 'Start the proxy',
+          edit: 'Edit',
+          monitor: 'Usage',
           notRunning: 'Not running (click "Plugin Unlock Login" or "No-Account Login")',
           hint: 'After start, it listens on a local address and exposes the /v1 API for Codex.',
         },
@@ -689,6 +715,11 @@ export const messages = {
     successCount: '\u6210\u529f',
     failureCount: '\u5931\u6557',
     ms: '\u30df\u30ea\u79d2',
+    tokenStats: '\u30c8\u30fc\u30af\u30f3\u7d71\u8a08',
+    avgTokensPerRequest: '\u5e73\u5747\u30c8\u30fc\u30af\u30f3/\u30ea\u30af\u30a8\u30b9\u30c8',
+    tokenShare: '\u5272\u5408',
+    promptCompletionSplit: '\u5185\u8a33',
+
   },
 
     logs: {
@@ -844,9 +875,17 @@ export const messages = {
         total: '総残高',
         depleted: '残高が不足しています。チャージしてください',
       },
+      monitor: {
+        title: 'API 使用量',
+        viewing: '表示中: {name}',
+        placeholder: 'さらなる監視機能を準備中',
+        noKey: 'このプロファイルに API Key を設定してください',
+      },
       step: {
         one: {
           title: 'ブリッジを起動',
+          edit: '編集',
+          monitor: '使用量',
           notRunning: '停止中（「プラグイン解除ログイン」または「アカウントなしログイン」をクリック）',
           hint: '起動後、ローカルで待受し、Codex は /v1 API にアクセスします。',
         },
@@ -944,6 +983,11 @@ export const messages = {
     successCount: '\uc131\uacf5',
     failureCount: '\uc2e4\ud328',
     ms: '\ubc00\ub9ac\ucd08',
+    tokenStats: '\ud1a0\ud070 \ud1b5\uacc4',
+    avgTokensPerRequest: '\ud3c9\uade0 \ud1a0\ud070/\uc694\uccad',
+    tokenShare: '\ube44\uc728',
+    promptCompletionSplit: '\ubd84\ud560',
+
   },
 
     logs: {
@@ -1099,9 +1143,17 @@ export const messages = {
         total: '총 잔액',
         depleted: '잔액이 부족합니다. 충전해주세요',
       },
+      monitor: {
+        title: 'API 사용량',
+        viewing: '보기: {name}',
+        placeholder: '더 많은 모니터링 기능이 곧 제공됩니다',
+        noKey: '이 프로필에 API Key를 설정해주세요',
+      },
       step: {
         one: {
           title: '브리지 시작',
+          edit: '편집',
+          monitor: '사용량',
           notRunning: '중지됨("플러그인 해제 로그인" 또는 "계정 없이 로그인"을 클릭)',
           hint: '시작되면 로컬 주소에서 /v1 API를 제공합니다.',
         },
@@ -1199,6 +1251,11 @@ export const messages = {
     successCount: 'Succ\u00e8s',
     failureCount: '\u00c9chec',
     ms: 'ms',
+    tokenStats: 'Statistiques de tokens',
+    avgTokensPerRequest: 'Moy. tokens/req',
+    tokenShare: 'Part',
+    promptCompletionSplit: 'R\u00e9partition',
+
   },
 
     logs: {
@@ -1354,9 +1411,17 @@ export const messages = {
         total: 'Solde total',
         depleted: 'Solde épuisé, veuillez recharger',
       },
+      monitor: {
+        title: 'Utilisation API',
+        viewing: 'Consultation: {name}',
+        placeholder: 'Plus de fonctionnalités de surveillance à venir',
+        noKey: 'Veuillez définir une clé API pour ce profil',
+      },
       step: {
         one: {
           title: 'Démarrer le proxy',
+          edit: 'Éditer',
+          monitor: 'Utilisation',
           notRunning: 'Arrêté (cliquez "Déverrouillage plugin" ou "Connexion sans compte")',
           hint: 'Après démarrage, un /v1 local est exposé pour Codex.',
         },
@@ -1454,6 +1519,11 @@ export const messages = {
     successCount: 'Erfolg',
     failureCount: 'Fehlschlag',
     ms: 'ms',
+    tokenStats: 'Token-Statistiken',
+    avgTokensPerRequest: '\u00d8 Tokens/Anfr',
+    tokenShare: 'Anteil',
+    promptCompletionSplit: 'Aufteilung',
+
   },
 
     logs: {
@@ -1609,8 +1679,14 @@ export const messages = {
         total: 'Gesamt',
         depleted: 'Guthaben aufgebraucht, bitte aufladen',
       },
+      monitor: {
+        title: 'API-Nutzung',
+        viewing: 'Anzeigen: {name}',
+        placeholder: 'Weitere Überwachungsfunktionen in Kürze',
+        noKey: 'Bitte API-Schlüssel für dieses Profil festlegen',
+      },
       step: {
-        one: { title: 'Proxy starten', notRunning: 'Gestoppt ("Plugin-Entsperrung Login" oder "Login ohne Konto" klicken)', hint: 'Nach dem Start wird lokal /v1 für Codex bereitgestellt.' },
+        one: { title: 'Proxy starten', edit: 'Bearbeiten', monitor: 'Nutzung', notRunning: 'Gestoppt ("Plugin-Entsperrung Login" oder "Login ohne Konto" klicken)', hint: 'Nach dem Start wird lokal /v1 für Codex bereitgestellt.' },
         two: {
           title: 'Erweiterte Konfiguration',
           baseUrl: 'Base URL',
@@ -1705,6 +1781,11 @@ export const messages = {
     successCount: '\u00c9xito',
     failureCount: 'Fallo',
     ms: 'ms',
+    tokenStats: 'Estad\u00edsticas de tokens',
+    avgTokensPerRequest: 'Prom. tokens/sol',
+    tokenShare: 'Participaci\u00f3n',
+    promptCompletionSplit: 'Divisi\u00f3n',
+
   },
 
     logs: {
@@ -1860,8 +1941,14 @@ export const messages = {
         total: 'Saldo total',
         depleted: 'Saldo agotado, por favor recargue',
       },
+      monitor: {
+        title: 'Uso de API',
+        viewing: 'Viendo: {name}',
+        placeholder: 'Más funciones de monitoreo próximamente',
+        noKey: 'Establezca una clave API para este perfil',
+      },
       step: {
-        one: { title: 'Inicia el proxy', notRunning: 'Detenido (pulse "Desbloqueo plugin" o "Acceso sin cuenta")', hint: 'Tras iniciar, expone /v1 local para Codex.' },
+        one: { title: 'Inicia el proxy', edit: 'Editar', monitor: 'Uso', notRunning: 'Detenido (pulse "Desbloqueo plugin" o "Acceso sin cuenta")', hint: 'Tras iniciar, expone /v1 local para Codex.' },
         two: {
           title: 'Configuración avanzada',
           baseUrl: 'Base URL',

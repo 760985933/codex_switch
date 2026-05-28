@@ -30,6 +30,11 @@ const tokenPercentage = computed(() => {
 const isActive = computed(() => {
   return props.stats.requestCount > 0
 })
+
+const avgTokensPerRequest = computed(() => {
+  if (props.stats.requestCount === 0) return 0
+  return Math.round(props.stats.totalTokens / props.stats.requestCount)
+})
 </script>
 
 <template>
@@ -80,10 +85,13 @@ const isActive = computed(() => {
       </div>
       <div class="token-details">
         <span class="token-detail">
-          <span class="dot prompt" /> {{ $t('monitoring.promptTokens') }}: {{ stats.promptTokens.toLocaleString() }}
+          <span class="dot prompt" /> {{ $t('monitoring.promptTokens') }}: <strong>{{ stats.promptTokens.toLocaleString() }}</strong>
         </span>
         <span class="token-detail">
-          <span class="dot completion" /> {{ $t('monitoring.completionTokens') }}: {{ stats.completionTokens.toLocaleString() }}
+          <span class="dot completion" /> {{ $t('monitoring.completionTokens') }}: <strong>{{ stats.completionTokens.toLocaleString() }}</strong>
+        </span>
+        <span class="token-detail avg-tokens">
+          {{ $t('monitoring.avgTokensPerRequest') }}: <strong>{{ avgTokensPerRequest.toLocaleString() }}</strong>
         </span>
       </div>
     </div>
@@ -184,11 +192,19 @@ const isActive = computed(() => {
   gap: 16px;
   font-size: 11px;
   color: var(--muted);
+  flex-wrap: wrap;
 }
 .token-detail {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+.token-detail strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.token-detail.avg-tokens {
+  margin-left: auto;
 }
 .dot {
   width: 8px;

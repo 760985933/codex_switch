@@ -3,7 +3,6 @@ import { onMounted, ref } from 'vue'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { ClipboardSetText } from '../../wailsjs/runtime/runtime'
-import ConfigPanel from '../components/ConfigPanel.vue'
 import QuickGuideCard from '../components/QuickGuideCard.vue'
 import { useProxyEvents } from '../composables/useProxyEvents'
 import { useAppStore } from '../stores/app'
@@ -87,26 +86,16 @@ onMounted(async () => {
 
 <template>
   <div class="overview-page">
-    <div class="page-grid">
-      <div class="main-column">
-        <ConfigPanel
-          @save="wrapAction(async () => store.refreshStatus())"
-        />
-      </div>
-
-      <div class="side-column">
-        <QuickGuideCard
-          :listen-address="store.status.listenAddress"
-          :status="store.status"
-          :health="store.healthCheck"
-          :loading="busy"
-          @copy="copyText"
-          @health="handleHealth"
-          @stop="handleStop"
-          @refresh="wrapAction(async () => { await store.refreshStatus(); await store.refreshLogs() })"
-        />
-      </div>
-    </div>
+    <QuickGuideCard
+      :listen-address="store.status.listenAddress"
+      :status="store.status"
+      :health="store.healthCheck"
+      :loading="busy"
+      @copy="copyText"
+      @health="handleHealth"
+      @stop="handleStop"
+      @refresh="wrapAction(async () => { await store.refreshStatus(); await store.refreshLogs() })"
+    />
   </div>
 </template>
 
@@ -114,24 +103,5 @@ onMounted(async () => {
 .overview-page {
   display: grid;
   gap: 24px;
-}
-
-.page-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
-  gap: 20px;
-  align-items: start;
-}
-
-.main-column,
-.side-column {
-  display: grid;
-  gap: 20px;
-}
-
-@media (max-width: 1120px) {
-  .page-grid {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

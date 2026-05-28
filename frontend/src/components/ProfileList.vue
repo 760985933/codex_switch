@@ -56,7 +56,7 @@ function handleMonitor(id: string) {
       <div class="profile-item-info">
         <span class="profile-item-name">{{ profile.name }}</span>
         <span class="profile-item-provider">{{ getProviderPreset(profile.provider)?.label ?? profile.provider }}</span>
-        <span class="profile-item-meta">{{ profile.baseURL }}</span>
+        <span v-if="profile.baseURL" class="profile-item-meta">{{ profile.baseURL }}</span>
         <span v-if="profile.defaultModel" class="profile-item-meta">{{ profile.defaultModel }}</span>
       </div>
       <div class="profile-item-actions" @click.stop>

@@ -1,24 +1,35 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '../stores/app'
 import { GetUsageBalance } from '../../wailsjs/go/main/App'
 import type { UsageBalance } from '../types'
 
+const props = defineProps<{
+  profileId?: string
+}>()
+
 const store = useAppStore()
 const { t } = useI18n()
+
+const profile = computed(() => {
+  if (props.profileId && store.config.profiles[props.profileId]) {
+    return store.config.profiles[props.profileId]
+  }
+  return store.currentProfile
+})
 
 const usageBalance = ref<UsageBalance | null>(null)
 const usageLoading = ref(false)
 
 async function fetchUsageBalance() {
-  if (!store.currentProfile?.apiKey) {
+  if (!profile.value?.apiKey) {
     usageBalance.value = null
     return
   }
   usageLoading.value = true
   try {
-    usageBalance.value = await GetUsageBalance()
+    usageBalance.value = await GetUsageBalance(props.profileId ?? '')
   } catch (err) {
     usageBalance.value = { availableBalance: '', totalBalance: '', currency: '', isDepleted: false, error: String(err) }
   } finally {

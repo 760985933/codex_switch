@@ -78,8 +78,8 @@ export function GetSyncStatus() {
   return window['go']['main']['App']['GetSyncStatus']();
 }
 
-export function GetUsageBalance() {
-  return window['go']['main']['App']['GetUsageBalance']();
+export function GetUsageBalance(arg1) {
+  return window['go']['main']['App']['GetUsageBalance'](arg1);
 }
 
 export function GetUsageStats() {

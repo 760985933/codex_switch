@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '../stores/app'
 import type { UsageStats, UsageStatsResponse } from '../types'
 import UsageStatsCard from '../components/UsageStatsCard.vue'
+import TokenStatsPanel from '../components/TokenStatsPanel.vue'
 
 const { t } = useI18n()
 const store = useAppStore()
@@ -91,7 +92,7 @@ onMounted(() => {
       </p>
     </div>
 
-    <div v-else class="stats-summary">
+    <div v-if="currentStats.length > 0" class="stats-summary">
       <n-card class="summary-card" size="small" :bordered="true">
         <div class="summary-grid">
           <div class="summary-item">
@@ -105,6 +106,12 @@ onMounted(() => {
         </div>
       </n-card>
     </div>
+
+    <TokenStatsPanel
+      v-if="currentStats.length > 0"
+      :stats="currentStats"
+      :total-tokens="totalTokens"
+    />
 
     <div v-if="currentStats.length > 0" class="stats-grid">
       <UsageStatsCard

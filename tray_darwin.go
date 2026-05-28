@@ -120,13 +120,13 @@ func (a *App) initPlatformTray() {
 
 		// Initial balance fetch
 		time.Sleep(1500 * time.Millisecond)
-		_ = a.GetUsageBalance()
+		_ = a.GetUsageBalance("")
 
 		// Periodic balance fetch for tray updates
 		ticker := time.NewTicker(60 * time.Second)
 		defer ticker.Stop()
 		for range ticker.C {
-			_ = a.GetUsageBalance()
+			_ = a.GetUsageBalance("")
 		}
 	}()
 }

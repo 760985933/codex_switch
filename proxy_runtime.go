@@ -620,9 +620,9 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 		}
 
 		b.clearLastUpstreamFailure()
-		textLen, toolNames := b.streamChatToResponses(w, resp.Body, model)
+		textLen, toolNames, pt, ct, tt := b.streamChatToResponses(w, resp.Body, model)
 		durationMs := time.Since(startedAt).Milliseconds()
-		b.recordUsage(cfg, model, "responses", 0, 0, 0, 200, durationMs, true)
+		b.recordUsage(cfg, model, "responses", pt, ct, tt, 200, durationMs, true)
 		message := fmt.Sprintf("POST /v1/responses (stream) -> 200 (%dms)", durationMs)
 		if reqSummary != "" {
 			message += " " + reqSummary
@@ -851,9 +851,9 @@ func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request)
 	}
 
 	b.clearLastUpstreamFailure()
-	textLen, toolNames := b.streamChatToResponsesWS(conn, resp.Body, model)
+	textLen, toolNames, pt, ct, tt := b.streamChatToResponsesWS(conn, resp.Body, model)
 	durationMs := time.Since(startedAt).Milliseconds()
-	b.recordUsage(cfg, model, "responses", 0, 0, 0, 200, durationMs, true)
+	b.recordUsage(cfg, model, "responses", pt, ct, tt, 200, durationMs, true)
 	duration := durationMs
 	message := fmt.Sprintf("WS /v1/responses -> 200 (%dms)", duration)
 	reqSummary := summarizeResponsesRequest(body)
@@ -1661,11 +1661,11 @@ func (b *ProxyRuntime) streamResponse(w http.ResponseWriter, body io.Reader) {
 	}
 }
 
-func (b *ProxyRuntime) streamChatToResponses(w http.ResponseWriter, body io.Reader, model string) (int, []string) {
+func (b *ProxyRuntime) streamChatToResponses(w http.ResponseWriter, body io.Reader, model string) (int, []string, int64, int64, int64) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		_, _ = io.Copy(w, body)
-		return 0, nil
+		return 0, nil, 0, 0, 0
 	}
 
 	seq := 1
@@ -1682,7 +1682,7 @@ func (b *ProxyRuntime) streamChatToResponses(w http.ResponseWriter, body io.Read
 	return b.processChatStreamToResponses(body, model, writeEvent)
 }
 
-func (b *ProxyRuntime) streamChatToResponsesWS(conn *websocket.Conn, body io.Reader, model string) (int, []string) {
+func (b *ProxyRuntime) streamChatToResponsesWS(conn *websocket.Conn, body io.Reader, model string) (int, []string, int64, int64, int64) {
 	seq := 1
 	writeEvent := func(eventType string, data map[string]any) {
 		data["type"] = eventType
@@ -1694,7 +1694,7 @@ func (b *ProxyRuntime) streamChatToResponsesWS(conn *websocket.Conn, body io.Rea
 	return b.processChatStreamToResponses(body, model, writeEvent)
 }
 
-func (b *ProxyRuntime) processChatStreamToResponses(body io.Reader, model string, writeEvent func(string, map[string]any)) (int, []string) {
+func (b *ProxyRuntime) processChatStreamToResponses(body io.Reader, model string, writeEvent func(string, map[string]any)) (int, []string, int64, int64, int64) {
 	respID := fmt.Sprintf("resp_%d", time.Now().UnixNano())
 	itemID := fmt.Sprintf("msg_%d", time.Now().UnixNano())
 	createdAt := time.Now().Unix()
@@ -1745,6 +1745,7 @@ func (b *ProxyRuntime) processChatStreamToResponses(body io.Reader, model string
 
 	var buf strings.Builder
 	var reasoningBuf strings.Builder
+	var promptTokens, completionTokens, totalTokens int64
 	reader := bufio.NewScanner(body)
 	reader.Buffer(make([]byte, 0, 64*1024), 2*1024*1024)
 	for reader.Scan() {
@@ -1763,6 +1764,18 @@ func (b *ProxyRuntime) processChatStreamToResponses(body io.Reader, model string
 		var chunk map[string]any
 		if err := json.Unmarshal([]byte(data), &chunk); err != nil {
 			continue
+		}
+
+		if usageRaw, ok := chunk["usage"].(map[string]any); ok {
+			if pt, ok := usageRaw["prompt_tokens"].(float64); ok {
+				promptTokens = int64(pt)
+			}
+			if ct, ok := usageRaw["completion_tokens"].(float64); ok {
+				completionTokens = int64(ct)
+			}
+			if tt, ok := usageRaw["total_tokens"].(float64); ok {
+				totalTokens = int64(tt)
+			}
 		}
 
 		if choicesAny, ok := chunk["choices"].([]any); ok && len(choicesAny) > 0 {
@@ -1962,7 +1975,7 @@ func (b *ProxyRuntime) processChatStreamToResponses(body io.Reader, model string
 		toolNames = append(toolNames[:12], "...")
 	}
 
-	return len(finalText), toolNames
+	return len(finalText), toolNames, promptTokens, completionTokens, totalTokens
 }
 func (b *ProxyRuntime) setStatus(status ProxyStatus, lastError string) {
 	b.mu.Lock()

@@ -188,10 +188,11 @@ function handleConfigSaved() {
 // ── Monitor modal ──
 const monitorVisible = ref(false)
 const monitorRef = ref<InstanceType<typeof MonitorPanel> | null>(null)
+const monitoringProfileId = ref<string | undefined>()
 
 function openMonitor(id: string) {
+  monitoringProfileId.value = id
   monitorVisible.value = true
-  // MonitorPanel fetches on next tick via expose
   setTimeout(() => monitorRef.value?.open(), 0)
 }
 
@@ -262,9 +263,6 @@ watch(showSandbox, (v) => {
   if (v) loadSandboxConfig()
 })
 
-// ── Step collapse ──
-const step2Expanded = ref(false)
-const step3Expanded = ref(false)
 </script>
 
 <template>
@@ -273,149 +271,151 @@ const step3Expanded = ref(false)
       <div>
         <h3>{{ t('guide.title') }}</h3>
       </div>
-      <n-button
-        tertiary
-        type="primary"
-        :disabled="!codexBaseURL"
-        @click="emit('copy', codexBaseURL)"
-      >
-        {{ t('guide.actions.copyBaseUrl') }}
-      </n-button>
+      <div class="guide-header-actions">
+        <n-button size="small" secondary @click="openAddDialog">
+          {{ t('profile.add') }}
+        </n-button>
+        <n-button
+          tertiary
+          type="primary"
+          :disabled="!codexBaseURL"
+          @click="emit('copy', codexBaseURL)"
+        >
+          {{ t('guide.actions.copyBaseUrl') }}
+        </n-button>
+      </div>
     </div>
 
-    <div class="steps">
-      <!-- Step 1: Profile list + proxy controls -->
-      <div class="step">
-        <div class="step-head">
-          <span class="step-badge">Step 1</span>
-          <span class="step-title">{{ t('guide.step.one.title') }}</span>
-        </div>
-        <div class="step-body">
-          <ProfileList
-            :profiles="store.profileList"
-            :current-profile-id="store.config.currentProfileId"
-            :loading="loading"
-            @switch="handleSwitchProfile"
-            @edit="handleEditProfile"
-            @delete="confirmDeleteProfile"
-            @monitor="openMonitor"
-          />
-
-          <n-button size="small" secondary block @click="openAddDialog">
-            {{ t('profile.add') }}
-          </n-button>
-
-          <!-- Proxy action buttons -->
-          <div class="action-bar">
-            <template v-if="store.isRunning">
-              <n-button
-                size="small"
-                tertiary
-                type="error"
-                :loading="loading"
-                @click="emit('stop')"
-              >
-                {{ t('config.actions.stop') }}
-              </n-button>
-            </template>
-            <template v-else>
-              <n-button
-                size="small"
-                type="primary"
-                :disabled="!store.config.currentProfileId || activeLoginAction === 'noaccount'"
-                :loading="activeLoginAction === 'plugin'"
-                @click="handlePluginUnlockLogin"
-              >
-                {{ t('guide.actions.pluginUnlockLogin') }}
-              </n-button>
-              <n-button
-                size="small"
-                secondary
-                :disabled="!store.config.currentProfileId || activeLoginAction === 'plugin'"
-                :loading="activeLoginAction === 'noaccount'"
-                @click="handleNoAccountLogin"
-              >
-                {{ t('guide.actions.noAccountLogin') }}
-              </n-button>
-            </template>
+    <div class="guide-body">
+      <!-- Left: Step 1 -->
+      <div class="guide-main">
+        <div class="step">
+          <div class="step-head">
+            <span class="step-badge">Step 1</span>
+            <span class="step-title">{{ t('guide.step.one.title') }}</span>
           </div>
+          <div class="step-body">
+            <ProfileList
+              :profiles="store.profileList"
+              :current-profile-id="store.config.currentProfileId"
+              :loading="loading"
+              @switch="handleSwitchProfile"
+              @edit="handleEditProfile"
+              @delete="confirmDeleteProfile"
+              @monitor="openMonitor"
+            />
 
-          <!-- Connection info -->
-          <div class="mono">{{ props.listenAddress || t('guide.step.one.notRunning') }}</div>
-          <div v-if="store.currentProfile" class="profile-info">
-            <span class="hint">{{ t('profile.current') }}:</span>
-            <strong class="mono">{{ store.currentProfile.name }}</strong>
-            <span class="hint">→</span>
-            <span class="mono url">{{ store.currentProfile.baseURL }}</span>
-          </div>
-        </div>
-      </div>
+            <!-- Proxy action buttons -->
+            <div class="action-bar">
+              <template v-if="store.isRunning">
+                <n-button
+                  size="small"
+                  tertiary
+                  type="error"
+                  :loading="loading"
+                  @click="emit('stop')"
+                >
+                  {{ t('config.actions.stop') }}
+                </n-button>
+              </template>
+              <template v-else>
+                <n-button
+                  size="small"
+                  type="primary"
+                  :disabled="!store.config.currentProfileId || activeLoginAction === 'noaccount'"
+                  :loading="activeLoginAction === 'plugin'"
+                  @click="handlePluginUnlockLogin"
+                >
+                  {{ t('guide.actions.pluginUnlockLogin') }}
+                </n-button>
+                <n-button
+                  size="small"
+                  secondary
+                  :disabled="!store.config.currentProfileId || activeLoginAction === 'plugin'"
+                  :loading="activeLoginAction === 'noaccount'"
+                  @click="handleNoAccountLogin"
+                >
+                  {{ t('guide.actions.noAccountLogin') }}
+                </n-button>
+              </template>
+            </div>
 
-      <!-- Step 2: advanced (collapsible) -->
-      <div class="step">
-        <div class="step-head step-head--clickable" @click="step2Expanded = !step2Expanded">
-          <span class="step-badge">{{ t('guide.step.two.title') }}</span>
-          <span class="step-title">{{ t('guide.step.two.title') }}</span>
-          <span class="step-chevron" :class="{ open: step2Expanded }">›</span>
-        </div>
-        <div v-show="step2Expanded" class="step-body">
-          <div class="actions">
-            <n-button tertiary @click="ui.showSettings = true">{{ t('guide.actions.preferences') }}</n-button>
-            <n-button tertiary @click="handleRestoreCodex">{{ t('guide.actions.restoreDefault') }}</n-button>
-            <n-button tertiary @click="showSandbox = true">{{ t('guide.actions.sandbox') }}</n-button>
-          </div>
-          <div class="restart-hint">{{ t('guide.sandbox.configHint') }}</div>
-        </div>
-      </div>
-
-      <!-- Step 3: console & verify (collapsible) -->
-      <div class="step">
-        <div class="step-head step-head--clickable" @click="step3Expanded = !step3Expanded">
-          <span class="step-badge">{{ t('guide.step.three.title') }}</span>
-          <span class="step-title">{{ t('guide.step.three.title') }}</span>
-          <span class="step-chevron" :class="{ open: step3Expanded }">›</span>
-        </div>
-        <div v-show="step3Expanded" class="step-body">
-          <div class="s-status">
-            <span class="s-dot" :data-status="status.status" />
-            <span>{{ statusLabel }}</span>
-          </div>
-
-          <div class="s-meta">
-            <span class="s-meta-item">
-              <span class="s-meta-label">{{ t('console.meta.listenAddress') }}:</span>
-              <strong>{{ status.listenAddress || t('console.meta.notRunning') }}</strong>
-            </span>
-            <span class="s-meta-item">
-              <span class="s-meta-label">{{ t('console.meta.requestCount') }}:</span>
-              <strong>{{ status.requestCount }}</strong>
-            </span>
-            <span v-if="status.lastError" class="s-meta-item" data-tone="error">
-              <span class="s-meta-label">{{ t('console.meta.lastError') }}:</span>
-              <strong>{{ status.lastError }}</strong>
-            </span>
-          </div>
-
-          <div v-if="healthSummary" class="s-health" :data-tone="healthSummary.tone">
-            <span class="h-dot" />
-            <span>{{ healthSummary.text }}</span>
-          </div>
-          <div v-if="failedChecks.length" class="s-fails">
-            <div v-for="item in failedChecks" :key="item.name" class="s-fail">
-              <strong>{{ item.name }}</strong>
-              <p>{{ item.message }}</p>
+            <!-- Connection info -->
+            <div class="mono">{{ props.listenAddress || t('guide.step.one.notRunning') }}</div>
+            <div v-if="store.currentProfile" class="profile-info">
+              <span class="hint">{{ t('profile.current') }}:</span>
+              <strong class="mono">{{ store.currentProfile.name }}</strong>
+              <span class="hint">&rarr;</span>
+              <span class="mono url">{{ store.currentProfile.baseURL }}</span>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div class="actions">
-            <n-button type="primary" :loading="loading" @click="emit('health')">{{ t('guide.step.three.healthCheck') }}</n-button>
-            <n-button secondary :loading="loading" @click="emit('refresh')">{{ t('console.actions.refresh') }}</n-button>
+      <!-- Right: Step 2 + Step 3 -->
+      <div class="guide-side">
+        <div class="step">
+          <div class="step-head">
+            <span class="step-badge">{{ t('guide.step.two.title') }}</span>
+            <span class="step-title">{{ t('guide.step.two.title') }}</span>
           </div>
+          <div class="step-body">
+            <div class="actions">
+              <n-button tertiary @click="ui.showSettings = true">{{ t('guide.actions.preferences') }}</n-button>
+              <n-button tertiary @click="handleRestoreCodex">{{ t('guide.actions.restoreDefault') }}</n-button>
+              <n-button tertiary @click="showSandbox = true">{{ t('guide.actions.sandbox') }}</n-button>
+            </div>
+            <div class="restart-hint">{{ t('guide.sandbox.configHint') }}</div>
+          </div>
+        </div>
 
-          <div class="hint">{{ t('guide.step.three.hint') }}</div>
-          <div class="cmd">
-            <div class="cmd-label">{{ t('guide.step.three.quickVerify') }}</div>
-            <div class="mono">浏览器访问 {{ props.listenAddress || 'http://127.0.0.1:11434' }}/health</div>
+        <div class="step">
+          <div class="step-head">
+            <span class="step-badge">{{ t('guide.step.three.title') }}</span>
+            <span class="step-title">{{ t('guide.step.three.title') }}</span>
+          </div>
+          <div class="step-body">
+            <div class="s-status">
+              <span class="s-dot" :data-status="status.status" />
+              <span>{{ statusLabel }}</span>
+            </div>
+
+            <div class="s-meta">
+              <span class="s-meta-item">
+                <span class="s-meta-label">{{ t('console.meta.listenAddress') }}:</span>
+                <strong>{{ status.listenAddress || t('console.meta.notRunning') }}</strong>
+              </span>
+              <span class="s-meta-item">
+                <span class="s-meta-label">{{ t('console.meta.requestCount') }}:</span>
+                <strong>{{ status.requestCount }}</strong>
+              </span>
+              <span v-if="status.lastError" class="s-meta-item" data-tone="error">
+                <span class="s-meta-label">{{ t('console.meta.lastError') }}:</span>
+                <strong>{{ status.lastError }}</strong>
+              </span>
+            </div>
+
+            <div v-if="healthSummary" class="s-health" :data-tone="healthSummary.tone">
+              <span class="h-dot" />
+              <span>{{ healthSummary.text }}</span>
+            </div>
+            <div v-if="failedChecks.length" class="s-fails">
+              <div v-for="item in failedChecks" :key="item.name" class="s-fail">
+                <strong>{{ item.name }}</strong>
+                <p>{{ item.message }}</p>
+              </div>
+            </div>
+
+            <div class="actions">
+              <n-button type="primary" :loading="loading" @click="emit('health')">{{ t('guide.step.three.healthCheck') }}</n-button>
+              <n-button secondary :loading="loading" @click="emit('refresh')">{{ t('console.actions.refresh') }}</n-button>
+            </div>
+
+            <div class="hint">{{ t('guide.step.three.hint') }}</div>
+            <div class="cmd">
+              <div class="cmd-label">{{ t('guide.step.three.quickVerify') }}</div>
+              <div class="mono">浏览器访问 {{ props.listenAddress || 'http://127.0.0.1:11434' }}/health</div>
+            </div>
           </div>
         </div>
       </div>
@@ -483,7 +483,7 @@ const step3Expanded = ref(false)
       preset="card"
       style="width: 480px; max-width: 90vw;"
     >
-      <MonitorPanel ref="monitorRef" />
+      <MonitorPanel ref="monitorRef" :profile-id="monitoringProfileId" />
     </n-modal>
 
     <!-- Sandbox modal -->
@@ -551,10 +551,34 @@ const step3Expanded = ref(false)
   gap: 16px;
 }
 
+.guide-header-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .guide-header h3 {
   margin: 0;
   font-size: 16px;
   color: var(--text);
+}
+
+.guide-body {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.guide-main,
+.guide-side {
+  display: grid;
+  gap: 10px;
+}
+
+.guide-side {
+  position: sticky;
+  top: 8px;
 }
 
 .steps {
@@ -819,6 +843,14 @@ const step3Expanded = ref(false)
 @media (max-width: 920px) {
   .guide-header {
     flex-direction: column;
+  }
+
+  .guide-body {
+    grid-template-columns: 1fr;
+  }
+
+  .guide-side {
+    position: static;
   }
 }
 </style>

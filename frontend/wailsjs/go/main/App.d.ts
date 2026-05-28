@@ -40,7 +40,7 @@ export function GetSandboxConfig():Promise<main.SandboxWorkspaceConfig>;
 
 export function GetSyncStatus():Promise<main.SyncStatusResult>;
 
-export function GetUsageBalance():Promise<main.UsageBalance>;
+export function GetUsageBalance(arg1:string):Promise<main.UsageBalance>;
 
 export function GetUsageStats():Promise<main.UsageStatsResponse>;
 
