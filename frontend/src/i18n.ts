@@ -1579,7 +1579,7 @@ export const messages = {
           title: 'Inicio rápido',
           step1: 'Seleccione un proveedor e ingrese su clave API',
           step2: 'Haga clic en "Guardar configuración"',
-          step3: 'Haga clic en "Iniciar proxy"',
+          step3: 'Haga clic en "Desbloqueo plugin" o "Acceso sin cuenta"',
           step4: 'Haga clic en "Escritura combinada" para escribir la configuración de Codex',
           step5: 'Abra Codex Desktop y comience a usar',
         },
@@ -1763,7 +1763,7 @@ export const messages = {
         depleted: 'Saldo agotado, por favor recargue',
       },
       step: {
-        one: { title: 'Inicia el proxy', notRunning: 'Detenido (pulsa "Iniciar" a la izquierda)', hint: 'Tras iniciar, expone /v1 local para Codex.' },
+        one: { title: 'Inicia el proxy', notRunning: 'Detenido (pulse "Desbloqueo plugin" o "Acceso sin cuenta")', hint: 'Tras iniciar, expone /v1 local para Codex.' },
         two: {
           title: 'Configuración avanzada',
           baseUrl: 'Base URL',
