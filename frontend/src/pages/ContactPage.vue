@@ -10,6 +10,7 @@ const { t } = useI18n()
 const sponsors = [
   { name: 'NetTopo专业网络运维软件', url: 'https://www.nettopo.com' },
   { name: 'AAA专业批发空气小李', url: '' },
+  { name: '回南天敌', url: '' },
 ]
 </script>
 
