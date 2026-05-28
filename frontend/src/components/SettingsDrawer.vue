@@ -264,8 +264,6 @@ async function clearAllBackups() {
             </div>
             <n-space>
               <n-button secondary @click="emit('codexCopy')">{{ t('settings.actions.copyToml') }}</n-button>
-              <n-button type="primary" @click="emit('codexWrite')">{{ t('settings.actions.writeFile') }}</n-button>
-              <n-button secondary @click="emit('codexWriteProfiles')">{{ t('settings.actions.writeFileProfiles') }}</n-button>
             </n-space>
             <n-form label-placement="top">
               <n-form-item :label="t('settings.codex.filePath')">
