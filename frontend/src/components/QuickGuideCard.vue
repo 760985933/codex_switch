@@ -150,6 +150,11 @@ function openMonitor(id: string) {
 
 // ── Per-profile login ──
 async function handleProfilePluginLogin(id: string) {
+  const profile = store.config.profiles[id]
+  if (!profile?.apiKey) {
+    message.warning(t('guide.monitor.noKey'))
+    return
+  }
   loginProfileId.value = id
   activeLoginAction.value = 'plugin'
   try {
@@ -171,6 +176,11 @@ async function handleProfilePluginLogin(id: string) {
 }
 
 async function handleProfileNoAccountLogin(id: string) {
+  const profile = store.config.profiles[id]
+  if (!profile?.apiKey) {
+    message.warning(t('guide.monitor.noKey'))
+    return
+  }
   loginProfileId.value = id
   activeLoginAction.value = 'noaccount'
   try {

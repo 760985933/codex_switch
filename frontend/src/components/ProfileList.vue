@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive } from 'vue'
+import { reactive, watch } from 'vue'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '../stores/app'
@@ -43,11 +43,11 @@ async function fetchUsage(id: string) {
   }
 }
 
-onMounted(() => {
-  props.profiles.forEach(p => {
-    if (p.apiKey) fetchUsage(p.id)
+watch(() => props.profiles, (profiles) => {
+  profiles.forEach(p => {
+    if (p.apiKey && !usageData[p.id]) fetchUsage(p.id)
   })
-})
+}, { immediate: true })
 
 function handleEdit(id: string) {
   emit('edit', id)
@@ -65,6 +65,11 @@ function isLoginDisabled(id: string, action: 'plugin' | 'noaccount') {
   if (props.loginProfileId === null) return false
   if (props.loginProfileId !== id) return true
   return props.activeLoginAction !== null && props.activeLoginAction !== action
+}
+
+function hasApiKey(id: string) {
+  const profile = props.profiles.find(p => p.id === id)
+  return !!profile?.apiKey
 }
 </script>
 
@@ -108,7 +113,7 @@ function isLoginDisabled(id: string, action: 'plugin' | 'noaccount') {
               size="small"
               type="primary"
               :title="t('guide.actions.pluginUnlockLoginTooltip')"
-              :disabled="isLoginDisabled(profile.id, 'noaccount')"
+              :disabled="isLoginDisabled(profile.id, 'noaccount') || !hasApiKey(profile.id)"
               :loading="loginProfileId === profile.id && activeLoginAction === 'plugin'"
               @click="emit('pluginLogin', profile.id)"
             >
@@ -118,7 +123,7 @@ function isLoginDisabled(id: string, action: 'plugin' | 'noaccount') {
               size="small"
               secondary
               type="primary"
-              :disabled="isLoginDisabled(profile.id, 'plugin')"
+              :disabled="isLoginDisabled(profile.id, 'plugin') || !hasApiKey(profile.id)"
               :loading="loginProfileId === profile.id && activeLoginAction === 'noaccount'"
               @click="emit('noaccountLogin', profile.id)"
             >
@@ -144,7 +149,11 @@ function isLoginDisabled(id: string, action: 'plugin' | 'noaccount') {
           <span>{{ t('guide.usage.total') }}: {{ usageData[profile.id]?.totalBalance }} {{ usageData[profile.id]?.currency }}</span>
           <span v-if="usageData[profile.id]?.isDepleted" class="usage-depleted">{{ t('guide.usage.depleted') }}</span>
         </template>
-        <n-button v-if="usageLoadingMap[profile.id]" text size="tiny" loading />
+        <n-button text size="tiny" :loading="usageLoadingMap[profile.id]" @click="fetchUsage(profile.id)">
+          <template #icon>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          </template>
+        </n-button>
       </div>
     </div>
   </div>
