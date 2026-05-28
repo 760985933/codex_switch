@@ -33,7 +33,7 @@ func mergeCodexConfigTomlProfiles(existing []byte, baseURL string, defaultModel 
 	delete(doc, "model_provider")
 	delete(doc, "openai_base_url")
 	delete(doc, "model_catalog_json")
-	delete(doc, "profile")
+	doc["profile"] = codexProfileName // activate [profiles.local] section
 
 	if strings.TrimSpace(defaultModel) == "" {
 		defaultModel = "deepseek-v4-flash"
@@ -54,15 +54,22 @@ func mergeCodexConfigTomlProfiles(existing []byte, baseURL string, defaultModel 
 	}
 	doc["profiles"] = profiles
 
-	// Clean legacy custom provider configs
-	if modelProviders, ok := doc["model_providers"].(map[string]any); ok {
-		delete(modelProviders, "Local")
-		if len(modelProviders) == 0 {
-			delete(doc, "model_providers")
-		} else {
-			doc["model_providers"] = modelProviders
+	// Build or update model_providers map — add a "local" entry so
+	// Codex knows how to reach the provider referenced by [profiles.local].
+	modelProviders := map[string]any{}
+	if existingMP, ok := doc["model_providers"].(map[string]any); ok {
+		for k, v := range existingMP {
+			if k != "Local" { // clean legacy capital-L key
+				modelProviders[k] = v
+			}
 		}
 	}
+	modelProviders[codexProfileName] = map[string]any{
+		"name":     codexProfileName,
+		"base_url": strings.TrimRight(baseURL, "/") + "/",
+		"wire_api": "responses",
+	}
+	doc["model_providers"] = modelProviders
 
 	return toml.Marshal(doc)
 }
