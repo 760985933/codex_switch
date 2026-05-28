@@ -63,8 +63,7 @@ export const messages = {
           step1: '在连接面板中选择提供商并填写 API Key',
           step2: '点击「保存配置」',
           step3: '点击「插件解决登录」或「无帐号登录」按钮',
-          step4: '点击左侧「写入文件」将 Codex 配置写入文件',
-          step5: '打开 Codex Desktop 即可使用',
+          step4: '打开 Codex Desktop 即可使用',
         },
         backup: {
           title: '备份与恢复',
