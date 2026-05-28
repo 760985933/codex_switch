@@ -147,7 +147,7 @@ function hasApiKey(id: string) {
               {{ t('guide.actions.noAccountLogin') }}
             </n-button>
           </template>
-          <div class="profile-item-actions-sep" />
+          <div class="profile-item-actions-sep"></div>
           <n-button size="small" tertiary @click="handleEdit(profile.id)">
             {{ t('guide.step.one.edit') }}
           </n-button>
@@ -156,24 +156,9 @@ function hasApiKey(id: string) {
           </n-button>
         </div>
       </div>
-      <div v-if="usageData[profile.id]" class="profile-item-usage" @click.stop>
-        <template v-if="usageData[profile.id]?.error">
-          <span class="usage-error">{{ usageData[profile.id]?.error }}</span>
-        </template>
-        <template v-else>
-          <span>{{ t('guide.usage.available') }}: {{ usageData[profile.id]?.availableBalance }} {{ usageData[profile.id]?.currency }}</span>
-          <span class="usage-sep">/</span>
-          <span>{{ t('guide.usage.total') }}: {{ usageData[profile.id]?.totalBalance }} {{ usageData[profile.id]?.currency }}</span>
-          <span v-if="usageData[profile.id]?.isDepleted" class="usage-depleted">{{ t('guide.usage.depleted') }}</span>
-        </template>
-        <n-button text size="tiny" :loading="usageLoadingMap[profile.id]" @click="fetchUsage(profile.id)">
-          <template #icon>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-          </template>
-        </n-button>
-      </div>
     </div>
   </div>
+</div>
 </template>
 
 <style scoped>
@@ -207,6 +192,14 @@ function hasApiKey(id: string) {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.profile-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .profile-item-info {
@@ -268,14 +261,12 @@ function hasApiKey(id: string) {
 .profile-item-usage {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-size: 12px;
   color: rgba(19, 160, 90, 0.88);
   font-weight: 500;
-  padding-top: 6px;
-  border-top: 1px dashed var(--border);
-  margin-top: 2px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .usage-sep {
