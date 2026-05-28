@@ -395,7 +395,7 @@ onBeforeUnmount(() => {
       <!-- Step 2: advanced (collapsible) -->
       <div class="step">
         <div class="step-head step-head--clickable" @click="step2Expanded = !step2Expanded">
-          <span class="step-badge">Step 2</span>
+          <span class="step-badge">可选</span>
           <span class="step-title">{{ t('guide.step.two.title') }}</span>
           <span class="step-chevron" :class="{ open: step2Expanded }">›</span>
         </div>
@@ -412,7 +412,7 @@ onBeforeUnmount(() => {
       <!-- Step 3: console & verify (collapsible) -->
       <div class="step">
         <div class="step-head step-head--clickable" @click="step3Expanded = !step3Expanded">
-          <span class="step-badge">Step 3</span>
+          <span class="step-badge">可选</span>
           <span class="step-title">{{ t('guide.step.three.title') }}</span>
           <span class="step-chevron" :class="{ open: step3Expanded }">›</span>
         </div>
