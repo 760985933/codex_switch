@@ -47,10 +47,10 @@ defineExpose({ open })
 <template>
   <div class="monitor-view">
     <div class="monitor-profile-hint">
-      {{ t('guide.monitor.viewing', { name: store.currentProfile?.name ?? '-' }) }}
+      {{ t('guide.monitor.viewing', { name: profile?.name ?? '-' }) }}
     </div>
 
-    <template v-if="store.currentProfile?.apiKey">
+    <template v-if="profile?.apiKey">
       <div v-if="usageLoading" class="monitor-loading">{{ t('common.loading') }}</div>
 
       <div v-else-if="usageBalance && !usageBalance.error" class="usage-section">

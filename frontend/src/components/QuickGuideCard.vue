@@ -59,23 +59,6 @@ const codexBaseURL = computed(() => {
   return props.listenAddress.replace(/\/+$/, '') + '/v1'
 })
 
-// ── Profile switching ──
-async function handleSwitchProfile(id: string) {
-  if (id === store.config.currentProfileId) return
-  const wasRunning = store.isRunning
-  try {
-    await store.setCurrentProfile(id)
-    if (wasRunning) {
-      await store.restartProxy()
-      message.success(t('profile.switchedWithRestart', { name: store.currentProfile?.name ?? id }))
-    } else {
-      message.success(t('profile.switched', { name: store.currentProfile?.name ?? id }))
-    }
-  } catch (error) {
-    message.error(error instanceof Error ? error.message : String(error))
-  }
-}
-
 // ── Add profile dialog ──
 const showAddDialog = ref(false)
 const adding = ref(false)
@@ -138,38 +121,7 @@ async function handleDeleteProfile() {
 
 // ── Login actions ──
 const activeLoginAction = ref<'plugin' | 'noaccount' | null>(null)
-
-async function handlePluginUnlockLogin() {
-  activeLoginAction.value = 'plugin'
-  try {
-    if (!store.isRunning) {
-      await store.startProxy()
-    }
-    const path = await store.pluginUnlockLogin()
-    const hintPath = await store.getCodexConfigPath()
-    message.success(t('app.toast.codexTomlWritten', { path: path || hintPath }))
-  } catch (error) {
-    message.error(error instanceof Error ? error.message : String(error))
-  } finally {
-    activeLoginAction.value = null
-  }
-}
-
-async function handleNoAccountLogin() {
-  activeLoginAction.value = 'noaccount'
-  try {
-    if (!store.isRunning) {
-      await store.startProxy()
-    }
-    const path = await store.writeCodexConfigTomlProfiles()
-    const hintPath = await store.getCodexConfigPath()
-    message.success(t('app.toast.codexTomlWritten', { path: path || hintPath }))
-  } catch (error) {
-    message.error(error instanceof Error ? error.message : String(error))
-  } finally {
-    activeLoginAction.value = null
-  }
-}
+const loginProfileId = ref<string | null>(null)
 
 // ── Config drawer ──
 const configDrawerVisible = ref(false)
@@ -194,6 +146,49 @@ function openMonitor(id: string) {
   monitoringProfileId.value = id
   monitorVisible.value = true
   setTimeout(() => monitorRef.value?.open(), 0)
+}
+
+// ── Per-profile login ──
+async function handleProfilePluginLogin(id: string) {
+  loginProfileId.value = id
+  activeLoginAction.value = 'plugin'
+  try {
+    if (id !== store.config.currentProfileId) {
+      const wasRunning = store.isRunning
+      await store.setCurrentProfile(id)
+      if (wasRunning) await store.restartProxy()
+    }
+    if (!store.isRunning) await store.startProxy()
+    const path = await store.pluginUnlockLogin()
+    const hintPath = await store.getCodexConfigPath()
+    message.success(t('app.toast.codexTomlWritten', { path: path || hintPath }))
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  } finally {
+    loginProfileId.value = null
+    activeLoginAction.value = null
+  }
+}
+
+async function handleProfileNoAccountLogin(id: string) {
+  loginProfileId.value = id
+  activeLoginAction.value = 'noaccount'
+  try {
+    if (id !== store.config.currentProfileId) {
+      const wasRunning = store.isRunning
+      await store.setCurrentProfile(id)
+      if (wasRunning) await store.restartProxy()
+    }
+    if (!store.isRunning) await store.startProxy()
+    const path = await store.writeCodexConfigTomlProfiles()
+    const hintPath = await store.getCodexConfigPath()
+    message.success(t('app.toast.codexTomlWritten', { path: path || hintPath }))
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  } finally {
+    loginProfileId.value = null
+    activeLoginAction.value = null
+  }
 }
 
 // ── Restore default ──
@@ -299,55 +294,17 @@ watch(showSandbox, (v) => {
               :profiles="store.profileList"
               :current-profile-id="store.config.currentProfileId"
               :loading="loading"
-              @switch="handleSwitchProfile"
+              :proxy-running="store.isRunning"
+              :login-profile-id="loginProfileId"
+              :active-login-action="activeLoginAction"
               @edit="handleEditProfile"
               @delete="confirmDeleteProfile"
               @monitor="openMonitor"
+              @stop="emit('stop')"
+              @plugin-login="handleProfilePluginLogin"
+              @noaccount-login="handleProfileNoAccountLogin"
             />
 
-            <!-- Proxy action buttons -->
-            <div class="action-bar">
-              <template v-if="store.isRunning">
-                <n-button
-                  size="small"
-                  tertiary
-                  type="error"
-                  :loading="loading"
-                  @click="emit('stop')"
-                >
-                  {{ t('config.actions.stop') }}
-                </n-button>
-              </template>
-              <template v-else>
-                <n-button
-                  size="small"
-                  type="primary"
-                  :disabled="!store.config.currentProfileId || activeLoginAction === 'noaccount'"
-                  :loading="activeLoginAction === 'plugin'"
-                  @click="handlePluginUnlockLogin"
-                >
-                  {{ t('guide.actions.pluginUnlockLogin') }}
-                </n-button>
-                <n-button
-                  size="small"
-                  secondary
-                  :disabled="!store.config.currentProfileId || activeLoginAction === 'plugin'"
-                  :loading="activeLoginAction === 'noaccount'"
-                  @click="handleNoAccountLogin"
-                >
-                  {{ t('guide.actions.noAccountLogin') }}
-                </n-button>
-              </template>
-            </div>
-
-            <!-- Connection info -->
-            <div class="mono">{{ props.listenAddress || t('guide.step.one.notRunning') }}</div>
-            <div v-if="store.currentProfile" class="profile-info">
-              <span class="hint">{{ t('profile.current') }}:</span>
-              <strong class="mono">{{ store.currentProfile.name }}</strong>
-              <span class="hint">&rarr;</span>
-              <span class="mono url">{{ store.currentProfile.baseURL }}</span>
-            </div>
           </div>
         </div>
       </div>
@@ -357,7 +314,6 @@ watch(showSandbox, (v) => {
         <div class="step">
           <div class="step-head">
             <span class="step-badge">{{ t('guide.step.two.title') }}</span>
-            <span class="step-title">{{ t('guide.step.two.title') }}</span>
           </div>
           <div class="step-body">
             <div class="actions">
@@ -372,7 +328,6 @@ watch(showSandbox, (v) => {
         <div class="step">
           <div class="step-head">
             <span class="step-badge">{{ t('guide.step.three.title') }}</span>
-            <span class="step-title">{{ t('guide.step.three.title') }}</span>
           </div>
           <div class="step-body">
             <div class="s-status">
