@@ -18,6 +18,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 type ProxyRuntime struct {
@@ -133,6 +135,13 @@ func (s *statusRecorder) Flush() {
 	if flusher, ok := s.ResponseWriter.(http.Flusher); ok {
 		flusher.Flush()
 	}
+}
+
+func (s *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if hijacker, ok := s.ResponseWriter.(http.Hijacker); ok {
+		return hijacker.Hijack()
+	}
+	return nil, nil, errors.New("statusRecorder: hijack not supported")
 }
 
 func (b *ProxyRuntime) withAccessLog(next http.Handler) http.Handler {
@@ -421,6 +430,11 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 	statusCode := 0
 	w.Header().Set("x-proxy-request-id", requestID)
 
+	if r.Method == "GET" && strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
+		b.handleResponsesWS(w, r)
+		return
+	}
+
 	body, err := io.ReadAll(io.LimitReader(r.Body, 4<<20))
 	if err != nil {
 		b.app.appendLog("error", "proxy", "responses 读取请求体失败", requestID)
@@ -607,6 +621,151 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	b.app.appendLog(statusToLevel(statusCode), "proxy", message, requestID)
+}
+
+func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request) {
+	cfg := b.snapshotConfig()
+	requestID := fmt.Sprintf("req_%d", time.Now().UnixNano())
+	startedAt := time.Now()
+	w.Header().Set("x-proxy-request-id", requestID)
+
+	upgrader := websocket.Upgrader{
+		ReadBufferSize:  65536,
+		WriteBufferSize: 65536,
+		CheckOrigin:     func(r *http.Request) bool { return true },
+	}
+
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		b.app.appendLog("error", "proxy", "responses WS 升级失败: "+err.Error(), requestID)
+		return
+	}
+	defer conn.Close()
+
+	conn.SetPongHandler(func(string) error {
+		_ = conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return nil
+	})
+	_ = conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for range ticker.C {
+			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
+		}
+	}()
+
+	_, body, err := conn.ReadMessage()
+	if err != nil {
+		b.app.appendLog("warn", "proxy", "responses WS 读取消息失败: "+err.Error(), requestID)
+		return
+	}
+
+	chatBody, _, model, err := translateResponsesToChatCompletions(body, cfg)
+	if err != nil {
+		_ = conn.WriteJSON(map[string]any{
+			"type": "response.failed",
+			"error": map[string]any{
+				"type":    "invalid_request",
+				"message": err.Error(),
+			},
+		})
+		b.app.appendLog("warn", "proxy", "responses WS 请求转换失败: "+err.Error(), requestID)
+		return
+	}
+
+	if !bytes.Contains(chatBody, []byte(`"stream":true`)) {
+		var patched map[string]any
+		if unmarshalErr := json.Unmarshal(chatBody, &patched); unmarshalErr == nil {
+			patched["stream"] = true
+			if out, marshalErr := json.Marshal(patched); marshalErr == nil {
+				chatBody = out
+			}
+		}
+	}
+
+	resourceURL, err := upstreamResourceURL(cfg.DeepseekBaseURL, "chat/completions")
+	if err != nil {
+		_ = conn.WriteJSON(map[string]any{
+			"type": "response.failed",
+			"error": map[string]any{
+				"type":    "bad_gateway",
+				"message": err.Error(),
+			},
+		})
+		b.app.appendLog("error", "proxy", "responses WS 上游地址错误: "+err.Error(), requestID)
+		return
+	}
+
+	upstreamReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost, resourceURL, bytes.NewReader(chatBody))
+	if err != nil {
+		_ = conn.WriteJSON(map[string]any{
+			"type": "response.failed",
+			"error": map[string]any{
+				"type":    "bad_gateway",
+				"message": err.Error(),
+			},
+		})
+		b.app.appendLog("error", "proxy", "responses WS 构造上游请求失败: "+err.Error(), requestID)
+		return
+	}
+	upstreamReq.Header.Set("Content-Type", "application/json")
+	upstreamReq.GetBody = func() (io.ReadCloser, error) {
+		return io.NopCloser(bytes.NewReader(chatBody)), nil
+	}
+
+	resp, err := b.doUpstream(upstreamReq, cfg, true)
+	if err != nil {
+		_ = conn.WriteJSON(map[string]any{
+			"type": "response.failed",
+			"error": map[string]any{
+				"type":    "bad_gateway",
+				"message": err.Error(),
+			},
+		})
+		b.app.appendLog("error", "proxy", "responses WS 转发失败: "+err.Error(), requestID)
+		return
+	}
+	defer resp.Body.Close()
+
+	atomic.AddInt64(&b.requestCount, 1)
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 8192))
+		msg := strings.TrimSpace(string(raw))
+		if msg == "" {
+			msg = fmt.Sprintf("上游返回 %d", resp.StatusCode)
+		} else {
+			msg = fmt.Sprintf("上游返回 %d: %s", resp.StatusCode, msg)
+		}
+		b.setLastUpstreamFailure(resp.StatusCode, msg)
+		_ = conn.WriteJSON(map[string]any{
+			"type": "response.failed",
+			"error": map[string]any{
+				"type":    "bad_gateway",
+				"message": msg,
+			},
+		})
+		b.app.appendLog("error", "proxy", "responses WS 上游错误: "+msg, requestID)
+		return
+	}
+
+	b.clearLastUpstreamFailure()
+	textLen, toolNames := b.streamChatToResponsesWS(conn, resp.Body, model)
+	duration := time.Since(startedAt).Milliseconds()
+	message := fmt.Sprintf("WS /v1/responses -> 200 (%dms)", duration)
+	reqSummary := summarizeResponsesRequest(body)
+	if reqSummary != "" {
+		message += " " + reqSummary
+	}
+	message += fmt.Sprintf(" out_text_len=%d tool_calls=%d", textLen, len(toolNames))
+	if len(toolNames) > 0 {
+		message += " tool_names=" + strings.Join(toolNames, ",")
+	}
+	b.app.appendLog("info", "proxy", message, requestID)
 }
 
 func summarizeJSONKeys(body []byte) string {
@@ -1401,20 +1560,7 @@ func (b *ProxyRuntime) streamChatToResponses(w http.ResponseWriter, body io.Read
 		return 0, nil
 	}
 
-	respID := fmt.Sprintf("resp_%d", time.Now().UnixNano())
-	itemID := fmt.Sprintf("msg_%d", time.Now().UnixNano())
-	createdAt := time.Now().Unix()
 	seq := 1
-
-	responseSkeleton := map[string]any{
-		"id":         respID,
-		"object":     "response",
-		"created_at": createdAt,
-		"model":      model,
-		"status":     "in_progress",
-		"output":     []any{},
-	}
-
 	writeEvent := func(eventType string, data map[string]any) {
 		data["type"] = eventType
 		data["sequence_number"] = seq
@@ -1425,9 +1571,39 @@ func (b *ProxyRuntime) streamChatToResponses(w http.ResponseWriter, body io.Read
 		flusher.Flush()
 	}
 
+	return b.processChatStreamToResponses(body, model, writeEvent)
+}
+
+func (b *ProxyRuntime) streamChatToResponsesWS(conn *websocket.Conn, body io.Reader, model string) (int, []string) {
+	seq := 1
+	writeEvent := func(eventType string, data map[string]any) {
+		data["type"] = eventType
+		data["sequence_number"] = seq
+		seq++
+		_ = conn.WriteJSON(data)
+	}
+
+	return b.processChatStreamToResponses(body, model, writeEvent)
+}
+
+func (b *ProxyRuntime) processChatStreamToResponses(body io.Reader, model string, writeEvent func(string, map[string]any)) (int, []string) {
+	respID := fmt.Sprintf("resp_%d", time.Now().UnixNano())
+	itemID := fmt.Sprintf("msg_%d", time.Now().UnixNano())
+	createdAt := time.Now().Unix()
+
+	responseSkeleton := map[string]any{
+		"id":         respID,
+		"object":     "response",
+		"created_at": createdAt,
+		"model":      model,
+		"status":     "in_progress",
+		"output":     []any{},
+	}
+
 	writeEvent("response.created", map[string]any{
 		"response": responseSkeleton,
 	})
+
 
 	writeEvent("response.output_item.added", map[string]any{
 		"output_index": 0,
@@ -1680,7 +1856,6 @@ func (b *ProxyRuntime) streamChatToResponses(w http.ResponseWriter, body io.Read
 
 	return len(finalText), toolNames
 }
-
 func (b *ProxyRuntime) setStatus(status ProxyStatus, lastError string) {
 	b.mu.Lock()
 	b.status = status
