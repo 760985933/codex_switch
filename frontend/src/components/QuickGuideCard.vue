@@ -5,6 +5,9 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useUiStore } from '../stores/ui'
+import { getProviderPreset } from '../utils/providers'
+import ProfileList from './ProfileList.vue'
+import ModelEditorPanel from './ModelEditorPanel.vue'
 import type { ProxyStatusPayload, HealthCheckResult } from '../types'
 
 const emit = defineEmits<{
@@ -59,6 +62,7 @@ const currentProfile = computed(() => store.currentProfile)
 const showAddDialog = ref(false)
 const newProfileName = ref('')
 const newProfileProvider = ref('deepseek')
+const newProfileApiKey = ref('')
 
 const providerOptions = [
   { label: 'DeepSeek', value: 'deepseek' },
@@ -78,11 +82,34 @@ const providerOptions = [
 
 async function handleAddProfile() {
   if (!newProfileName.value.trim()) return
-  await store.addProfile(newProfileName.value.trim(), newProfileProvider.value)
+  await store.addProfile(newProfileName.value.trim(), newProfileProvider.value, newProfileApiKey.value || undefined)
   newProfileName.value = ''
   newProfileProvider.value = 'deepseek'
+  newProfileApiKey.value = ''
   showAddDialog.value = false
   message.success(t('models.toast.added'))
+}
+
+// ── Edit / Delete ──
+const editingProfileId = ref<string | null>(null)
+const showEditor = ref(false)
+
+function handleEdit(id: string) {
+  editingProfileId.value = id
+  showEditor.value = true
+}
+
+function handleDelete(id: string) {
+  if (store.profileList.length < 2) {
+    message.warning(t('profile.cannotDeleteLast'))
+    return
+  }
+  store.deleteProfile(id)
+}
+
+function handleEditorSave() {
+  showEditor.value = false
+  editingProfileId.value = null
 }
 
 // ── Login actions ──
@@ -149,43 +176,34 @@ async function handleNoAccountLogin() {
           </n-button>
         </div>
       </div>
-      <div v-if="currentProfile" class="profile-summary">
-        <div class="profile-summary-main">
-          <span class="profile-name">{{ currentProfile.name }}</span>
-          <span class="profile-badge">{{ currentProfile.provider }}</span>
-        </div>
-        <div class="profile-summary-meta">
-          <span class="meta-item"><span class="meta-label">Model:</span> {{ currentProfile.defaultModel }}</span>
-          <span class="meta-item"><span class="meta-label">API:</span> {{ currentProfile.baseURL }}</span>
-        </div>
-        <div class="profile-actions" v-if="currentProfile.apiKey">
-          <n-button
-            size="small"
-            type="primary"
-            :title="t('guide.actions.pluginUnlockLoginTooltip')"
-            :loading="loginProfileId === store.config.currentProfileId && activeLoginAction === 'plugin'"
-            @click="handlePluginLogin"
-          >
-            {{ t('guide.actions.pluginUnlockLogin') }}
-          </n-button>
-          <n-button
-            size="small"
-            secondary
-            type="primary"
-            :loading="loginProfileId === store.config.currentProfileId && activeLoginAction === 'noaccount'"
-            @click="handleNoAccountLogin"
-          >
-            {{ t('guide.actions.noAccountLogin') }}
-          </n-button>
-        </div>
-      </div>
-      <div v-else class="no-profile">
-        <p>{{ t('dashboard.noProfile') }}</p>
-        <div class="no-profile-actions">
-          <n-button size="small" type="primary" @click="showAddDialog = true">
-            {{ t('models.addProfile') }}
-          </n-button>
-        </div>
+
+      <ProfileList
+        :profiles="store.profileList"
+        :current-profile-id="store.config.currentProfileId"
+        :loading="store.isBusy"
+        @edit="handleEdit"
+        @delete="handleDelete"
+      />
+
+      <div v-if="currentProfile?.apiKey" class="login-actions">
+        <n-button
+          size="small"
+          type="primary"
+          :title="t('guide.actions.pluginUnlockLoginTooltip')"
+          :loading="loginProfileId === store.config.currentProfileId && activeLoginAction === 'plugin'"
+          @click="handlePluginLogin"
+        >
+          {{ t('guide.actions.pluginUnlockLogin') }}
+        </n-button>
+        <n-button
+          size="small"
+          secondary
+          type="primary"
+          :loading="loginProfileId === store.config.currentProfileId && activeLoginAction === 'noaccount'"
+          @click="handleNoAccountLogin"
+        >
+          {{ t('guide.actions.noAccountLogin') }}
+        </n-button>
       </div>
     </div>
 
@@ -268,8 +286,27 @@ async function handleNoAccountLogin() {
         <n-form-item :label="t('models.provider')">
           <n-select v-model:value="newProfileProvider" :options="providerOptions" />
         </n-form-item>
+        <n-form-item label="API Key">
+          <n-input
+            v-model:value="newProfileApiKey"
+            type="password"
+            show-password-on="click"
+            :placeholder="getProviderPreset(newProfileProvider)?.placeholderApiKey ?? 'sk-...'"
+          />
+        </n-form-item>
       </n-form>
     </n-modal>
+
+    <!-- Editor Drawer -->
+    <n-drawer v-model:show="showEditor" :width="520" placement="right">
+      <n-drawer-content :title="t('models.editor.title')" closable>
+        <ModelEditorPanel
+          v-if="editingProfileId"
+          :profile-id="editingProfileId"
+          @save="handleEditorSave"
+        />
+      </n-drawer-content>
+    </n-drawer>
   </div>
 </template>
 
@@ -307,72 +344,12 @@ async function handleNoAccountLogin() {
   gap: 8px;
 }
 
-/* Profile Summary */
-.profile-summary {
-  display: grid;
-  gap: 8px;
-}
-
-.profile-summary-main {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.profile-name {
-  font-size: 16px;
-  font-weight: 700;
-  color: rgba(11, 18, 32, 0.92);
-}
-
-.profile-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  background: rgba(22, 119, 255, 0.12);
-  color: rgba(22, 119, 255, 0.92);
-}
-
-.profile-summary-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  font-size: 12px;
-}
-
-.meta-item {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  color: rgba(11, 18, 32, 0.72);
-}
-
-.meta-label {
-  font-family: inherit;
-  color: var(--muted);
-}
-
-.profile-actions {
+.login-actions {
   display: flex;
   gap: 8px;
-  margin-top: 4px;
-}
-
-.no-profile {
-  display: grid;
-  gap: 8px;
-}
-
-.no-profile p {
-  margin: 0;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.no-profile-actions {
-  display: flex;
-  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
 }
 
 /* Status */
