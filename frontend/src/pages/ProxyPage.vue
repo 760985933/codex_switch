@@ -160,10 +160,6 @@ onMounted(async () => {
       <n-tab-pane name="codex" :tab="t('overview.tab.codexDesktop')">
         <div class="tab-content">
           <div class="card">
-            <div class="card-header">
-              <span class="card-title">{{ t('overview.codex.overview') }}</span>
-            </div>
-            <p class="card-desc">{{ t('overview.codex.overviewDesc') }}</p>
             <div class="address-hint">
               <div class="hint-label">{{ t('proxy.proxyAddress') }}</div>
               <div class="hint-row">
@@ -176,10 +172,6 @@ onMounted(async () => {
           </div>
 
           <div class="card">
-            <div class="card-header">
-              <span class="card-title">{{ t('overview.codex.quickLogin') }}</span>
-            </div>
-            <p class="card-desc">{{ t('overview.codex.quickLoginDesc') }}</p>
             <div class="login-actions">
               <CodexLoginActions
                 v-for="p in store.profileList"
@@ -193,10 +185,6 @@ onMounted(async () => {
           </div>
 
           <div class="card">
-            <div class="card-header">
-              <span class="card-title">{{ t('overview.codex.configToml') }}</span>
-            </div>
-            <p class="card-desc">{{ t('overview.codex.configTomlDesc') }}</p>
             <n-form label-placement="top" size="small">
               <n-form-item :label="t('settings.codex.filePath')">
                 <n-input :value="codexConfigPath" readonly />
@@ -225,10 +213,6 @@ onMounted(async () => {
       <n-tab-pane name="claude" :tab="t('overview.tab.claudeCode')">
         <div class="tab-content">
           <div class="card">
-            <div class="card-header">
-              <span class="card-title">{{ t('overview.claude.overview') }}</span>
-            </div>
-            <p class="card-desc">{{ t('overview.claude.overviewDesc') }}</p>
             <div class="address-hint">
               <div class="hint-label">{{ t('proxy.proxyAddress') }}</div>
               <div class="hint-row">
@@ -241,10 +225,6 @@ onMounted(async () => {
           </div>
 
           <div class="card">
-            <div class="card-header">
-              <span class="card-title">{{ t('overview.claude.envConfig') }}</span>
-            </div>
-            <p class="card-desc">{{ t('overview.claude.envConfigDesc') }}</p>
             <div class="code-block">
               <code>export ANTHROPIC_BASE_URL="{{ proxyAddress }}"</code>
               <n-button text size="small" type="primary" @click="handleCopyEnvVar">
@@ -258,10 +238,6 @@ onMounted(async () => {
           </div>
 
           <div class="card">
-            <div class="card-header">
-              <span class="card-title">{{ t('overview.claude.verify') }}</span>
-            </div>
-            <p class="card-desc">{{ t('overview.claude.verifyDesc') }}</p>
             <div class="code-block">
               <code>claude --version</code>
             </div>
