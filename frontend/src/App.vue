@@ -21,7 +21,7 @@ import {
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { BrowserOpenURL, ClipboardSetText, EventsOn, Quit, WindowMinimise } from '../wailsjs/runtime/runtime'
-import { CheckForUpdates, GetAppVersion } from '../wailsjs/go/main/App'
+import { CheckForUpdates, GetAppVersion, GetDebugMode, SetDebugMode } from '../wailsjs/go/main/App'
 import SettingsDrawer from './components/SettingsDrawer.vue'
 import { useAppStore } from './stores/app'
 import { useUiStore } from './stores/ui'
@@ -31,6 +31,7 @@ const store = useAppStore()
 const ui = useUiStore()
 const { t, locale } = useI18n()
 const appVersion = ref('v0.0.4')
+const debugMode = ref(false)
 const updateChecking = ref(false)
 const updateHasUpdate = ref(false)
 const updateLatest = ref('')
@@ -234,9 +235,18 @@ function handleClose() {
   Quit()
 }
 
+async function toggleDebugMode() {
+  debugMode.value = !debugMode.value
+  await SetDebugMode(debugMode.value)
+}
+
 onMounted(async () => {
   try {
     appVersion.value = await GetAppVersion()
+  } catch {
+  }
+  try {
+    debugMode.value = await GetDebugMode()
   } catch {
   }
   await checkUpdates(false, true)
@@ -308,6 +318,12 @@ onMounted(async () => {
                   <span class="help-icon">?</span>
                 </template>
               </n-button>
+              <span
+                class="debug-dot"
+                :class="{ active: debugMode }"
+                @click="toggleDebugMode"
+                :title="debugMode ? 'Debug: ON' : 'Debug: OFF'"
+              />
             </div>
           </header>
 
@@ -489,6 +505,22 @@ onMounted(async () => {
   font-weight: 700;
   color: var(--accent);
   cursor: pointer;
+}
+
+.debug-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(11, 18, 32, 0.18);
+  cursor: pointer;
+  transition: background 200ms ease;
+  flex-shrink: 0;
+}
+
+.debug-dot.active {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
 }
 
 .status-dot {

@@ -37,13 +37,16 @@ type ProxyRuntime struct {
 	lastUpstreamStatus int
 	lastUpstreamError  string
 	lastUpstreamAt     time.Time
+	debugMode          atomic.Bool
 }
 
 func NewProxyRuntime(app *App) *ProxyRuntime {
-	return &ProxyRuntime{
+	r := &ProxyRuntime{
 		app:    app,
 		status: ProxyStopped,
 	}
+	r.debugMode.Store(debugPayloadEnabled())
+	return r
 }
 
 func (b *ProxyRuntime) Start(cfg AppConfig) error {
@@ -72,6 +75,7 @@ func (b *ProxyRuntime) Start(cfg AppConfig) error {
 	mux.HandleFunc("/v1/chat/completions", b.handleChatCompletions)
 	mux.HandleFunc("/v1/responses", b.handleResponses)
 	mux.HandleFunc("/v1/messages", b.handleMessages)
+	mux.HandleFunc("/v1/audio/speech", b.handleAudioSpeech)
 	b.server = &http.Server{
 		Handler:           b.withAccessLog(mux),
 		ReadHeaderTimeout: 10 * time.Second,
@@ -476,8 +480,9 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// DEBUG: 打印原始请求结构和图片相关信息
-	b.logResponsesRequestDebug(body, requestID)
+	if b.debugMode.Load() {
+		b.logResponsesRequestDebug(body, requestID)
+	}
 
 	reqSummary := summarizeResponsesRequest(body)
 	var upstreamRaw []byte
@@ -488,7 +493,9 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 		b.writeProxyError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	b.logChatBodyDebug(chatBody, model, requestID)
+	if b.debugMode.Load() {
+		b.logChatBodyDebug(chatBody, model, requestID)
+	}
 	reasoningInjected := false
 	if patched, ok := injectReasoningIntoChatPayload(chatBody, b.getLastReasoning()); ok {
 		chatBody = patched
@@ -571,7 +578,7 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 				message += " reasoning_injected=true"
 			}
 			message += " upstream_error=" + truncateForLog(msg, 2048)
-			if debugPayloadEnabled() {
+			if b.debugMode.Load() {
 				message += " req_json=" + truncateForLog(string(chatBody), 4096)
 			}
 			b.app.appendLog("error", "proxy", message, requestID)
@@ -593,7 +600,7 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 		if len(toolNames) > 0 {
 			message += " tool_names=" + strings.Join(toolNames, ",")
 		}
-		if debugPayloadEnabled() {
+		if b.debugMode.Load() {
 			message += " req_json=" + truncateForLog(string(chatBody), 4096)
 		}
 		b.app.appendLog("info", "proxy", message, requestID)
@@ -670,7 +677,7 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 	if statusCode >= http.StatusBadRequest && len(upstreamRaw) > 0 {
 		message += " upstream_error=" + truncateForLog(string(upstreamRaw), 2048)
 	}
-	if debugPayloadEnabled() {
+	if b.debugMode.Load() {
 		message += " req_json=" + truncateForLog(string(chatBody), 4096)
 		if len(upstreamRaw) > 0 {
 			message += " resp_json=" + truncateForLog(string(upstreamRaw), 4096)
@@ -720,8 +727,9 @@ func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// DEBUG: 打印原始请求结构和图片相关信息
-	b.logResponsesRequestDebug(body, requestID)
+	if b.debugMode.Load() {
+		b.logResponsesRequestDebug(body, requestID)
+	}
 
 	chatBody, _, model, err := translateResponsesToChatCompletions(body, cfg)
 	if err != nil {
@@ -736,7 +744,9 @@ func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	b.logChatBodyDebug(chatBody, model, requestID)
+	if b.debugMode.Load() {
+		b.logChatBodyDebug(chatBody, model, requestID)
+	}
 
 	if !bytes.Contains(chatBody, []byte(`"stream":true`)) {
 		var patched map[string]any
@@ -1087,6 +1097,14 @@ func (b *ProxyRuntime) snapshotConfig() AppConfig {
 	return b.config
 }
 
+func (b *ProxyRuntime) SetDebugMode(enabled bool) {
+	b.debugMode.Store(enabled)
+}
+
+func (b *ProxyRuntime) GetDebugMode() bool {
+	return b.debugMode.Load()
+}
+
 // DEBUG: 打印 Responses API 请求中的图片相关内容
 func (b *ProxyRuntime) logResponsesRequestDebug(body []byte, requestID string) {
 	var payload map[string]any
@@ -1253,5 +1271,93 @@ func (b *ProxyRuntime) copyHeaders(dst http.Header, src http.Header) {
 			dst.Add(key, value)
 		}
 	}
+}
+
+func (b *ProxyRuntime) handleAudioSpeech(w http.ResponseWriter, r *http.Request) {
+	cfg := b.snapshotConfig()
+	requestID := fmt.Sprintf("req_%d", time.Now().UnixNano())
+	startedAt := time.Now()
+	w.Header().Set("x-proxy-request-id", requestID)
+
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		b.app.appendLog("error", "proxy", "audio/speech 读取请求体失败", requestID)
+		b.writeProxyError(w, http.StatusBadRequest, "读取请求体失败")
+		return
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(body, &payload); err != nil {
+		b.app.appendLog("warn", "proxy", "audio/speech JSON 解析失败: "+err.Error(), requestID)
+		b.writeProxyError(w, http.StatusBadRequest, "请求体不是有效的 JSON")
+		return
+	}
+
+	// 模型映射
+	model := strings.TrimSpace(cfg.DefaultModel)
+	if rawModel, ok := payload["model"].(string); ok && strings.TrimSpace(rawModel) != "" {
+		if mapped, ok := cfg.Mappings[rawModel]; ok && strings.TrimSpace(mapped) != "" {
+			model = mapped
+		}
+	}
+	payload["model"] = model
+
+	upstreamBody, err := json.Marshal(payload)
+	if err != nil {
+		b.app.appendLog("error", "proxy", "audio/speech 序列化失败: "+err.Error(), requestID)
+		b.writeProxyError(w, http.StatusInternalServerError, "序列化失败")
+		return
+	}
+
+	resourceURL, err := upstreamResourceURL(cfg.DeepseekBaseURL, "audio/speech")
+	if err != nil {
+		b.app.appendLog("error", "proxy", "audio/speech 上游地址错误: "+err.Error(), requestID)
+		b.writeProxyError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+
+	req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, resourceURL, bytes.NewReader(upstreamBody))
+	if err != nil {
+		b.app.appendLog("error", "proxy", "audio/speech 构造上游请求失败: "+err.Error(), requestID)
+		b.writeProxyError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+cfg.APIKey)
+	copyRequestHeaders(req.Header, r.Header, cfg.Headers)
+	req.GetBody = func() (io.ReadCloser, error) {
+		return io.NopCloser(bytes.NewReader(upstreamBody)), nil
+	}
+
+	resp, err := b.doUpstream(req, cfg, false)
+	if err != nil {
+		b.writeProxyError(w, http.StatusBadGateway, err.Error())
+		b.app.appendLog("error", "proxy", "audio/speech 转发失败: "+err.Error(), requestID)
+		return
+	}
+	defer resp.Body.Close()
+
+	atomic.AddInt64(&b.requestCount, 1)
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 8192))
+		b.setLastUpstreamFailure(resp.StatusCode, string(raw))
+		b.copyHeaders(w.Header(), resp.Header)
+		w.WriteHeader(resp.StatusCode)
+		_, _ = w.Write(raw)
+		duration := time.Since(startedAt).Milliseconds()
+		b.recordUsage(cfg, model, "audio/speech", 0, 0, 0, resp.StatusCode, duration, false)
+		b.app.appendLog("error", "proxy", fmt.Sprintf("POST /v1/audio/speech -> %d (%dms) model=%s", resp.StatusCode, duration, model), requestID)
+		return
+	}
+
+	b.clearLastUpstreamFailure()
+	b.copyHeaders(w.Header(), resp.Header)
+	w.WriteHeader(resp.StatusCode)
+
+	written, _ := io.Copy(w, resp.Body)
+	duration := time.Since(startedAt).Milliseconds()
+	b.recordUsage(cfg, model, "audio/speech", 0, 0, 0, resp.StatusCode, duration, true)
+	b.app.appendLog("info", "proxy", fmt.Sprintf("POST /v1/audio/speech -> 200 (%dms) model=%s bytes=%d", duration, model, written), requestID)
 }
 

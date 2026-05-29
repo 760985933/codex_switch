@@ -30,6 +30,8 @@ export function GetCodexConfigPath():Promise<string>;
 
 export function GetCodexSessionContent(arg1:string):Promise<main.SessionDetail>;
 
+export function GetDebugMode():Promise<boolean>;
+
 export function GetLogHistory(arg1:number):Promise<Array<main.LogEntry>>;
 
 export function GetOverviewSnapshot():Promise<main.OverviewSnapshot>;
@@ -77,6 +79,8 @@ export function RunHealthCheck():Promise<main.HealthCheckResult>;
 export function RunSync(arg1:string):Promise<main.SyncResult>;
 
 export function SaveAppConfig(arg1:main.AppConfig):Promise<main.AppConfig>;
+
+export function SetDebugMode(arg1:boolean):Promise<void>;
 
 export function SetCurrentProfile(arg1:string):Promise<main.AppConfig>;
 

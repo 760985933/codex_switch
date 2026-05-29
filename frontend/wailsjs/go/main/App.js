@@ -62,6 +62,10 @@ export function GetLogHistory(arg1) {
   return window['go']['main']['App']['GetLogHistory'](arg1);
 }
 
+export function GetDebugMode() {
+  return window['go']['main']['App']['GetDebugMode']();
+}
+
 export function GetOverviewSnapshot() {
   return window['go']['main']['App']['GetOverviewSnapshot']();
 }
@@ -152,6 +156,10 @@ export function RunSync(arg1) {
 
 export function SaveAppConfig(arg1) {
   return window['go']['main']['App']['SaveAppConfig'](arg1);
+}
+
+export function SetDebugMode(arg1) {
+  return window['go']['main']['App']['SetDebugMode'](arg1);
 }
 
 export function SetCurrentProfile(arg1) {

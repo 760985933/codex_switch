@@ -103,6 +103,14 @@ func (a *App) GetAppVersion() string {
 	return "v" + appVersion
 }
 
+func (a *App) SetDebugMode(enabled bool) {
+	a.proxy.SetDebugMode(enabled)
+}
+
+func (a *App) GetDebugMode() bool {
+	return a.proxy.GetDebugMode()
+}
+
 func (a *App) CheckForUpdates() (UpdateCheckResult, error) {
 	now := time.Now()
 	result := UpdateCheckResult{
