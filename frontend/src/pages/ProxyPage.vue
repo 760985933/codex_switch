@@ -88,7 +88,7 @@ onMounted(async () => {
 
 <template>
   <div class="proxy-page">
-    <n-tabs v-model:value="activeTab" type="line" animated>
+    <n-tabs v-model:value="activeTab" type="segment" animated>
       <n-tab-pane name="codex" :tab="t('overview.tab.codexDesktop')">
         <QuickGuideCard
           :listen-address="store.status.listenAddress"
@@ -114,5 +114,19 @@ onMounted(async () => {
   display: grid;
   gap: 16px;
   max-width: 780px;
+}
+
+.proxy-page :deep(.n-tabs-nav) {
+  margin-bottom: 16px;
+}
+
+.proxy-page :deep(.n-tabs-tab) {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 16px;
+}
+
+.proxy-page :deep(.n-tabs-tab--active) {
+  font-weight: 600;
 }
 </style>

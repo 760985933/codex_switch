@@ -56,7 +56,7 @@ const iconMap: Record<string, string> = {
 }
 
 const navItems = computed(() => [
-  { label: t('app.nav.overview'), to: '/proxy' },
+  { label: t('app.nav.proxy'), to: '/proxy' },
   { label: t('app.nav.models'), to: '/models' },
   { label: t('app.nav.sessions'), to: '/sessions' },
   { label: t('app.nav.monitoring'), to: '/monitoring' },
