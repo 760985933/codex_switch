@@ -66,7 +66,7 @@ func convertResponsesContentToChatContent(content any) any {
 		switch t {
 		case "input_image":
 			hasMedia = true
-			imageURL, _ := p["image_url"].(string)
+			imageURL := extractImageURL(p["image_url"])
 			chatParts = append(chatParts, map[string]any{
 				"type": "image_url",
 				"image_url": map[string]any{
@@ -107,6 +107,20 @@ func convertResponsesContentToChatContent(content any) any {
 		}
 	}
 	return strings.Join(texts, "")
+}
+
+// extractImageURL handles both string and object formats for the image_url field.
+// The Responses API allows image_url as a plain URL string or as {url, detail}.
+func extractImageURL(value any) string {
+	if s, ok := value.(string); ok && strings.TrimSpace(s) != "" {
+		return s
+	}
+	if m, ok := value.(map[string]any); ok {
+		if url, ok := m["url"].(string); ok && strings.TrimSpace(url) != "" {
+			return url
+		}
+	}
+	return ""
 }
 
 func flattenResponsesContent(value any) string {

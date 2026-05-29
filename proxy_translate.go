@@ -747,7 +747,7 @@ func responsesInputToMessages(payload map[string]any) ([]any, error) {
 				case "message":
 					// fallthrough to role/content parsing below
 				case "input_image":
-					imageURL, _ := msg["image_url"].(string)
+					imageURL := extractImageURL(msg["image_url"])
 					chatParts := []any{map[string]any{
 						"type": "image_url",
 						"image_url": map[string]any{"url": imageURL},
