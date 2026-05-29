@@ -91,7 +91,7 @@ export const messages = {
     models: {
       title: '模型管理',
       description: '管理你的 LLM 提供商和模型配置',
-      addProfile: '添加配置',
+      addProfile: '添加模型',
       profileName: '配置名称',
       profileNamePlaceholder: '如 DeepSeek Pro',
       provider: '提供商',
@@ -320,7 +320,7 @@ export const messages = {
     },
     guide: {
       title: '接入指引',
-      actions: { copyBaseUrl: '复制 Base URL', preferences:'偏好设置', pluginUnlockLogin: '插件解锁登录', pluginUnlockLoginTooltip: '该模式 codex 可能会短暂请求外网，需要确保可以访问外部网络，否则有可能界面一直进不去。', noAccountLogin: '无帐号登录', restoreDefault: '恢复默认', sandbox: '沙盒测试' },
+      actions: { copyBaseUrl: '复制 Base URL', preferences:'偏好设置', pluginUnlockLogin: '插件解锁登录', pluginUnlockLoginTooltip: '该模式 codex 可能会短暂请求外网，需要确保可以访问外部网络，否则有可能界面一直进不去。', noAccountLogin: '无帐号登录', restoreDefault: '恢复默认', sandbox: '沙盒测试', completed: '已启用', stop: '停止', stopped: '已停止' },
       sandbox: {
         title: 'API 沙盒',
         networkAccess: '互联网访问',
@@ -456,7 +456,7 @@ export const messages = {
     models: {
       title: 'Models',
       description: 'Manage your LLM providers and model configurations',
-      addProfile: 'Add Profile',
+      addProfile: 'Add Model',
       profileName: 'Profile Name',
       profileNamePlaceholder: 'e.g. DeepSeek Pro',
       provider: 'Provider',
@@ -676,7 +676,7 @@ export const messages = {
     },
     guide: {
       title: 'Quick Start',
-      actions: { copyBaseUrl: 'Copy Base URL', preferences:'Preferences', pluginUnlockLogin: 'Plugin Unlock Login', pluginUnlockLoginTooltip: 'Codex may briefly access the internet. Make sure external network is accessible, otherwise the UI may get stuck.', noAccountLogin: 'No-Account Login', restoreDefault: 'Restore default', sandbox: 'Sandbox' },
+      actions: { copyBaseUrl: 'Copy Base URL', preferences:'Preferences', pluginUnlockLogin: 'Plugin Unlock Login', pluginUnlockLoginTooltip: 'Codex may briefly access the internet. Make sure external network is accessible, otherwise the UI may get stuck.', noAccountLogin: 'No-Account Login', restoreDefault: 'Restore default', sandbox: 'Sandbox', completed: 'Enabled', stop: 'Stop', stopped: 'Stopped' },
       sandbox: {
         title: 'API Sandbox',
         networkAccess: 'Network Access',
@@ -961,7 +961,7 @@ export const messages = {
     },
     guide: {
       title: '接続ガイド',
-      actions: { copyBaseUrl: 'Base URL をコピー', preferences:'設定', pluginUnlockLogin: 'プラグイン解除ログイン', pluginUnlockLoginTooltip: 'Codex が一時的に外部ネットワークにアクセスする可能性があります。外部ネットワークにアクセスできることを確認してください。', noAccountLogin: 'アカウントなしログイン', restoreDefault: '既定に戻す', sandbox: 'Sandbox' },
+      actions: { copyBaseUrl: 'Base URL をコピー', preferences:'設定', pluginUnlockLogin: 'プラグイン解除ログイン', pluginUnlockLoginTooltip: 'Codex が一時的に外部ネットワークにアクセスする可能性があります。外部ネットワークにアクセスできることを確認してください。', noAccountLogin: 'アカウントなしログイン', restoreDefault: '既定に戻す', sandbox: 'Sandbox', completed: '有効', stop: '停止', stopped: '停止しました' },
       sandbox: {
         title: 'API サンドボックス',
         networkAccess: 'ネットワークアクセス',
@@ -1230,7 +1230,7 @@ export const messages = {
     },
     guide: {
       title: '빠른 시작',
-      actions: { copyBaseUrl: 'Base URL 복사', preferences:'설정', pluginUnlockLogin: '플러그인 해제 로그인', pluginUnlockLoginTooltip: 'Codex가 일시적으로 외부 네트워크에 접속할 수 있습니다. 외부 네트워크에 접속할 수 있는지 확인하세요.', noAccountLogin: '계정 없이 로그인', restoreDefault: '기본 복원', sandbox: 'Sandbox' },
+      actions: { copyBaseUrl: 'Base URL 복사', preferences:'설정', pluginUnlockLogin: '플러그인 해제 로그인', pluginUnlockLoginTooltip: 'Codex가 일시적으로 외부 네트워크에 접속할 수 있습니다. 외부 네트워크에 접속할 수 있는지 확인하세요.', noAccountLogin: '계정 없이 로그인', restoreDefault: '기본 복원', sandbox: 'Sandbox', completed: '활성화됨', stop: '중지', stopped: '중지됨' },
       sandbox: {
         title: 'API 샌드박스',
         networkAccess: '네트워크 액세스',
@@ -1499,7 +1499,7 @@ export const messages = {
     },
     guide: {
       title: 'Guide',
-      actions: { copyBaseUrl: 'Copier Base URL', preferences:'Préférences', pluginUnlockLogin: 'Déverrouillage plugin', pluginUnlockLoginTooltip: 'Codex peut brièvement accéder à Internet. Assurez-vous que le réseau externe est accessible.', noAccountLogin: 'Connexion sans compte', restoreDefault: 'Restaurer défaut', sandbox: 'Sandbox' },
+      actions: { copyBaseUrl: 'Copier Base URL', preferences:'Préférences', pluginUnlockLogin: 'Déverrouillage plugin', pluginUnlockLoginTooltip: 'Codex peut brièvement accéder à Internet. Assurez-vous que le réseau externe est accessible.', noAccountLogin: 'Connexion sans compte', restoreDefault: 'Restaurer défaut', sandbox: 'Sandbox', completed: 'Activé', stop: 'Arrêter', stopped: 'Arrêté' },
       sandbox: {
         title: 'Bac à sable API',
         networkAccess: 'Accès Internet',
@@ -1768,7 +1768,7 @@ export const messages = {
     },
     guide: {
       title: 'Anleitung',
-      actions: { copyBaseUrl: 'Base URL kopieren', preferences:'Einstellungen', pluginUnlockLogin: 'Plugin-Entsperrung Login', pluginUnlockLoginTooltip: 'Codex kann kurzzeitig auf das Internet zugreifen. Stellen Sie sicher, dass das externe Netzwerk erreichbar ist.', noAccountLogin: 'Login ohne Konto', restoreDefault: 'Standard wiederherstellen', sandbox: 'Sandbox' },
+      actions: { copyBaseUrl: 'Base URL kopieren', preferences:'Einstellungen', pluginUnlockLogin: 'Plugin-Entsperrung Login', pluginUnlockLoginTooltip: 'Codex kann kurzzeitig auf das Internet zugreifen. Stellen Sie sicher, dass das externe Netzwerk erreichbar ist.', noAccountLogin: 'Login ohne Konto', restoreDefault: 'Standard wiederherstellen', sandbox: 'Sandbox', completed: 'Aktiviert', stop: 'Stoppen', stopped: 'Gestoppt' },
       sandbox: {
         title: 'API-Sandbox',
         networkAccess: 'Internetzugriff',
@@ -2031,7 +2031,7 @@ export const messages = {
     },
     guide: {
       title: 'Guía',
-      actions: { copyBaseUrl: 'Copiar Base URL', preferences:'Preferencias', pluginUnlockLogin: 'Desbloqueo plugin', pluginUnlockLoginTooltip: 'Codex puede acceder brevemente a Internet. Asegúrese de que la red externa sea accesible.', noAccountLogin: 'Acceso sin cuenta', restoreDefault: 'Restaurar por defecto', sandbox: 'Sandbox' },
+      actions: { copyBaseUrl: 'Copiar Base URL', preferences:'Preferencias', pluginUnlockLogin: 'Desbloqueo plugin', pluginUnlockLoginTooltip: 'Codex puede acceder brevemente a Internet. Asegúrese de que la red externa sea accesible.', noAccountLogin: 'Acceso sin cuenta', restoreDefault: 'Restaurar por defecto', sandbox: 'Sandbox', completed: 'Activado', stop: 'Detener', stopped: 'Detenido' },
       sandbox: {
         title: 'Sandbox de API',
         networkAccess: 'Acceso a Internet',

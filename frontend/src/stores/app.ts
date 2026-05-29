@@ -207,7 +207,7 @@ export const useAppStore = defineStore('app', {
       this.config = (await SetCurrentProfile(id)) as AppConfig
       return this.config
     },
-    async addProfile(name: string, provider?: string, apiKey?: string, template?: Profile) {
+    async addProfile(name: string, provider?: string, template?: Profile, apiKey?: string) {
       const id = 'profile_' + Date.now().toString(36)
       const profile = template
         ? { ...template, id, name, apiKey: apiKey || template.apiKey }

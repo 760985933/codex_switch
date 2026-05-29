@@ -10,11 +10,19 @@ const props = defineProps<{
   profiles: Profile[]
   currentProfileId: string
   loading: boolean
+  showLoginActions?: boolean
+  loginLoadingId?: string | null
+  loginAction?: string | null
+  completedLogins?: Record<string, string[]>
 }>()
 
 const emit = defineEmits<{
   edit: [id: string]
   delete: [id: string]
+  select: [id: string]
+  pluginLogin: [id: string]
+  noAccountLogin: [id: string]
+  stopLogin: [id: string]
 }>()
 
 const store = useAppStore()
@@ -63,12 +71,14 @@ function handleDelete(id: string) {
       :key="profile.id"
       class="profile-item"
       :class="{ active: profile.id === currentProfileId }"
+      @click="emit('select', profile.id)"
     >
       <div class="profile-item-main">
         <div class="profile-item-info">
           <div class="profile-item-name-row">
             <span v-if="profile.name" class="profile-item-label">{{ t('config.fields.profileName') }}:</span>
             <span class="profile-item-name">{{ profile.name }}</span>
+            <span class="profile-badge">{{ profile.provider }}</span>
           </div>
           <span v-if="profile.baseURL" class="profile-item-meta">
             <span class="profile-item-label">API:</span> {{ profile.baseURL }}
@@ -95,6 +105,28 @@ function handleDelete(id: string) {
             </n-button>
           </div>
           <div class="profile-item-actions" @click.stop>
+            <template v-if="showLoginActions">
+              <n-button
+                size="small"
+                :type="loginLoadingId === profile.id && loginAction === 'plugin' ? 'error' : (completedLogins?.[profile.id]?.includes('plugin') ? 'success' : (profile.apiKey ? 'primary' : undefined))"
+                :disabled="!profile.apiKey || (completedLogins?.[profile.id]?.includes('plugin') && !(loginLoadingId === profile.id && loginAction === 'plugin'))"
+                :loading="false"
+                :title="loginLoadingId === profile.id && loginAction === 'plugin' ? '' : (profile.apiKey ? t('guide.actions.pluginUnlockLoginTooltip') : t('guide.monitor.noKey'))"
+                @click="loginLoadingId === profile.id && loginAction === 'plugin' ? emit('stopLogin', profile.id) : emit('pluginLogin', profile.id)"
+              >
+                {{ loginLoadingId === profile.id && loginAction === 'plugin' ? t('guide.actions.stop') : (completedLogins?.[profile.id]?.includes('plugin') ? t('guide.actions.completed') : t('guide.actions.pluginUnlockLogin')) }}
+              </n-button>
+              <n-button
+                size="small"
+                :type="loginLoadingId === profile.id && loginAction === 'noaccount' ? 'error' : (completedLogins?.[profile.id]?.includes('noaccount') ? 'success' : (profile.apiKey ? 'primary' : undefined))"
+                :disabled="!profile.apiKey || (completedLogins?.[profile.id]?.includes('noaccount') && !(loginLoadingId === profile.id && loginAction === 'noaccount'))"
+                :loading="false"
+                @click="loginLoadingId === profile.id && loginAction === 'noaccount' ? emit('stopLogin', profile.id) : emit('noAccountLogin', profile.id)"
+              >
+                {{ loginLoadingId === profile.id && loginAction === 'noaccount' ? t('guide.actions.stop') : (completedLogins?.[profile.id]?.includes('noaccount') ? t('guide.actions.completed') : t('guide.actions.noAccountLogin')) }}
+              </n-button>
+              <span class="actions-sep">|</span>
+            </template>
             <n-button size="small" tertiary @click="handleEdit(profile.id)">
               {{ t('guide.step.one.edit') }}
             </n-button>
@@ -178,9 +210,15 @@ function handleDelete(id: string) {
   text-overflow: ellipsis;
 }
 
-.profile-item-provider {
-  font-size: 11px;
-  color: var(--muted);
+.profile-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(22, 119, 255, 0.12);
+  color: rgba(22, 119, 255, 0.92);
 }
 
 .profile-item-meta {
@@ -196,6 +234,12 @@ function handleDelete(id: string) {
   flex-shrink: 0;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.actions-sep {
+  color: var(--border);
+  font-size: 12px;
+  margin: 0 2px;
 }
 
 .profile-item-usage {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -82,7 +82,7 @@ const providerOptions = [
 
 async function handleAddProfile() {
   if (!newProfileName.value.trim()) return
-  await store.addProfile(newProfileName.value.trim(), newProfileProvider.value, newProfileApiKey.value || undefined)
+  await store.addProfile(newProfileName.value.trim(), newProfileProvider.value, undefined, newProfileApiKey.value || undefined)
   newProfileName.value = ''
   newProfileProvider.value = 'deepseek'
   newProfileApiKey.value = ''
@@ -115,9 +115,16 @@ function handleEditorSave() {
 // ── Login actions ──
 const activeLoginAction = ref<'plugin' | 'noaccount' | null>(null)
 const loginProfileId = ref<string | null>(null)
+const completedLogins = reactive<Record<string, string[]>>({})
 
-async function handlePluginLogin() {
-  const id = store.config.currentProfileId
+function handleStopLogin(id: string) {
+  if (loginProfileId.value !== id) return
+  loginProfileId.value = null
+  activeLoginAction.value = null
+  message.info(t('guide.actions.stopped'))
+}
+
+async function handlePluginLogin(id: string) {
   const profile = store.config.profiles[id]
   if (!profile?.apiKey) {
     message.warning(t('guide.monitor.noKey'))
@@ -126,20 +133,30 @@ async function handlePluginLogin() {
   loginProfileId.value = id
   activeLoginAction.value = 'plugin'
   try {
+    if (id !== store.config.currentProfileId) {
+      await store.setCurrentProfile(id)
+    }
     if (!store.isRunning) await store.startProxy()
     const path = await store.pluginUnlockLogin()
+    if (loginProfileId.value !== id || activeLoginAction.value !== 'plugin') return
     const hintPath = await store.getCodexConfigPath()
+    if (!completedLogins[id]) completedLogins[id] = []
+    if (!completedLogins[id].includes('plugin')) completedLogins[id].push('plugin')
+    if (!completedLogins[id].includes('noaccount')) completedLogins[id].push('noaccount')
     message.success(t('app.toast.codexTomlWritten', { path: path || hintPath }))
   } catch (error) {
-    message.error(error instanceof Error ? error.message : String(error))
+    if (loginProfileId.value === id && activeLoginAction.value === 'plugin') {
+      message.error(error instanceof Error ? error.message : String(error))
+    }
   } finally {
-    loginProfileId.value = null
-    activeLoginAction.value = null
+    if (loginProfileId.value === id && activeLoginAction.value === 'plugin') {
+      loginProfileId.value = null
+      activeLoginAction.value = null
+    }
   }
 }
 
-async function handleNoAccountLogin() {
-  const id = store.config.currentProfileId
+async function handleNoAccountLogin(id: string) {
   const profile = store.config.profiles[id]
   if (!profile?.apiKey) {
     message.warning(t('guide.monitor.noKey'))
@@ -148,15 +165,26 @@ async function handleNoAccountLogin() {
   loginProfileId.value = id
   activeLoginAction.value = 'noaccount'
   try {
+    if (id !== store.config.currentProfileId) {
+      await store.setCurrentProfile(id)
+    }
     if (!store.isRunning) await store.startProxy()
     const path = await store.writeCodexConfigTomlProfiles()
+    if (loginProfileId.value !== id || activeLoginAction.value !== 'noaccount') return
     const hintPath = await store.getCodexConfigPath()
+    if (!completedLogins[id]) completedLogins[id] = []
+    if (!completedLogins[id].includes('noaccount')) completedLogins[id].push('noaccount')
+    if (!completedLogins[id].includes('plugin')) completedLogins[id].push('plugin')
     message.success(t('app.toast.codexTomlWritten', { path: path || hintPath }))
   } catch (error) {
-    message.error(error instanceof Error ? error.message : String(error))
+    if (loginProfileId.value === id && activeLoginAction.value === 'noaccount') {
+      message.error(error instanceof Error ? error.message : String(error))
+    }
   } finally {
-    loginProfileId.value = null
-    activeLoginAction.value = null
+    if (loginProfileId.value === id && activeLoginAction.value === 'noaccount') {
+      loginProfileId.value = null
+      activeLoginAction.value = null
+    }
   }
 }
 </script>
@@ -181,30 +209,18 @@ async function handleNoAccountLogin() {
         :profiles="store.profileList"
         :current-profile-id="store.config.currentProfileId"
         :loading="store.isBusy"
+        :login-loading-id="loginProfileId"
+        :login-action="activeLoginAction"
+        :completed-logins="completedLogins"
+        show-login-actions
         @edit="handleEdit"
         @delete="handleDelete"
+        @select="store.setCurrentProfile"
+        @plugin-login="handlePluginLogin"
+        @no-account-login="handleNoAccountLogin"
+        @stop-login="handleStopLogin"
       />
 
-      <div v-if="currentProfile?.apiKey" class="login-actions">
-        <n-button
-          size="small"
-          type="primary"
-          :title="t('guide.actions.pluginUnlockLoginTooltip')"
-          :loading="loginProfileId === store.config.currentProfileId && activeLoginAction === 'plugin'"
-          @click="handlePluginLogin"
-        >
-          {{ t('guide.actions.pluginUnlockLogin') }}
-        </n-button>
-        <n-button
-          size="small"
-          secondary
-          type="primary"
-          :loading="loginProfileId === store.config.currentProfileId && activeLoginAction === 'noaccount'"
-          @click="handleNoAccountLogin"
-        >
-          {{ t('guide.actions.noAccountLogin') }}
-        </n-button>
-      </div>
     </div>
 
     <!-- Proxy Status Card -->
@@ -342,14 +358,6 @@ async function handleNoAccountLogin() {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.login-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
 }
 
 /* Status */
