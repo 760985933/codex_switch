@@ -174,11 +174,13 @@ export const messages = {
       },
     },
     dashboard: {
-      currentProfile: '当前模型',
+      currentProfile: '代理配置',
       manageModels: '管理模型 →',
       proxyStatus: '代理状态',
       proxySettings: '代理设置 →',
       quickActions: '高级配置',
+      removeProxy: '移除代理配置',
+      removedProxy: '代理配置已移除',
       noProfile: '暂无活跃的模型配置',
       goToModels: '前往模型管理',
     },
@@ -591,11 +593,13 @@ export const messages = {
       },
     },
     dashboard: {
-      currentProfile: 'Active Model',
+      currentProfile: 'Proxy Config',
       manageModels: 'Manage Models →',
       proxyStatus: 'Proxy Status',
       proxySettings: 'Proxy Settings →',
       quickActions: 'Advanced Config',
+      removeProxy: 'Remove Proxy',
+      removedProxy: 'Proxy removed',
       noProfile: 'No active model profile',
       goToModels: 'Go to Models',
     },
@@ -912,6 +916,8 @@ export const messages = {
     },
     dashboard: {
       quickActions: '高度な設定',
+      removeProxy: 'プロキシ設定を削除',
+      removedProxy: 'プロキシ設定を削除しました',
     },
   monitoring: {
     title: '\u30e2\u30cb\u30bf\u30ea\u30f3\u30b0',
@@ -1192,6 +1198,8 @@ export const messages = {
     },
     dashboard: {
       quickActions: '고급 설정',
+      removeProxy: '프록시 설정 제거',
+      removedProxy: '프록시 설정이 제거되었습니다',
     },
   monitoring: {
     title: '\ubaac\ub9ac\ud130\ub9c1',
@@ -1471,6 +1479,8 @@ export const messages = {
       health: { ok: 'Contrôle OK', bad: 'Problèmes détectés. Voir la console.' },
     dashboard: {
       quickActions: 'Configuration avancée',
+      removeProxy: 'Supprimer le proxy',
+      removedProxy: 'Proxy supprimé',
     },
     },
   monitoring: {
@@ -1750,6 +1760,8 @@ export const messages = {
       },
     dashboard: {
       quickActions: 'Erweiterte Konfiguration',
+      removeProxy: 'Proxy entfernen',
+      removedProxy: 'Proxy entfernt',
     },
       health: { ok: 'Health-Check ok', bad: 'Probleme erkannt. Details in der Konsole.' },
     },
@@ -2023,6 +2035,8 @@ export const messages = {
         clipboardCopied: 'Copiado al portapapeles',
     dashboard: {
       quickActions: 'Configuración avanzada',
+      removeProxy: 'Eliminar proxy',
+      removedProxy: 'Proxy eliminado',
     },
       },
       health: { ok: 'Salud OK', bad: 'Se detectaron problemas. Ver consola.' },

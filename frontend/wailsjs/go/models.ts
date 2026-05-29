@@ -43,6 +43,7 @@ export namespace main {
 	    headers: Record<string, string>;
 	    currentProfileId?: string;
 	    profiles?: Record<string, Profile>;
+	    proxyProfileIds?: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new AppConfig(source);
@@ -66,6 +67,7 @@ export namespace main {
 	        this.headers = source["headers"];
 	        this.currentProfileId = source["currentProfileId"];
 	        this.profiles = this.convertValues(source["profiles"], Profile, true);
+	        this.proxyProfileIds = source["proxyProfileIds"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

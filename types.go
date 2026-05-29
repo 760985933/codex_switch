@@ -40,6 +40,7 @@ type AppConfig struct {
 
 	CurrentProfileID string              `json:"currentProfileId,omitempty"`
 	Profiles         map[string]*Profile `json:"profiles,omitempty"`
+	ProxyProfileIDs  []string            `json:"proxyProfileIds,omitempty"`
 }
 
 type ProxyStatusPayload struct {

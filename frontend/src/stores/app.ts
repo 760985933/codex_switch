@@ -44,6 +44,7 @@ const FALLBACK_CONFIG: AppConfig = {
   headers: {},
   currentProfileId: 'default',
   profiles: {},
+  proxyProfileIds: [] as string[],
 }
 
 const FALLBACK_STATUS: ProxyStatusPayload = {
@@ -96,6 +97,10 @@ export const useAppStore = defineStore('app', {
     },
     profileList(state): Profile[] {
       return Object.values(state.config.profiles)
+    },
+    proxyProfiles(state): Profile[] {
+      const ids = state.config.proxyProfileIds || []
+      return ids.map(id => state.config.profiles[id]).filter(Boolean) as Profile[]
     },
     isRunning(state): boolean {
       return state.status.status === 'running'
@@ -151,6 +156,7 @@ export const useAppStore = defineStore('app', {
       const profile = template
         ? { ...template, id, name, apiKey: apiKey || template.apiKey }
         : { ...makeDefaultProfile(id, name, provider), apiKey: apiKey || '' }
+      const ids = this.config.proxyProfileIds || []
       const updated = {
         ...this.config,
         currentProfileId: id,
@@ -158,6 +164,23 @@ export const useAppStore = defineStore('app', {
           ...this.config.profiles,
           [id]: profile,
         },
+        proxyProfileIds: ids.includes(id) ? ids : [...ids, id],
+      }
+      this.config = await saveAppConfigBridge(updated)
+      return this.config
+    },
+    async removeFromProxy(id: string) {
+      const ids = (this.config.proxyProfileIds || []).filter(i => i !== id)
+      let updated = { ...this.config, proxyProfileIds: ids }
+      // If profile has no API key (invalid), also remove from profiles
+      const profile = this.config.profiles[id]
+      if (profile && !profile.apiKey) {
+        const { [id]: _, ...rest } = this.config.profiles
+        updated = { ...updated, profiles: rest }
+        if (id === updated.currentProfileId) {
+          const others = Object.keys(rest)
+          updated.currentProfileId = others.length > 0 ? others[0] : ''
+        }
       }
       this.config = await saveAppConfigBridge(updated)
       return this.config

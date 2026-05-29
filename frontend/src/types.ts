@@ -28,6 +28,7 @@ export interface AppConfig {
   headers: Record<string, string>
   currentProfileId: string
   profiles: Record<string, Profile>
+  proxyProfileIds?: string[]
 }
 
 export interface ProxyStatusPayload {

@@ -116,6 +116,11 @@ function handleEditorSave() {
   showEditor.value = false
   editingProfileId.value = null
 }
+
+async function handleRemoveProxy(id: string) {
+  await store.removeFromProxy(id)
+  message.success(t('dashboard.removedProxy'))
+}
 </script>
 
 <template>
@@ -136,7 +141,7 @@ function handleEditorSave() {
         </div>
 
         <ProfileList
-          :profiles="store.profileList"
+          :profiles="store.proxyProfiles"
           :current-profile-id="store.config.currentProfileId"
           :loading="store.isBusy"
           :show-delete="false"
@@ -146,6 +151,9 @@ function handleEditorSave() {
         >
           <template #actions="{ profile }">
             <CodexLoginActions :profile-id="profile.id" />
+            <n-button size="small" tertiary type="warning" @click="handleRemoveProxy(profile.id)">
+              {{ t('dashboard.removeProxy') }}
+            </n-button>
           </template>
         </ProfileList>
       </div>
