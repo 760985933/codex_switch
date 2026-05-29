@@ -293,6 +293,22 @@ func extractUsage(body []byte) (map[string]int64, bool) {
 	return nil, false
 }
 
+func extractGoogleUsage(body []byte) (promptTokens, completionTokens, totalTokens int64) {
+	var payload struct {
+		UsageMetadata *struct {
+			PromptTokenCount     float64 `json:"promptTokenCount"`
+			CandidatesTokenCount float64 `json:"candidatesTokenCount"`
+			TotalTokenCount      float64 `json:"totalTokenCount"`
+		} `json:"usageMetadata"`
+	}
+	if err := json.Unmarshal(body, &payload); err == nil && payload.UsageMetadata != nil {
+		return int64(payload.UsageMetadata.PromptTokenCount),
+			int64(payload.UsageMetadata.CandidatesTokenCount),
+			int64(payload.UsageMetadata.TotalTokenCount)
+	}
+	return 0, 0, 0
+}
+
 func extractChatCompletionText(payload map[string]any) string {
 	choicesAny, ok := payload["choices"]
 	if !ok {

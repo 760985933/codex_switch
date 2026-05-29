@@ -32,7 +32,6 @@ func mergeCodexConfigTomlProfiles(existing []byte, baseURL string, defaultModel 
 	// Clean top-level keys that conflict with profiles
 	delete(doc, "model_provider")
 	delete(doc, "openai_base_url")
-	delete(doc, "model_catalog_json")
 	doc["profile"] = codexProfileName // activate [profiles.local] section
 
 	if strings.TrimSpace(defaultModel) == "" {

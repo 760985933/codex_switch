@@ -156,7 +156,6 @@ func mergeCodexConfigToml(existing []byte, baseURL string, defaultModel string) 
 	}
 
 	doc["model_provider"] = codexProviderID
-	delete(doc, "model_catalog_json")
 	delete(doc, "profile")
 	if strings.TrimSpace(defaultModel) != "" {
 		doc["model"] = defaultModel

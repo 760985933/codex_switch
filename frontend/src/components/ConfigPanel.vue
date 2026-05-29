@@ -36,6 +36,7 @@ const apiTypeOptions = [
   { label: 'Chat Completions（OpenAI 兼容）', value: 'chat_completions' },
   { label: 'Responses（Codex / OpenAI）', value: 'responses' },
   { label: 'Messages（Anthropic Claude）', value: 'messages' },
+  { label: 'Google（Gemini）', value: 'google' },
 ]
 
 // Sync form when switching profiles

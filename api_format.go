@@ -17,6 +17,7 @@ const (
 	APIChatCompletions APIType = "chat_completions"
 	APIResponses       APIType = "responses"
 	APIMessages        APIType = "messages"
+	APIGoogle          APIType = "google"
 )
 
 // ---- 格式配置 ----
@@ -76,6 +77,15 @@ func (h *messagesHandler) AdditionalHeaders() map[string]string {
 	return map[string]string{"anthropic-version": "2023-06-01"}
 }
 
+type googleHandler struct{}
+
+func (h *googleHandler) APIType() APIType     { return APIGoogle }
+func (h *googleHandler) EndpointPath() string  { return "" } // model-aware URL, built in BuildUpstreamRequest
+func (h *googleHandler) AuthHeader(apiKey string) (string, string) {
+	return "x-goog-api-key", apiKey
+}
+func (h *googleHandler) AdditionalHeaders() map[string]string { return nil }
+
 // ---- 格式注册表 ----
 
 var formatHandlers = map[APIType]FormatHandler{}
@@ -96,6 +106,7 @@ func init() {
 	RegisterFormatHandler(&chatCompletionsHandler{})
 	RegisterFormatHandler(&responsesHandler{})
 	RegisterFormatHandler(&messagesHandler{})
+	RegisterFormatHandler(&googleHandler{})
 }
 
 // ---- 格式感知路由上下文 ----
@@ -171,6 +182,24 @@ func TranslateRequestBody(body []byte, sourceFormat, targetFormat APIType, cfg A
 	case sourceFormat == APIMessages && targetFormat == APIChatCompletions:
 		return translateMessagesToChatCompletions(body, cfg)
 
+	case sourceFormat == APIChatCompletions && targetFormat == APIGoogle:
+		return translateChatCompletionsToGoogle(body, cfg)
+
+	case sourceFormat == APIMessages && targetFormat == APIGoogle:
+		chatBody, _, _, err := translateMessagesToChatCompletions(body, cfg)
+		if err != nil {
+			return nil, false, "", err
+		}
+		return translateChatCompletionsToGoogle(chatBody, cfg)
+
+	case sourceFormat == APIResponses && targetFormat == APIGoogle:
+		chatBody, stream, _, err := translateResponsesToChatCompletions(body, cfg)
+		if err != nil {
+			return nil, false, "", err
+		}
+		googleBody, _, _, err := translateChatCompletionsToGoogle(chatBody, cfg)
+		return googleBody, stream, "", err
+
 	case sourceFormat == APIMessages && targetFormat == APIResponses:
 		chatBody, stream, _, err := translateMessagesToChatCompletions(body, cfg)
 		if err != nil {
@@ -219,6 +248,23 @@ func TranslateResponseBody(upstreamBody []byte, sourceFormat, targetFormat APITy
 	case sourceFormat == APIMessages && targetFormat == APIChatCompletions:
 		return translateChatCompletionToMessages(upstreamBody, model)
 
+	case sourceFormat == APIChatCompletions && targetFormat == APIGoogle:
+		return translateGoogleToChatCompletions(upstreamBody, model)
+
+	case sourceFormat == APIMessages && targetFormat == APIGoogle:
+		chatResp, err := translateGoogleToChatCompletions(upstreamBody, model)
+		if err != nil {
+			return nil, err
+		}
+		return translateChatCompletionToMessages(jsonMarshalBytes(chatResp), model)
+
+	case sourceFormat == APIResponses && targetFormat == APIGoogle:
+		chatResp, err := translateGoogleToChatCompletions(upstreamBody, model)
+		if err != nil {
+			return nil, err
+		}
+		return translateChatCompletionToResponses(jsonMarshalBytes(chatResp), model)
+
 	case sourceFormat == APIResponses && targetFormat == APIMessages:
 		return translateMessagesToResponses(upstreamBody, model)
 
@@ -264,7 +310,7 @@ func passThroughMessagesBody(body []byte, cfg AppConfig) ([]byte, error) {
 		if mapped, ok := cfg.Mappings[rawModel]; ok && strings.TrimSpace(mapped) != "" {
 			payload["model"] = mapped
 		} else {
-			payload["model"] = strings.TrimSpace(cfg.DefaultModel)
+			payload["model"] = rawModel
 		}
 	} else {
 		payload["model"] = strings.TrimSpace(cfg.DefaultModel)
@@ -281,7 +327,7 @@ func passThroughResponsesBody(body []byte, cfg AppConfig) ([]byte, error) {
 		if mapped, ok := cfg.Mappings[rawModel]; ok && strings.TrimSpace(mapped) != "" {
 			payload["model"] = mapped
 		} else {
-			payload["model"] = strings.TrimSpace(cfg.DefaultModel)
+			payload["model"] = rawModel
 		}
 	} else {
 		payload["model"] = strings.TrimSpace(cfg.DefaultModel)
@@ -308,6 +354,8 @@ func translateChatToMessagesRequest(body []byte, cfg AppConfig) ([]byte, bool, s
 	if rawModel, ok := payload["model"].(string); ok && strings.TrimSpace(rawModel) != "" {
 		if mapped, ok := cfg.Mappings[rawModel]; ok && strings.TrimSpace(mapped) != "" {
 			model = mapped
+		} else {
+			model = rawModel
 		}
 	}
 	payload["model"] = model
@@ -362,6 +410,8 @@ func translateChatToResponsesRequest(body []byte, cfg AppConfig) ([]byte, bool, 
 	if rawModel, ok := payload["model"].(string); ok && strings.TrimSpace(rawModel) != "" {
 		if mapped, ok := cfg.Mappings[rawModel]; ok && strings.TrimSpace(mapped) != "" {
 			model = mapped
+		} else {
+			model = rawModel
 		}
 	}
 
@@ -401,6 +451,241 @@ func translateChatToResponsesRequest(body []byte, cfg AppConfig) ([]byte, bool, 
 	}
 	out, err := json.Marshal(outPayload)
 	return out, streaming, model, err
+}
+
+// ---- Google Gemini API 跨格式翻译 ----
+
+func translateChatCompletionsToGoogle(body []byte, cfg AppConfig) ([]byte, bool, string, error) {
+	var payload map[string]any
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, false, "", fmt.Errorf("无效 JSON: %w", err)
+	}
+
+	streaming := detectStreaming(body)
+
+	model := strings.TrimSpace(cfg.DefaultModel)
+	if rawModel, ok := payload["model"].(string); ok && strings.TrimSpace(rawModel) != "" {
+		if mapped, ok := cfg.Mappings[rawModel]; ok && strings.TrimSpace(mapped) != "" {
+			model = mapped
+		} else {
+			model = rawModel
+		}
+	}
+
+	// 转换 messages → contents
+	messages, _ := payload["messages"].([]any)
+	if messages == nil {
+		messages = []any{}
+	}
+	var systemParts []map[string]any
+	contents := make([]any, 0, len(messages))
+	for _, item := range messages {
+		msg, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		role, _ := msg["role"].(string)
+		content := msg["content"]
+
+		if role == "system" {
+			if text := extractStringContent(content); strings.TrimSpace(text) != "" {
+				systemParts = append(systemParts, map[string]any{"text": text})
+			}
+			continue
+		}
+
+		// Google roles: "user" or "model" (not "assistant")
+		googleRole := role
+		if role == "assistant" {
+			googleRole = "model"
+		}
+
+		parts := convertContentToGoogleParts(content)
+		contents = append(contents, map[string]any{
+			"role":  googleRole,
+			"parts": parts,
+		})
+	}
+
+	outPayload := map[string]any{
+		"contents": contents,
+	}
+	if len(systemParts) > 0 {
+		outPayload["systemInstruction"] = map[string]any{"parts": systemParts}
+	}
+
+	// 转换 generationConfig
+	genConfig := map[string]any{}
+	if v, ok := payload["temperature"]; ok {
+		genConfig["temperature"] = v
+	}
+	if v, ok := payload["max_tokens"]; ok {
+		genConfig["maxOutputTokens"] = v
+	} else if v, ok := payload["max_completion_tokens"]; ok {
+		genConfig["maxOutputTokens"] = v
+	}
+	if v, ok := payload["top_p"]; ok {
+		genConfig["topP"] = v
+	}
+	if v, ok := payload["stop"]; ok {
+		genConfig["stopSequences"] = v
+	}
+	if len(genConfig) > 0 {
+		outPayload["generationConfig"] = genConfig
+	}
+
+	// 直通 tools（Google 兼容 OpenAI tool 格式）
+	if v, ok := payload["tools"]; ok {
+		outPayload["tools"] = v
+	}
+	if v, ok := payload["tool_choice"]; ok {
+		outPayload["toolConfig"] = map[string]any{"functionCallingConfig": v}
+	}
+
+	out, err := json.Marshal(outPayload)
+	return out, streaming, model, err
+}
+
+func extractStringContent(content any) string {
+	switch c := content.(type) {
+	case string:
+		return c
+	case []any:
+		var parts []string
+		for _, item := range c {
+			if m, ok := item.(map[string]any); ok {
+				if t, _ := m["type"].(string); t == "text" {
+					if text, ok := m["text"].(string); ok {
+						parts = append(parts, text)
+					}
+				}
+			}
+		}
+		return strings.Join(parts, "\n")
+	}
+	return ""
+}
+
+func convertContentToGoogleParts(content any) []map[string]any {
+	switch c := content.(type) {
+	case string:
+		return []map[string]any{{"text": c}}
+	case []any:
+		parts := make([]map[string]any, 0, len(c))
+		for _, item := range c {
+			m, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+			t, _ := m["type"].(string)
+			switch t {
+			case "text":
+				if text, ok := m["text"].(string); ok {
+					parts = append(parts, map[string]any{"text": text})
+				}
+			case "image_url":
+				if img, ok := m["image_url"].(map[string]any); ok {
+					if url, ok := img["url"].(string); ok {
+						parts = append(parts, map[string]any{
+							"inlineData": map[string]any{
+								"mimeType": "image/jpeg",
+								"data":     extractBase64FromDataURL(url),
+							},
+						})
+					}
+				}
+			}
+		}
+		return parts
+	}
+	return []map[string]any{}
+}
+
+func extractBase64FromDataURL(url string) string {
+	if idx := strings.Index(url, ";base64,"); idx != -1 {
+		return url[idx+8:]
+	}
+	return url
+}
+
+func translateGoogleToChatCompletions(body []byte, model string) (map[string]any, error) {
+	var payload map[string]any
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, err
+	}
+
+	var text string
+	var finishReason string
+	candidates, _ := payload["candidates"].([]any)
+	if len(candidates) > 0 {
+		if cand, ok := candidates[0].(map[string]any); ok {
+			if fr, ok := cand["finishReason"].(string); ok {
+				finishReason = mapGoogleFinishReason(fr)
+			}
+			if content, ok := cand["content"].(map[string]any); ok {
+				if parts, ok := content["parts"].([]any); ok {
+					var texts []string
+					for _, p := range parts {
+						if pm, ok := p.(map[string]any); ok {
+							if t, ok := pm["text"].(string); ok {
+								texts = append(texts, t)
+							}
+						}
+					}
+					text = strings.Join(texts, "\n")
+				}
+			}
+		}
+	}
+
+	usage := map[string]any{}
+	if um, ok := payload["usageMetadata"].(map[string]any); ok {
+		if v, ok := um["promptTokenCount"]; ok {
+			usage["prompt_tokens"] = v
+		}
+		if v, ok := um["candidatesTokenCount"]; ok {
+			usage["completion_tokens"] = v
+		}
+		if v, ok := um["totalTokenCount"]; ok {
+			usage["total_tokens"] = v
+		}
+	}
+
+	respModel := model
+	if m, ok := payload["modelVersion"].(string); ok && strings.TrimSpace(m) != "" {
+		respModel = m
+	}
+
+	return map[string]any{
+		"id":      fmt.Sprintf("chatcmpl-%d", timestamp()),
+		"object":  "chat.completion",
+		"created": timestamp() / 1e9,
+		"model":   respModel,
+		"choices": []any{map[string]any{
+			"index": 0,
+			"message": map[string]any{
+				"role":    "assistant",
+				"content": text,
+			},
+			"finish_reason": finishReason,
+		}},
+		"usage": usage,
+	}, nil
+}
+
+func mapGoogleFinishReason(fr string) string {
+	switch fr {
+	case "STOP":
+		return "stop"
+	case "MAX_TOKENS":
+		return "length"
+	case "SAFETY":
+		return "content_filter"
+	case "RECITATION":
+		return "content_filter"
+	default:
+		return strings.ToLower(fr)
+	}
 }
 
 // ---- 响应跨格式翻译 ----
@@ -573,6 +858,11 @@ func timestamp() int64 {
 	return int64(1e6)
 }
 
+func jsonMarshalBytes(v any) []byte {
+	b, _ := json.Marshal(v)
+	return b
+}
+
 // ---- SSE 流式跨格式翻译 ----
 
 // StreamChatToResponsesSSE 将 Chat SSE 流转为 Responses SSE 流
@@ -581,20 +871,37 @@ func timestamp() int64 {
 // StreamChatToMessagesSSE 将 Chat SSE 流转为 Messages SSE 流
 // 实现在 proxy_runtime.go:streamChatToMessages
 
+// buildGoogleEndpointURL 构建 Google Gemini 的模型感知端点 URL
+func buildGoogleEndpointURL(baseURL, model string, streaming bool) string {
+	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	action := "generateContent"
+	if streaming {
+		action = "streamGenerateContent"
+	}
+	// Google baseURL 通常为 https://generativelanguage.googleapis.com/v1beta，已含 API 版本路径
+	return fmt.Sprintf("%s/models/%s:%s", baseURL, model, action)
+}
+
 // ---- HTTP 请求构建辅助 ----
 
 // BuildUpstreamRequest 构建格式感知的上游 HTTP 请求
-func BuildUpstreamRequest(r *http.Request, body []byte, targetFormat APIType, cfg AppConfig) (*http.Request, error) {
+func BuildUpstreamRequest(r *http.Request, body []byte, targetFormat APIType, cfg AppConfig, model string, streaming bool) (*http.Request, error) {
 	handler, err := GetFormatHandler(targetFormat)
 	if err != nil {
 		return nil, err
 	}
 
 	baseURL := ResolveProviderBaseURL(cfg)
-	endpointPath := handler.EndpointPath()
-	upstreamURL, err := upstreamResourceURL(baseURL, endpointPath)
-	if err != nil {
-		return nil, err
+
+	var upstreamURL string
+	if targetFormat == APIGoogle {
+		upstreamURL = buildGoogleEndpointURL(baseURL, model, streaming)
+	} else {
+		endpointPath := handler.EndpointPath()
+		upstreamURL, err = upstreamResourceURL(baseURL, endpointPath)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, upstreamURL, bytes.NewReader(body))

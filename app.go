@@ -301,6 +301,8 @@ func (a *App) SaveAppConfig(cfg AppConfig) (AppConfig, error) {
 	a.config = cfg
 	a.mu.Unlock()
 
+	a.proxy.RefreshConfig()
+
 	a.appendLog("info", "app", "配置已保存", "")
 	return cfg, nil
 }
@@ -325,6 +327,8 @@ func (a *App) SetCurrentProfile(id string) (AppConfig, error) {
 	a.mu.Lock()
 	a.config = cfg
 	a.mu.Unlock()
+
+	a.proxy.RefreshConfig()
 
 	a.appendLog("info", "app", "已切换到配置: "+cfg.Profiles[id].Name, "")
 	return cfg, nil

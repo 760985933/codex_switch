@@ -150,6 +150,8 @@ func translateMessagesToChatCompletions(body []byte, cfg AppConfig) ([]byte, boo
 	if raw, ok := payload["model"].(string); ok && strings.TrimSpace(raw) != "" {
 		if mapped, ok := cfg.Mappings[raw]; ok && strings.TrimSpace(mapped) != "" {
 			model = mapped
+		} else {
+			model = raw
 		}
 	}
 	payload["model"] = model
@@ -428,6 +430,8 @@ func translateChatCompletions(body []byte, cfg AppConfig) ([]byte, error) {
 		mappedModel := cfg.Mappings[rawModel]
 		if strings.TrimSpace(mappedModel) != "" {
 			model = mappedModel
+		} else {
+			model = rawModel
 		}
 	}
 	payload["model"] = model
@@ -501,6 +505,8 @@ func translateResponsesToChatCompletions(body []byte, cfg AppConfig) ([]byte, bo
 	if rawModel, ok := payload["model"].(string); ok && strings.TrimSpace(rawModel) != "" {
 		if mapped, ok := cfg.Mappings[rawModel]; ok && strings.TrimSpace(mapped) != "" {
 			model = mapped
+		} else {
+			model = rawModel
 		}
 	}
 

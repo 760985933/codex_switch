@@ -6,13 +6,14 @@ export interface ProviderPreset {
   docsURL: string
   placeholderApiKey: string
   placeholderModel: string
-  apiType: 'chat_completions' | 'responses' | 'messages'
+  apiType: 'chat_completions' | 'responses' | 'messages' | 'google'
 }
 
 export const API_TYPE_LABELS: Record<string, string> = {
   chat_completions: 'Chat Completions (OpenAI)',
   responses: 'Responses (Codex)',
   messages: 'Messages (Anthropic)',
+  google: 'Google (Gemini)',
 }
 
 export const PROVIDER_PRESETS: ProviderPreset[] = [
@@ -115,6 +116,16 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     placeholderApiKey: 'sk-...',
     placeholderModel: 'MiniMax-M2.7',
     apiType: 'chat_completions',
+  },
+  {
+    id: 'google',
+    label: 'Google Gemini',
+    defaultBaseURL: 'https://generativelanguage.googleapis.com/v1beta',
+    defaultModel: 'gemini-2.5-flash',
+    docsURL: 'https://ai.google.dev/gemini-api/docs',
+    placeholderApiKey: 'AIza...',
+    placeholderModel: 'gemini-2.5-flash',
+    apiType: 'google',
   },
   {
     id: 'anthropic',

@@ -24,6 +24,7 @@ const (
 	ProviderSilicon   ProviderID = "silicon"
 	ProviderKimi      ProviderID = "kimi"
 	ProviderMiniMax   ProviderID = "minimax"
+	ProviderGoogle    ProviderID = "google"
 	ProviderAnthropic ProviderID = "anthropic"
 	ProviderCustom    ProviderID = "custom"
 )
@@ -232,6 +233,17 @@ var registeredProviders = map[string]*ProviderInfo{
 		APIType:         APIChatCompletions,
 		DefaultMappings: minimaxDefaultMappings(),
 	},
+	string(ProviderGoogle): {
+		ID:              ProviderGoogle,
+		Name:            "Google Gemini",
+		DefaultBaseURL:  "https://generativelanguage.googleapis.com/v1beta",
+		DefaultModel:    "gemini-2.5-flash",
+		DocsURL:         "https://ai.google.dev/gemini-api/docs",
+		HasBalanceAPI:   false,
+		BalanceCheckFn:  nil,
+		APIType:         APIGoogle,
+		DefaultMappings: googleDefaultMappings(),
+	},
 	string(ProviderAnthropic): {
 		ID:              ProviderAnthropic,
 		Name:            "Anthropic Claude",
@@ -382,6 +394,20 @@ func minimaxDefaultMappings() map[string]string {
 		"gpt-4o-mini":       "MiniMax-M2.7-highspeed",
 		"o4-mini":           "MiniMax-M2.7-highspeed",
 		"codex-auto-review": "MiniMax-M2.5",
+	}
+}
+
+func googleDefaultMappings() map[string]string {
+	return map[string]string{
+		"gpt-5.5":           "gemini-2.5-pro",
+		"gpt-5.4":           "gemini-2.5-pro",
+		"gpt-5.4-mini":      "gemini-2.5-flash",
+		"gpt-5.3-codex":     "gemini-2.5-pro",
+		"gpt-4.1":           "gemini-2.5-flash",
+		"gpt-4o":            "gemini-2.5-flash",
+		"gpt-4o-mini":       "gemini-2.5-flash",
+		"o4-mini":           "gemini-2.5-flash-thinking",
+		"codex-auto-review": "gemini-2.5-flash",
 	}
 }
 

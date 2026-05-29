@@ -929,7 +929,7 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 构建格式感知的上游请求
-	req, err := BuildUpstreamRequest(r, upstreamBody, targetFormat, cfg)
+	req, err := BuildUpstreamRequest(r, upstreamBody, targetFormat, cfg, model, streaming)
 	if err != nil {
 		b.app.appendLog("error", "proxy", "messages 构造上游请求失败: "+err.Error(), requestID)
 		if streaming {
@@ -983,6 +983,11 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 		if sourceFormat == targetFormat {
 			// 直通：Messages SSE → Messages SSE
 			b.streamPassthrough(w, resp.Body)
+		} else if targetFormat == APIGoogle {
+			// Google SSE → Chat SSE → Messages SSE
+			chatBody := googleSSEToChatSSEPipe(resp.Body, model)
+			defer chatBody.Close()
+			b.streamChatToMessages(w, chatBody, model)
 		} else {
 			b.streamChatToMessages(w, resp.Body, model)
 		}
@@ -999,19 +1004,38 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 			b.recordUsage(cfg, model, "messages", 0, 0, 0, resp.StatusCode, time.Since(startedAt).Milliseconds(), true)
 		} else {
 			var pt, ct, tt int64
-			if usageMap, ok := extractUsage(upstreamRaw); ok {
+			if targetFormat == APIGoogle {
+				pt, ct, tt = extractGoogleUsage(upstreamRaw)
+			} else if usageMap, ok := extractUsage(upstreamRaw); ok {
 				pt = usageMap["prompt_tokens"]
 				ct = usageMap["completion_tokens"]
 				tt = usageMap["total_tokens"]
 			}
 			b.recordUsage(cfg, model, "messages", pt, ct, tt, resp.StatusCode, time.Since(startedAt).Milliseconds(), resp.StatusCode < http.StatusBadRequest)
-			response, err := translateChatCompletionToMessages(upstreamRaw, model)
-			if err != nil {
-				b.app.appendLog("error", "proxy", "messages 响应转换失败: "+err.Error(), requestID)
-				b.writeProxyError(w, http.StatusInternalServerError, "响应转换失败")
-				return
+
+			if targetFormat == APIGoogle {
+				chatResp, err := translateGoogleToChatCompletions(upstreamRaw, model)
+				if err != nil {
+					b.app.appendLog("error", "proxy", "messages Google 响应转换失败: "+err.Error(), requestID)
+					b.writeProxyError(w, http.StatusInternalServerError, "响应转换失败")
+					return
+				}
+				msgResp, err := translateChatCompletionToMessages(jsonMarshalBytes(chatResp), model)
+				if err != nil {
+					b.app.appendLog("error", "proxy", "messages Chat→Messages 响应转换失败: "+err.Error(), requestID)
+					b.writeProxyError(w, http.StatusInternalServerError, "响应转换失败")
+					return
+				}
+				b.writeJSON(w, http.StatusOK, msgResp)
+			} else {
+				response, err := translateChatCompletionToMessages(upstreamRaw, model)
+				if err != nil {
+					b.app.appendLog("error", "proxy", "messages 响应转换失败: "+err.Error(), requestID)
+					b.writeProxyError(w, http.StatusInternalServerError, "响应转换失败")
+					return
+				}
+				b.writeJSON(w, http.StatusOK, response)
 			}
-			b.writeJSON(w, http.StatusOK, response)
 		}
 	}
 
@@ -1095,6 +1119,17 @@ func (b *ProxyRuntime) snapshotConfig() AppConfig {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 	return b.config
+}
+
+// RefreshConfig 从 App 拉取最新配置，供 SetCurrentProfile / SaveAppConfig 调用
+func (b *ProxyRuntime) RefreshConfig() {
+	cfg, err := b.app.GetAppConfig()
+	if err != nil {
+		return
+	}
+	b.mu.Lock()
+	b.config = cfg
+	b.mu.Unlock()
 }
 
 func (b *ProxyRuntime) SetDebugMode(enabled bool) {
