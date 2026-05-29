@@ -158,12 +158,8 @@ func translateMessagesToChatCompletions(body []byte, cfg AppConfig) ([]byte, boo
 		messages = []any{}
 	}
 
-	// Move system field to a system message at the beginning
-	if sys, ok := payload["system"].(string); ok && strings.TrimSpace(sys) != "" {
-		systemMsg := map[string]any{"role": "system", "content": sys}
-		messages = append([]any{systemMsg}, messages...)
-	}
-	delete(payload, "system")
+	// Move system field to a system message at the beginning.
+	// Handle array format first (newer Anthropic API), then string format.
 	if sysArr, ok := payload["system"].([]any); ok {
 		var texts []string
 		for _, item := range sysArr {
@@ -177,8 +173,12 @@ func translateMessagesToChatCompletions(body []byte, cfg AppConfig) ([]byte, boo
 			systemMsg := map[string]any{"role": "system", "content": strings.Join(texts, "\n")}
 			messages = append([]any{systemMsg}, messages...)
 		}
-		delete(payload, "system")
 	}
+	if sys, ok := payload["system"].(string); ok && strings.TrimSpace(sys) != "" {
+		systemMsg := map[string]any{"role": "system", "content": sys}
+		messages = append([]any{systemMsg}, messages...)
+	}
+	delete(payload, "system")
 
 	// Convert Messages API content blocks to Chat Completions format
 	for i, item := range messages {
