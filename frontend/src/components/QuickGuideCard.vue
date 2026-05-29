@@ -120,102 +120,106 @@ function handleEditorSave() {
 
 <template>
   <div class="dashboard">
-    <!-- Active Profile Card -->
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">{{ t('dashboard.currentProfile') }}</span>
-        <div class="card-header-actions">
-          <n-button text size="small" @click="showAddDialog = true">
-            {{ t('models.addProfile') }}
-          </n-button>
-          <n-button text size="small" type="primary" @click="router.push('/models')">
-            {{ t('dashboard.manageModels') }}
-          </n-button>
-        </div>
-      </div>
-
-      <ProfileList
-        :profiles="store.profileList"
-        :current-profile-id="store.config.currentProfileId"
-        :loading="store.isBusy"
-        @edit="handleEdit"
-        @delete="handleDelete"
-        @select="store.setCurrentProfile"
-      >
-        <template #actions="{ profile }">
-          <CodexLoginActions :profile-id="profile.id" />
-        </template>
-      </ProfileList>
-
-    </div>
-
-    <!-- Proxy Status Card -->
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">{{ t('dashboard.proxyStatus') }}</span>
-        <n-button text size="small" type="primary" @click="showProxySettings = true">
-          {{ t('dashboard.proxySettings') }}
-        </n-button>
-      </div>
-      <div class="status-section">
-        <div class="s-status">
-          <span class="s-dot" :data-status="status.status" />
-          <span>{{ statusLabel }}</span>
-        </div>
-
-        <div class="s-meta">
-          <span class="s-meta-item">
-            <span class="s-meta-label">{{ t('console.meta.listenAddress') }}:</span>
-            <strong>{{ status.listenAddress || t('console.meta.notRunning') }}</strong>
-          </span>
-          <span class="s-meta-item">
-            <span class="s-meta-label">{{ t('console.meta.requestCount') }}:</span>
-            <strong>{{ status.requestCount }}</strong>
-          </span>
-          <span v-if="status.lastError" class="s-meta-item" data-tone="error">
-            <span class="s-meta-label">{{ t('console.meta.lastError') }}:</span>
-            <strong>{{ status.lastError }}</strong>
-          </span>
-        </div>
-
-        <div v-if="healthSummary" class="s-health" :data-tone="healthSummary.tone">
-          <span class="h-dot" />
-          <span>{{ healthSummary.text }}</span>
-        </div>
-        <div v-if="failedChecks.length" class="s-fails">
-          <div v-for="item in failedChecks" :key="item.name" class="s-fail">
-            <strong>{{ item.name }}</strong>
-            <p>{{ item.message }}</p>
+    <div class="dashboard-grid">
+      <!-- Left: Profile Card -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">{{ t('dashboard.currentProfile') }}</span>
+          <div class="card-header-actions">
+            <n-button text size="small" @click="showAddDialog = true">
+              {{ t('models.addProfile') }}
+            </n-button>
+            <n-button text size="small" type="primary" @click="router.push('/models')">
+              {{ t('dashboard.manageModels') }}
+            </n-button>
           </div>
         </div>
 
-        <div class="actions">
-          <n-button type="primary" :loading="loading" @click="emit('health')">{{ t('guide.step.three.healthCheck') }}</n-button>
-          <n-button secondary :loading="loading" @click="emit('refresh')">{{ t('console.actions.refresh') }}</n-button>
-        </div>
-
-        <div class="cmd">
-          <div class="cmd-label">{{ t('guide.step.three.quickVerify') }}</div>
-          <div class="mono">浏览器访问 {{ props.listenAddress || 'http://127.0.0.1:11434' }}/health</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">{{ t('dashboard.quickActions') }}</span>
-      </div>
-      <div class="actions">
-        <n-button tertiary @click="ui.showSettings = true">{{ t('guide.actions.preferences') }}</n-button>
-        <n-button
-          tertiary
-          type="primary"
-          :disabled="!codexBaseURL"
-          @click="emit('copy', codexBaseURL)"
+        <ProfileList
+          :profiles="store.profileList"
+          :current-profile-id="store.config.currentProfileId"
+          :loading="store.isBusy"
+          @edit="handleEdit"
+          @delete="handleDelete"
+          @select="store.setCurrentProfile"
         >
-          {{ t('guide.actions.copyBaseUrl') }}
-        </n-button>
+          <template #actions="{ profile }">
+            <CodexLoginActions :profile-id="profile.id" />
+          </template>
+        </ProfileList>
+      </div>
+
+      <!-- Right: Status + Actions -->
+      <div class="right-col">
+        <!-- Proxy Status Card -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">{{ t('dashboard.proxyStatus') }}</span>
+            <n-button text size="small" type="primary" @click="showProxySettings = true">
+              {{ t('dashboard.proxySettings') }}
+            </n-button>
+          </div>
+          <div class="status-section">
+            <div class="s-status">
+              <span class="s-dot" :data-status="status.status" />
+              <span>{{ statusLabel }}</span>
+            </div>
+
+            <div class="s-meta">
+              <span class="s-meta-item">
+                <span class="s-meta-label">{{ t('console.meta.listenAddress') }}:</span>
+                <strong>{{ status.listenAddress || t('console.meta.notRunning') }}</strong>
+              </span>
+              <span class="s-meta-item">
+                <span class="s-meta-label">{{ t('console.meta.requestCount') }}:</span>
+                <strong>{{ status.requestCount }}</strong>
+              </span>
+              <span v-if="status.lastError" class="s-meta-item" data-tone="error">
+                <span class="s-meta-label">{{ t('console.meta.lastError') }}:</span>
+                <strong>{{ status.lastError }}</strong>
+              </span>
+            </div>
+
+            <div v-if="healthSummary" class="s-health" :data-tone="healthSummary.tone">
+              <span class="h-dot" />
+              <span>{{ healthSummary.text }}</span>
+            </div>
+            <div v-if="failedChecks.length" class="s-fails">
+              <div v-for="item in failedChecks" :key="item.name" class="s-fail">
+                <strong>{{ item.name }}</strong>
+                <p>{{ item.message }}</p>
+              </div>
+            </div>
+
+            <div class="actions">
+              <n-button type="primary" :loading="loading" @click="emit('health')">{{ t('guide.step.three.healthCheck') }}</n-button>
+              <n-button secondary :loading="loading" @click="emit('refresh')">{{ t('console.actions.refresh') }}</n-button>
+            </div>
+
+            <div class="cmd">
+              <div class="cmd-label">{{ t('guide.step.three.quickVerify') }}</div>
+              <div class="mono">浏览器访问 {{ props.listenAddress || 'http://127.0.0.1:11434' }}/health</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">{{ t('dashboard.quickActions') }}</span>
+          </div>
+          <div class="actions">
+            <n-button tertiary @click="ui.showSettings = true">{{ t('guide.actions.preferences') }}</n-button>
+            <n-button
+              tertiary
+              type="primary"
+              :disabled="!codexBaseURL"
+              @click="emit('copy', codexBaseURL)"
+            >
+              {{ t('guide.actions.copyBaseUrl') }}
+            </n-button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -266,7 +270,18 @@ function handleEditorSave() {
 .dashboard {
   display: grid;
   gap: 16px;
-  max-width: 720px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+  align-items: start;
+}
+
+.right-col {
+  display: grid;
+  gap: 16px;
 }
 
 .card {

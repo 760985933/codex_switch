@@ -178,7 +178,7 @@ export const messages = {
       manageModels: '管理模型 →',
       proxyStatus: '代理状态',
       proxySettings: '代理设置 →',
-      quickActions: '快速操作',
+      quickActions: '高级配置',
       noProfile: '暂无活跃的模型配置',
       goToModels: '前往模型管理',
     },
@@ -595,7 +595,7 @@ export const messages = {
       manageModels: 'Manage Models →',
       proxyStatus: 'Proxy Status',
       proxySettings: 'Proxy Settings →',
-      quickActions: 'Quick Actions',
+      quickActions: 'Advanced Config',
       noProfile: 'No active model profile',
       goToModels: 'Go to Models',
     },
@@ -910,6 +910,9 @@ export const messages = {
       },
       health: { ok: 'ヘルスチェック成功', bad: 'ヘルスチェックに問題があります。詳細はコンソールを確認してください。' },
     },
+    dashboard: {
+      quickActions: '高度な設定',
+    },
   monitoring: {
     title: '\u30e2\u30cb\u30bf\u30ea\u30f3\u30b0',
     today: '\u4eca\u65e5',
@@ -1187,6 +1190,9 @@ export const messages = {
       },
       health: { ok: '헬스 체크 통과', bad: '헬스 체크에 문제가 있습니다. 콘솔에서 확인하세요.' },
     },
+    dashboard: {
+      quickActions: '고급 설정',
+    },
   monitoring: {
     title: '\ubaac\ub9ac\ud130\ub9c1',
     today: '\uc624\ub298',
@@ -1463,6 +1469,9 @@ export const messages = {
         clipboardCopied: 'Copié dans le presse-papiers',
       },
       health: { ok: 'Contrôle OK', bad: 'Problèmes détectés. Voir la console.' },
+    dashboard: {
+      quickActions: 'Configuration avancée',
+    },
     },
   monitoring: {
     title: 'Surveillance',
@@ -1739,6 +1748,9 @@ export const messages = {
         proxyRestarted: 'Proxy neu gestartet',
         clipboardCopied: 'In Zwischenablage kopiert',
       },
+    dashboard: {
+      quickActions: 'Erweiterte Konfiguration',
+    },
       health: { ok: 'Health-Check ok', bad: 'Probleme erkannt. Details in der Konsole.' },
     },
   monitoring: {
@@ -2009,6 +2021,9 @@ export const messages = {
         proxyStopped: 'Proxy detenido',
         proxyRestarted: 'Proxy reiniciado',
         clipboardCopied: 'Copiado al portapapeles',
+    dashboard: {
+      quickActions: 'Configuración avanzada',
+    },
       },
       health: { ok: 'Salud OK', bad: 'Se detectaron problemas. Ver consola.' },
     },
