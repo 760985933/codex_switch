@@ -6,12 +6,14 @@ import { useAppStore } from '../stores/app'
 import { GetUsageBalance } from '../../wailsjs/go/main/App'
 import type { Profile, UsageBalance } from '../types'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   profiles: Profile[]
   currentProfileId: string
   loading: boolean
   showDelete?: boolean
-}>()
+}>(), {
+  showDelete: true,
+})
 
 const emit = defineEmits<{
   edit: [id: string]
@@ -140,7 +142,7 @@ function cancelDelete() {
             <n-button size="small" tertiary @click="handleEdit(profile.id)">
               {{ t('models.editModel') }}
             </n-button>
-            <n-button v-if="props.showDelete !== false" size="small" tertiary type="error" @click="handleDelete(profile.id)">
+            <n-button v-if="showDelete" size="small" tertiary type="error" @click="handleDelete(profile.id)">
               {{ t('models.deleteModel') }}
             </n-button>
           </div>
