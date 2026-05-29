@@ -2433,6 +2433,17 @@ func responsesInputToMessages(payload map[string]any) ([]any, error) {
 						"content": chatParts,
 					})
 					continue
+					case "input_audio":
+						audioData, _ := msg["input_audio"].(map[string]any)
+						chatParts := []any{map[string]any{
+							"type":        "input_audio",
+							"input_audio": audioData,
+						}}
+						messages = append(messages, map[string]any{
+							"role":    "user",
+							"content": chatParts,
+						})
+						continue
 				case "input_text":
 					if text := strings.TrimSpace(flattenResponsesContent(msg)); text != "" {
 						messages = append(messages, map[string]any{"role": "user", "content": text})
@@ -2625,6 +2636,13 @@ func convertResponsesContentToChatContent(content any) any {
 				"image_url": map[string]any{
 					"url": imageURL,
 				},
+			})
+		case "input_audio":
+			hasImage = true
+			audioData, _ := p["input_audio"].(map[string]any)
+			chatParts = append(chatParts, map[string]any{
+				"type":        "input_audio",
+				"input_audio": audioData,
 			})
 		case "input_text":
 			text, _ := p["text"].(string)
