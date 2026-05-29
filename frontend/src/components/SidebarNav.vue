@@ -40,11 +40,6 @@ const localeOptions = [
 
 const collapsed = computed(() => ui.sidebarCollapsed)
 
-const sidebarStyle = computed(() => {
-  if (collapsed.value) return {}
-  return { width: `${ui.sidebarWidth}px`, minWidth: `${ui.sidebarWidth}px` }
-})
-
 const iconMap: Record<string, string> = {
   '/overview':
     '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="6" height="6"/><rect x="12" y="2" width="6" height="6"/><rect x="2" y="12" width="6" height="6"/><rect x="12" y="12" width="6" height="6"/></svg>',
@@ -128,30 +123,6 @@ async function toggleDebugMode() {
   await SetDebugMode(debugMode.value)
 }
 
-function onDragStart(e: MouseEvent) {
-  if (collapsed.value) return
-  e.preventDefault()
-  const startX = e.clientX
-  const startW = ui.sidebarWidth
-
-  function onMove(e: MouseEvent) {
-    const w = Math.max(160, Math.min(400, startW + e.clientX - startX))
-    ui.setSidebarWidth(w)
-  }
-
-  function onUp() {
-    document.removeEventListener('mousemove', onMove)
-    document.removeEventListener('mouseup', onUp)
-    document.body.style.cursor = ''
-    document.body.style.userSelect = ''
-  }
-
-  document.body.style.cursor = 'col-resize'
-  document.body.style.userSelect = 'none'
-  document.addEventListener('mousemove', onMove)
-  document.addEventListener('mouseup', onUp)
-}
-
 onMounted(async () => {
   try { appVersion.value = await GetAppVersion() } catch {}
   try { debugMode.value = await GetDebugMode() } catch {}
@@ -161,9 +132,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <aside class="sidebar" :class="{ collapsed }" :style="sidebarStyle">
-    <!-- Drag resize handle -->
-    <div class="drag-handle" @mousedown="onDragStart" />
+  <aside class="sidebar" :class="{ collapsed }">
+    <!-- Sidebar edge toggle (always visible) -->
+    <div
+      class="edge-toggle"
+      @click="ui.toggleSidebar()"
+      :title="collapsed ? '展开侧栏' : '收起侧栏'"
+    >
+      <span class="edge-toggle-icon">{{ collapsed ? '▶' : '◁' }}</span>
+    </div>
 
     <!-- Brand header -->
     <div class="sidebar-header">
@@ -222,16 +199,6 @@ onMounted(async () => {
         :options="localeOptions"
         @update:value="(value: string) => ui.setLocale(value)"
       />
-
-      <div class="footer-toggle-area">
-        <span
-          class="footer-expand-btn"
-          @click="ui.toggleSidebar()"
-          :title="collapsed ? '展开侧栏' : '收起侧栏'"
-        >
-          {{ collapsed ? '▶' : '◁' }}
-        </span>
-      </div>
     </div>
   </aside>
 </template>
@@ -251,6 +218,8 @@ onMounted(async () => {
   overflow: hidden;
   position: relative;
   flex-shrink: 0;
+  width: 220px;
+  min-width: 220px;
 }
 
 .sidebar.collapsed {
@@ -258,22 +227,36 @@ onMounted(async () => {
   min-width: 52px !important;
 }
 
-/* ==================== Drag handle ==================== */
-.drag-handle {
+/* ==================== Edge toggle ==================== */
+.edge-toggle {
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 5px;
-  height: 100%;
-  cursor: col-resize;
-  z-index: 10;
-  background: transparent;
-  transition: background 160ms ease;
+  top: 50%;
+  right: -1px;
+  transform: translateY(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 44px;
+  border-radius: 0 6px 6px 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-left: none;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+  color: var(--muted);
 }
-.drag-handle:hover,
-.drag-handle:active {
+.edge-toggle:hover {
   background: var(--accent);
-  opacity: 0.25;
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.edge-toggle-icon {
+  font-size: 10px;
+  line-height: 1;
+  user-select: none;
 }
 
 /* ==================== Brand header ==================== */
@@ -413,7 +396,6 @@ onMounted(async () => {
   padding: 6px 0 8px;
 }
 
-/* Status dot */
 .footer-status-dot {
   width: 7px;
   min-width: 7px;
@@ -450,7 +432,6 @@ onMounted(async () => {
   background: rgba(255, 170, 0, 0.12);
 }
 
-/* Help button */
 .footer-help {
   display: inline-flex;
   align-items: center;
@@ -469,7 +450,6 @@ onMounted(async () => {
   background: rgba(22, 119, 255, 0.1);
 }
 
-/* Debug dot */
 .footer-debug {
   display: inline-block;
   width: 7px;
@@ -485,39 +465,7 @@ onMounted(async () => {
   box-shadow: 0 0 5px var(--accent);
 }
 
-/* Locale */
 .locale-select {
   margin: 0 10px 6px;
-}
-
-/* ==================== Expand / collapse toggle ==================== */
-.footer-toggle-area {
-  display: flex;
-  justify-content: center;
-  padding: 10px 0;
-}
-
-.footer-expand-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  font-size: 12px;
-  color: var(--muted);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background 160ms ease, color 160ms ease;
-}
-.footer-expand-btn:hover {
-  background: rgba(22, 119, 255, 0.1);
-  color: var(--accent);
-}
-
-.sidebar.collapsed .footer-expand-btn {
-  width: 32px;
-  height: 32px;
-  font-size: 14px;
 }
 </style>
