@@ -48,6 +48,21 @@ function handleEdit(id: string) {
   emit('edit', id)
 }
 
+function friendlyError(raw: string): string {
+  if (!raw) return ''
+  const lower = raw.toLowerCase()
+  if (lower.includes('timeout') || lower.includes('deadline') || lower.includes('exceeded')) {
+    return t('guide.usage.timeout')
+  }
+  if (lower.includes('connection refused') || lower.includes('no such host') || lower.includes('dns') || lower.includes('unreachable')) {
+    return t('guide.usage.networkError')
+  }
+  if (raw.length > 40) {
+    return t('guide.usage.queryFailed')
+  }
+  return raw
+}
+
 // ── Delete confirmation ──
 const deleteConfirmId = ref<string | null>(null)
 const deleteTargetName = computed(() => {
@@ -102,7 +117,7 @@ function cancelDelete() {
           <div v-if="usageData[profile.id]" class="profile-item-usage" @click.stop>
             <template v-if="usageData[profile.id]?.error">
               <span class="usage-error-icon">!</span>
-              <span class="usage-error" :title="usageData[profile.id]?.error">{{ usageData[profile.id]?.error }}</span>
+              <span class="usage-error" :title="usageData[profile.id]?.error">{{ friendlyError(usageData[profile.id]?.error || '') }}</span>
             </template>
             <template v-else>
               <span>{{ t('guide.usage.available') }}: {{ usageData[profile.id]?.availableBalance }} {{ usageData[profile.id]?.currency }}</span>

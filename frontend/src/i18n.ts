@@ -391,6 +391,9 @@ export const messages = {
         available: '可用余额',
         total: '总余额',
         depleted: '余额已用尽，请及时充值',
+        timeout: '查询超时，点击重试',
+        networkError: '网络异常，点击重试',
+        queryFailed: '查询失败，点击重试',
       },
       monitor: {
         title: 'API 用量',
@@ -795,6 +798,9 @@ export const messages = {
         available: 'Available',
         total: 'Total',
         depleted: 'Balance depleted, please top up',
+        timeout: 'Query timeout, tap to retry',
+        networkError: 'Network error, tap to retry',
+        queryFailed: 'Query failed, tap to retry',
       },
       monitor: {
         title: 'API Usage',
@@ -1080,6 +1086,9 @@ export const messages = {
         available: '利用可能残高',
         total: '総残高',
         depleted: '残高が不足しています。チャージしてください',
+        timeout: 'クエリタイムアウト、タップして再試行',
+        networkError: 'ネットワークエラー、タップして再試行',
+        queryFailed: 'クエリ失敗、タップして再試行',
       },
       monitor: {
         title: 'API 使用量',
@@ -1353,6 +1362,9 @@ export const messages = {
         available: '사용 가능 잔액',
         total: '총 잔액',
         depleted: '잔액이 부족합니다. 충전해주세요',
+        timeout: '쿼리 시간 초과, 탭하여 재시도',
+        networkError: '네트워크 오류, 탭하여 재시도',
+        queryFailed: '쿼리 실패, 탭하여 재시도',
       },
       monitor: {
         title: 'API 사용량',
@@ -1626,6 +1638,9 @@ export const messages = {
         available: 'Solde disponible',
         total: 'Solde total',
         depleted: 'Solde épuisé, veuillez recharger',
+        timeout: 'Délai dépassé, appuyez pour réessayer',
+        networkError: 'Erreur réseau, appuyez pour réessayer',
+        queryFailed: 'Échec de la requête, appuyez pour réessayer',
       },
       monitor: {
         title: 'Utilisation API',
@@ -1899,6 +1914,9 @@ export const messages = {
         available: 'Verfügbar',
         total: 'Gesamt',
         depleted: 'Guthaben aufgebraucht, bitte aufladen',
+        timeout: 'Zeitüberschreitung, zum Wiederholen tippen',
+        networkError: 'Netzwerkfehler, zum Wiederholen tippen',
+        queryFailed: 'Abfrage fehlgeschlagen, zum Wiederholen tippen',
       },
       monitor: {
         title: 'API-Nutzung',
@@ -2166,6 +2184,9 @@ export const messages = {
         available: 'Saldo disponible',
         total: 'Saldo total',
         depleted: 'Saldo agotado, por favor recargue',
+        timeout: 'Tiempo de espera agotado, toque para reintentar',
+        networkError: 'Error de red, toque para reintentar',
+        queryFailed: 'Consulta fallida, toque para reintentar',
       },
       monitor: {
         title: 'Uso de API',
