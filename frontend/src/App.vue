@@ -1,26 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
-import {
-  createDiscreteApi,
-  lightTheme,
-  dateDeDE,
-  dateEnUS,
-  dateEsAR,
-  dateFrFR,
-  dateJaJP,
-  dateKoKR,
-  dateZhCN,
-  deDE,
-  enUS,
-  esAR,
-  frFR,
-  jaJP,
-  koKR,
-  zhCN,
-} from 'naive-ui'
+import { computed, watch } from 'vue'
+import { lightTheme, dateDeDE, dateEnUS, dateEsAR, dateFrFR, dateJaJP, dateKoKR, dateZhCN, deDE, enUS, esAR, frFR, jaJP, koKR, zhCN } from 'naive-ui'
 import { RouterView } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ClipboardSetText, EventsOn } from '../wailsjs/runtime/runtime'
+import { WindowMinimise, Quit } from '../wailsjs/runtime/runtime'
 import SettingsDrawer from './components/SettingsDrawer.vue'
 import SidebarNav from './components/SidebarNav.vue'
 import { useAppStore } from './stores/app'
@@ -30,13 +13,10 @@ const store = useAppStore()
 const ui = useUiStore()
 const { t, locale } = useI18n()
 
-watch(
-  () => ui.locale,
-  (value) => {
-    locale.value = value
-  },
-  { immediate: true },
-)
+function handleMinimise() { WindowMinimise() }
+function handleClose() { Quit() }
+
+watch(() => ui.locale, (value) => { locale.value = value }, { immediate: true })
 
 const naiveLocale = computed(() => {
   switch (ui.locale) {
@@ -61,82 +41,6 @@ const naiveDateLocale = computed(() => {
     default: return dateEnUS
   }
 })
-
-const { message, dialog } = createDiscreteApi(['message', 'dialog'], {
-  configProviderProps: { theme: lightTheme },
-})
-
-async function handleSaveSettings(config: typeof store.config) {
-  try {
-    await store.saveConfig(config)
-    ui.showSettings = false
-    message.success(t('app.toast.settingsSaved'))
-  } catch (error) {
-    message.error(error instanceof Error ? error.message : String(error))
-  }
-}
-
-async function handleExport() {
-  try {
-    const content = await store.exportConfig()
-    await ClipboardSetText(content)
-    message.success(t('app.toast.configJsonCopied'))
-  } catch (error) {
-    dialog.warning({
-      title: t('app.dialog.exportConfig.title'),
-      content: error instanceof Error ? error.message : String(error),
-      positiveText: t('app.dialog.exportConfig.ok'),
-    })
-  }
-}
-
-async function handleCodexCopy() {
-  try {
-    const content = await store.generateCodexConfigToml()
-    await ClipboardSetText(content)
-    message.success(t('app.toast.codexTomlCopied'))
-  } catch (error) {
-    dialog.warning({
-      title: t('app.dialog.codexCopy.title'),
-      content: error instanceof Error ? error.message : String(error),
-      positiveText: t('app.dialog.codexCopy.ok'),
-    })
-  }
-}
-
-async function handleCodexWrite() {
-  try {
-    const path = await store.writeCodexConfigToml()
-    const hintPath = await store.getCodexConfigPath()
-    message.success(t('app.toast.codexTomlWritten', { path: path || hintPath }))
-  } catch (error) {
-    dialog.warning({
-      title: t('app.dialog.codexWrite.title'),
-      content: error instanceof Error ? error.message : String(error),
-      positiveText: t('app.dialog.codexWrite.ok'),
-    })
-  }
-}
-
-async function handleCodexWriteProfiles() {
-  try {
-    const path = await store.writeCodexConfigTomlProfiles()
-    const hintPath = await store.getCodexConfigPath()
-    message.success(t('app.toast.codexTomlWritten', { path: path || hintPath }))
-  } catch (error) {
-    dialog.warning({
-      title: t('app.dialog.codexWrite.title'),
-      content: error instanceof Error ? error.message : String(error),
-      positiveText: t('app.dialog.codexWrite.ok'),
-    })
-  }
-}
-
-onMounted(() => {
-  EventsOn('tray:help', () => {
-    ui.showHelp = true
-  })
-})
 </script>
 
 <template>
@@ -144,22 +48,25 @@ onMounted(() => {
     <n-dialog-provider>
       <n-message-provider placement="bottom-right">
         <div class="shell">
-          <SidebarNav @show-help="ui.showHelp = true" />
-          <main class="content">
-            <RouterView />
-          </main>
+          <div class="titlebar">
+            <div class="titlebar-drag" />
+            <div class="titlebar-actions">
+              <n-button tertiary size="small" @click="handleMinimise">—</n-button>
+              <n-button tertiary type="error" size="small" @click="handleClose">×</n-button>
+            </div>
+          </div>
+          <div class="shell-body">
+            <SidebarNav @show-help="ui.showHelp = true" />
+            <main class="content">
+              <RouterView />
+            </main>
+          </div>
 
           <SettingsDrawer
             v-model:model-value="ui.showSettings"
             :config="store.config"
-            @save="handleSaveSettings"
-            @export="handleExport"
-            @codex-copy="handleCodexCopy"
-            @codex-write="handleCodexWrite"
-            @codex-write-profiles="handleCodexWriteProfiles"
           />
 
-          <!-- Help modal -->
           <n-modal v-model:show="ui.showHelp" preset="card" :title="'💡 ' + t('app.help.title')" style="max-width: 600px" :bordered="false" closable>
             <div class="help-content">
               <div class="help-section">
@@ -192,8 +99,38 @@ onMounted(() => {
 <style scoped>
 .shell {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
+}
+
+.titlebar {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  min-height: 32px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.titlebar-drag {
+  flex: 1;
+}
+
+.titlebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 10px;
+  -webkit-app-region: no-drag;
+}
+
+.shell-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
 }
 
 .content {

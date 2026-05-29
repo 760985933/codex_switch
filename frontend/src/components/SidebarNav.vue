@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { createDiscreteApi, lightTheme } from 'naive-ui'
-import { BrowserOpenURL, Quit, WindowMinimise } from '../../wailsjs/runtime/runtime'
+import { BrowserOpenURL, EventsOn } from '../../wailsjs/runtime/runtime'
 import { CheckForUpdates, GetAppVersion, GetDebugMode, SetDebugMode } from '../../wailsjs/go/main/App'
 import { useAppStore } from '../stores/app'
 import { useUiStore } from '../stores/ui'
@@ -104,14 +104,11 @@ async function toggleDebugMode() {
   await SetDebugMode(debugMode.value)
 }
 
-function handleMinimise() { WindowMinimise() }
-
-function handleClose() { Quit() }
-
 onMounted(async () => {
   try { appVersion.value = await GetAppVersion() } catch {}
   try { debugMode.value = await GetDebugMode() } catch {}
   await checkUpdates(false, true)
+  EventsOn('tray:help', () => { ui.showHelp = true })
 })
 </script>
 
@@ -127,10 +124,6 @@ onMounted(async () => {
             <span class="app-version">{{ appVersion }}</span>
           </div>
         </div>
-      </div>
-      <div class="window-actions">
-        <n-button tertiary size="small" @click="handleMinimise">—</n-button>
-        <n-button tertiary type="error" size="small" @click="handleClose">×</n-button>
       </div>
     </div>
 
@@ -188,7 +181,7 @@ onMounted(async () => {
   flex-direction: column;
   width: 220px;
   min-width: 220px;
-  height: 100vh;
+  height: calc(100vh - 32px);
   padding: 16px 12px;
   gap: 4px;
   background: var(--bg-elevated);
@@ -199,7 +192,6 @@ onMounted(async () => {
 .sidebar-header {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
   padding-bottom: 12px;
   margin-bottom: 4px;
   border-bottom: 1px solid var(--border);
@@ -248,13 +240,6 @@ onMounted(async () => {
   font-size: 10px;
   color: var(--muted);
   letter-spacing: 0.04em;
-}
-
-.window-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
 }
 
 .nav {

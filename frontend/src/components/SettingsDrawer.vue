@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useDialog, useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
+import { ClipboardSetText } from '../../wailsjs/runtime/runtime'
 import type { AppConfig } from '../types'
 import { useAppStore } from '../stores/app'
 import { useUiStore } from '../stores/ui'
@@ -13,11 +14,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  save: [value: AppConfig]
-  export: []
-  codexCopy: []
-  codexWrite: []
-  codexWriteProfiles: []
 }>()
 
 const localConfig = ref<AppConfig>({ ...props.config })
@@ -69,8 +65,70 @@ watch(
   },
 )
 
-function submit() {
-  emit('save', localConfig.value)
+async function submit() {
+  try {
+    await store.saveConfig(localConfig.value)
+    emit('update:modelValue', false)
+    message.success(t('app.toast.settingsSaved'))
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+async function handleExport() {
+  try {
+    const content = await store.exportConfig()
+    await ClipboardSetText(content)
+    message.success(t('app.toast.configJsonCopied'))
+  } catch (error) {
+    dialog.warning({
+      title: t('app.dialog.exportConfig.title'),
+      content: error instanceof Error ? error.message : String(error),
+      positiveText: t('app.dialog.exportConfig.ok'),
+    })
+  }
+}
+
+async function handleCodexCopy() {
+  try {
+    const content = await store.generateCodexConfigToml()
+    await ClipboardSetText(content)
+    message.success(t('app.toast.codexTomlCopied'))
+  } catch (error) {
+    dialog.warning({
+      title: t('app.dialog.codexCopy.title'),
+      content: error instanceof Error ? error.message : String(error),
+      positiveText: t('app.dialog.codexCopy.ok'),
+    })
+  }
+}
+
+async function handleCodexWrite() {
+  try {
+    const path = await store.writeCodexConfigToml()
+    const hintPath = await store.getCodexConfigPath()
+    message.success(t('app.toast.codexTomlWritten', { path: path || hintPath }))
+  } catch (error) {
+    dialog.warning({
+      title: t('app.dialog.codexWrite.title'),
+      content: error instanceof Error ? error.message : String(error),
+      positiveText: t('app.dialog.codexWrite.ok'),
+    })
+  }
+}
+
+async function handleCodexWriteProfiles() {
+  try {
+    const path = await store.writeCodexConfigTomlProfiles()
+    const hintPath = await store.getCodexConfigPath()
+    message.success(t('app.toast.codexTomlWritten', { path: path || hintPath }))
+  } catch (error) {
+    dialog.warning({
+      title: t('app.dialog.codexWrite.title'),
+      content: error instanceof Error ? error.message : String(error),
+      positiveText: t('app.dialog.codexWrite.ok'),
+    })
+  }
 }
 
 async function loadCodexRaw() {
@@ -232,7 +290,7 @@ async function clearAllBackups() {
         </n-alert>
 
         <n-space class="settings-actions">
-          <n-button secondary size="small" @click="emit('export')">{{ t('settings.actions.exportConfig') }}</n-button>
+          <n-button secondary size="small" @click="handleExport">{{ t('settings.actions.exportConfig') }}</n-button>
         </n-space>
 
         <n-card size="small" embedded>
@@ -244,7 +302,7 @@ async function clearAllBackups() {
               </n-text>
             </div>
             <n-space>
-              <n-button secondary @click="emit('codexCopy')">{{ t('settings.actions.copyToml') }}</n-button>
+              <n-button secondary @click="handleCodexCopy">{{ t('settings.actions.copyToml') }}</n-button>
             </n-space>
             <n-form label-placement="top">
               <n-form-item :label="t('settings.codex.filePath')">
