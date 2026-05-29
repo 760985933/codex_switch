@@ -107,6 +107,16 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     apiType: 'chat_completions',
   },
   {
+    id: 'minimax',
+    label: 'MiniMax 海螺',
+    defaultBaseURL: 'https://api.minimax.io/v1',
+    defaultModel: 'MiniMax-M2.7',
+    docsURL: 'https://platform.minimax.io/docs',
+    placeholderApiKey: 'sk-...',
+    placeholderModel: 'MiniMax-M2.7',
+    apiType: 'chat_completions',
+  },
+  {
     id: 'anthropic',
     label: 'Anthropic Claude',
     defaultBaseURL: 'https://api.anthropic.com',
