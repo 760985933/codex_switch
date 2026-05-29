@@ -39,7 +39,7 @@ export function detectInitialLocale(): SupportedLocale {
 export const messages = {
   'zh-CN': {
     app: {
-      nav: { overview: '主工作台', models: '模型管理', proxy: '代理设置', monitoring: '监控统计', logs: '最近日志', sessions: '会话管理', contact: '联系与赞助' },
+      nav: { overview: '中转代理', models: '模型管理', proxy: '代理设置', monitoring: '监控统计', logs: '最近日志', sessions: '会话管理', contact: '联系与赞助' },
       status: { running: '运行中', starting: '启动中', error: '异常', stopped: '未启动' },
       actions: { preferences: '偏好设置' },
       toast: {
@@ -75,7 +75,7 @@ export const messages = {
       },
     },
     overview: {
-      title: '主工作台',
+      title: '中转代理',
       toast: {
         configSaved: '配置已保存',
         proxyStarted: '代理服务已启动',
@@ -405,7 +405,7 @@ export const messages = {
   },
   'en-US': {
     app: {
-      nav: { overview: 'Dashboard', models: 'Models', proxy: 'Proxy', monitoring: 'Monitoring', logs: 'Recent Logs', sessions: 'Sessions', contact: 'Contact & Sponsor' },
+      nav: { overview: 'Transit Proxy', models: 'Models', proxy: 'Proxy', monitoring: 'Monitoring', logs: 'Recent Logs', sessions: 'Sessions', contact: 'Contact & Sponsor' },
       status: { running: 'Running', starting: 'Starting', error: 'Error', stopped: 'Stopped' },
       actions: { preferences: 'Preferences' },
       toast: {
@@ -440,7 +440,7 @@ export const messages = {
       },
     },
     overview: {
-      title: 'Dashboard',
+      title: 'Transit Proxy',
       toast: {
         configSaved: 'Config saved',
         proxyStarted: 'Proxy started',
@@ -761,7 +761,7 @@ export const messages = {
   },
   'ja-JP': {
     app: {
-      nav: { overview: 'ダッシュボード', models: 'モデル管理', proxy: 'プロキシ設定', monitoring: 'モニタリング', logs: '最近のログ', sessions: 'セッション', contact: '連絡とスポンサー' },
+      nav: { overview: '中継プロキシ', models: 'モデル管理', proxy: 'プロキシ設定', monitoring: 'モニタリング', logs: '最近のログ', sessions: 'セッション', contact: '連絡とスポンサー' },
       status: { running: '稼働中', starting: '起動中', error: 'エラー', stopped: '停止中' },
       actions: { preferences: '設定' },
       toast: {
@@ -796,7 +796,7 @@ export const messages = {
       },
     },
     overview: {
-      title: 'ダッシュボード',
+      title: '中継プロキシ',
       toast: {
         configSaved: '設定を保存しました',
         proxyStarted: 'ブリッジを起動しました',
@@ -1030,7 +1030,7 @@ export const messages = {
   },
   'ko-KR': {
     app: {
-      nav: { overview: '대시보드', models: '모델 관리', proxy: '프록시 설정', monitoring: '모니터링', logs: '최근 로그', sessions: '세션', contact: '연락 및 후원' },
+      nav: { overview: '중계 프록시', models: '모델 관리', proxy: '프록시 설정', monitoring: '모니터링', logs: '최근 로그', sessions: '세션', contact: '연락 및 후원' },
       status: { running: '실행 중', starting: '시작 중', error: '오류', stopped: '중지됨' },
       actions: { preferences: '설정' },
       toast: {
@@ -1065,7 +1065,7 @@ export const messages = {
       },
     },
     overview: {
-      title: '대시보드',
+      title: '중계 프록시',
       toast: {
         configSaved: '설정이 저장되었습니다',
         proxyStarted: '브리지가 시작되었습니다',
@@ -1299,7 +1299,7 @@ export const messages = {
   },
   'fr-FR': {
     app: {
-      nav: { overview: 'Tableau', models: 'Modèles', proxy: 'Proxy', monitoring: 'Surveillance', logs: 'Journaux', sessions: 'Sessions', contact: 'Contact & Sponsor' },
+      nav: { overview: 'Proxy relais', models: 'Modèles', proxy: 'Proxy', monitoring: 'Surveillance', logs: 'Journaux', sessions: 'Sessions', contact: 'Contact & Sponsor' },
       status: { running: 'En cours', starting: 'Démarrage', error: 'Erreur', stopped: 'Arrêté' },
       actions: { preferences: 'Préférences' },
       toast: {
@@ -1334,7 +1334,7 @@ export const messages = {
       },
     },
     overview: {
-      title: 'Tableau de bord',
+      title: 'Proxy relais',
       toast: {
         configSaved: 'Configuration enregistrée',
         proxyStarted: 'Proxy démarré',
@@ -1568,7 +1568,7 @@ export const messages = {
   },
   'de-DE': {
     app: {
-      nav: { overview: 'Übersicht', models: 'Modelle', proxy: 'Proxy', monitoring: 'Überwachung', logs: 'Logs', sessions: 'Sitzungen', contact: 'Kontakt & Sponsoring' },
+      nav: { overview: 'Vermittlungsproxy', models: 'Modelle', proxy: 'Proxy', monitoring: 'Überwachung', logs: 'Logs', sessions: 'Sitzungen', contact: 'Kontakt & Sponsoring' },
       status: { running: 'Läuft', starting: 'Startet', error: 'Fehler', stopped: 'Gestoppt' },
       actions: { preferences: 'Einstellungen' },
       toast: {
@@ -1603,7 +1603,7 @@ export const messages = {
       },
     },
     overview: {
-      title: 'Übersicht',
+      title: 'Vermittlungsproxy',
       toast: {
         configSaved: 'Konfiguration gespeichert',
         proxyStarted: 'Proxy gestartet',
@@ -1831,7 +1831,7 @@ export const messages = {
   },
   'es-AR': {
     app: {
-      nav: { overview: 'Panel', models: 'Modelos', proxy: 'Proxy', monitoring: 'Monitoreo', logs: 'Registros', sessions: 'Sesiones', contact: 'Contacto y Patrocinio' },
+      nav: { overview: 'Proxy de tránsito', models: 'Modelos', proxy: 'Proxy', monitoring: 'Monitoreo', logs: 'Registros', sessions: 'Sesiones', contact: 'Contacto y Patrocinio' },
       status: { running: 'En ejecución', starting: 'Iniciando', error: 'Error', stopped: 'Detenido' },
       actions: { preferences: 'Preferencias' },
       toast: {
@@ -1866,7 +1866,7 @@ export const messages = {
       },
     },
     overview: {
-      title: 'Panel',
+      title: 'Proxy de tránsito',
       toast: {
         configSaved: 'Configuración guardada',
         proxyStarted: 'Proxy iniciado',
