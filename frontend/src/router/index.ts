@@ -11,11 +11,11 @@ export const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/overview',
+      redirect: '/proxy',
     },
     {
-      path: '/overview',
-      name: 'overview',
+      path: '/proxy',
+      name: 'proxy',
       component: ProxyPage,
     },
     {

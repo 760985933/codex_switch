@@ -22,6 +22,8 @@ import {
   NText,
   NSelect,
   NSwitch,
+  NTabPane,
+  NTabs,
   NTag,
   create,
 } from 'naive-ui'
@@ -54,6 +56,8 @@ const naive = create({
     NText,
     NSelect,
     NSwitch,
+    NTabPane,
+    NTabs,
     NTag,
   ],
 })
