@@ -1,28 +1,87 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { ClipboardSetText } from '../../wailsjs/runtime/runtime'
+import QuickGuideCard from '../components/QuickGuideCard.vue'
+import CodexLoginActions from '../components/CodexLoginActions.vue'
+import { useProxyEvents } from '../composables/useProxyEvents'
 import { useAppStore } from '../stores/app'
 import { useCodexStore } from '../stores/codex'
-import ProxySettingsPanel from '../components/ProxySettingsPanel.vue'
-import CodexLoginActions from '../components/CodexLoginActions.vue'
+import { useUiStore } from '../stores/ui'
 
 const store = useAppStore()
 const codexStore = useCodexStore()
+const ui = useUiStore()
 const message = useMessage()
 const { t } = useI18n()
+const busy = ref(false)
 
-const activeTab = ref('general')
+async function wrapAction<T>(
+  task: () => Promise<T>,
+  successMessage?: string,
+  options?: { timeoutMs?: number; onTimeout?: () => Promise<void> },
+) {
+  busy.value = true
+  try {
+    const timeoutMs = options?.timeoutMs ?? 5000
+    const timeoutSeconds = Math.max(1, Math.round(timeoutMs / 1000))
+    const timeoutError = new Error(t('app.errors.timeoutStopped', { seconds: timeoutSeconds }))
+    timeoutError.name = 'TimeoutError'
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      window.setTimeout(() => reject(timeoutError), timeoutMs)
+    })
 
-const proxyAddress = computed(() => {
-  const host = store.config.listenHost || '127.0.0.1'
-  const port = store.config.listenPort || 17419
-  return `http://${host}:${port}/v1`
-})
+    const result = await Promise.race([task(), timeoutPromise])
+    await store.refreshLogs()
+    if (successMessage) {
+      message.success(successMessage)
+    }
+    return result
+  } catch (error) {
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      if (options?.onTimeout) {
+        await options.onTimeout()
+      }
+      await store.refreshLogs()
+      message.error(error.message)
+      return null as T
+    }
 
+    message.error(error instanceof Error ? error.message : String(error))
+    throw error
+  } finally {
+    busy.value = false
+  }
+}
+
+async function handleStop() {
+  await wrapAction(async () => store.stopProxy(), t('overview.toast.proxyStopped'))
+}
+
+async function handleHealth() {
+  const result = await wrapAction(async () => store.runHealthCheck())
+  if (result) {
+    message[result.ok ? 'success' : 'warning'](result.ok ? t('overview.health.ok') : t('overview.health.bad'))
+  }
+}
+
+async function copyText(value: string) {
+  await ClipboardSetText(value)
+  message.success(t('overview.toast.clipboardCopied'))
+}
+
+// ── Codex Desktop tab state ──
+const activeTab = ref('dashboard')
+const proxyAddress = ref('')
 const codexConfigPath = ref('')
 const codexConfigContent = ref('')
+
+function updateProxyAddress() {
+  const host = store.config.listenHost || '127.0.0.1'
+  const port = store.config.listenPort || 17419
+  proxyAddress.value = `http://${host}:${port}/v1`
+}
 
 async function loadCodexConfig() {
   try {
@@ -54,39 +113,57 @@ async function handleCopyEnvVar() {
 }
 
 function handleTabChange(tab: string) {
+  updateProxyAddress()
   if (tab === 'codex') loadCodexConfig()
 }
+
+useProxyEvents({
+  onStatus(payload) {
+    store.applyStatus(payload)
+  },
+  onLog(entry) {
+    store.pushLog(entry)
+  },
+})
+
+onMounted(async () => {
+  updateProxyAddress()
+  if (!store.lastLoadedAt) {
+    await wrapAction(async () => store.initialize())
+  }
+})
 </script>
 
 <template>
   <div class="proxy-page">
-    <div class="page-header">
-      <div>
-        <h2>{{ t('proxy.title') }}</h2>
-        <p class="page-desc">{{ t('proxy.description') }}</p>
-      </div>
-    </div>
-
     <n-tabs
       v-model:value="activeTab"
       type="line"
       animated
       @update:value="handleTabChange"
     >
-      <!-- Tab 1: General Settings -->
-      <n-tab-pane name="general" :tab="t('proxy.tab.general')">
-        <ProxySettingsPanel :config="store.config" />
+      <!-- Tab 1: Dashboard -->
+      <n-tab-pane name="dashboard" :tab="t('overview.tab.dashboard')">
+        <QuickGuideCard
+          :listen-address="store.status.listenAddress"
+          :status="store.status"
+          :health="store.healthCheck"
+          :loading="busy"
+          @copy="copyText"
+          @health="handleHealth"
+          @stop="handleStop"
+          @refresh="wrapAction(async () => { await store.refreshStatus(); await store.refreshLogs() })"
+        />
       </n-tab-pane>
 
       <!-- Tab 2: Codex Desktop -->
-      <n-tab-pane name="codex" :tab="t('proxy.tab.codexDesktop')">
+      <n-tab-pane name="codex" :tab="t('overview.tab.codexDesktop')">
         <div class="tab-content">
           <div class="card">
             <div class="card-header">
-              <span class="card-title">{{ t('proxy.codex.overview') }}</span>
+              <span class="card-title">{{ t('overview.codex.overview') }}</span>
             </div>
-            <p class="card-desc">{{ t('proxy.codex.overviewDesc') }}</p>
-
+            <p class="card-desc">{{ t('overview.codex.overviewDesc') }}</p>
             <div class="address-hint">
               <div class="hint-label">{{ t('proxy.proxyAddress') }}</div>
               <div class="hint-row">
@@ -100,9 +177,9 @@ function handleTabChange(tab: string) {
 
           <div class="card">
             <div class="card-header">
-              <span class="card-title">{{ t('proxy.codex.quickLogin') }}</span>
+              <span class="card-title">{{ t('overview.codex.quickLogin') }}</span>
             </div>
-            <p class="card-desc">{{ t('proxy.codex.quickLoginDesc') }}</p>
+            <p class="card-desc">{{ t('overview.codex.quickLoginDesc') }}</p>
             <div class="login-actions">
               <CodexLoginActions
                 v-for="p in store.profileList"
@@ -117,10 +194,9 @@ function handleTabChange(tab: string) {
 
           <div class="card">
             <div class="card-header">
-              <span class="card-title">{{ t('proxy.codex.configToml') }}</span>
+              <span class="card-title">{{ t('overview.codex.configToml') }}</span>
             </div>
-            <p class="card-desc">{{ t('proxy.codex.configTomlDesc') }}</p>
-
+            <p class="card-desc">{{ t('overview.codex.configTomlDesc') }}</p>
             <n-form label-placement="top" size="small">
               <n-form-item :label="t('settings.codex.filePath')">
                 <n-input :value="codexConfigPath" readonly />
@@ -133,7 +209,6 @@ function handleTabChange(tab: string) {
                 />
               </n-form-item>
             </n-form>
-
             <div class="action-row">
               <n-button type="primary" size="small" @click="handleWriteCodexConfig">
                 {{ t('settings.codexActions.mergeWrite') }}
@@ -147,14 +222,13 @@ function handleTabChange(tab: string) {
       </n-tab-pane>
 
       <!-- Tab 3: Claude Code -->
-      <n-tab-pane name="claude" :tab="t('proxy.tab.claudeCode')">
+      <n-tab-pane name="claude" :tab="t('overview.tab.claudeCode')">
         <div class="tab-content">
           <div class="card">
             <div class="card-header">
-              <span class="card-title">{{ t('proxy.claude.overview') }}</span>
+              <span class="card-title">{{ t('overview.claude.overview') }}</span>
             </div>
-            <p class="card-desc">{{ t('proxy.claude.overviewDesc') }}</p>
-
+            <p class="card-desc">{{ t('overview.claude.overviewDesc') }}</p>
             <div class="address-hint">
               <div class="hint-label">{{ t('proxy.proxyAddress') }}</div>
               <div class="hint-row">
@@ -168,18 +242,16 @@ function handleTabChange(tab: string) {
 
           <div class="card">
             <div class="card-header">
-              <span class="card-title">{{ t('proxy.claude.envConfig') }}</span>
+              <span class="card-title">{{ t('overview.claude.envConfig') }}</span>
             </div>
-            <p class="card-desc">{{ t('proxy.claude.envConfigDesc') }}</p>
-
+            <p class="card-desc">{{ t('overview.claude.envConfigDesc') }}</p>
             <div class="code-block">
               <code>export ANTHROPIC_BASE_URL="{{ proxyAddress }}"</code>
               <n-button text size="small" type="primary" @click="handleCopyEnvVar">
                 {{ t('logs.actions.copy') }}
               </n-button>
             </div>
-
-            <p class="card-desc" style="margin-top: 16px">{{ t('proxy.claude.apiKeyNote') }}</p>
+            <p class="card-desc" style="margin-top: 16px">{{ t('overview.claude.apiKeyNote') }}</p>
             <div class="code-block">
               <code>export ANTHROPIC_API_KEY="your-api-key"</code>
             </div>
@@ -187,13 +259,13 @@ function handleTabChange(tab: string) {
 
           <div class="card">
             <div class="card-header">
-              <span class="card-title">{{ t('proxy.claude.verify') }}</span>
+              <span class="card-title">{{ t('overview.claude.verify') }}</span>
             </div>
-            <p class="card-desc">{{ t('proxy.claude.verifyDesc') }}</p>
+            <p class="card-desc">{{ t('overview.claude.verifyDesc') }}</p>
             <div class="code-block">
               <code>claude --version</code>
             </div>
-            <p class="card-desc" style="margin-top: 12px">{{ t('proxy.claude.runHint') }}</p>
+            <p class="card-desc" style="margin-top: 12px">{{ t('overview.claude.runHint') }}</p>
             <div class="code-block">
               <code>claude</code>
             </div>
@@ -209,25 +281,6 @@ function handleTabChange(tab: string) {
   display: grid;
   gap: 16px;
   max-width: 780px;
-}
-
-.page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.page-header h2 {
-  margin: 0 0 4px;
-  font-size: 18px;
-  color: var(--text);
-}
-
-.page-desc {
-  margin: 0;
-  font-size: 12px;
-  color: var(--muted);
 }
 
 .tab-content {
