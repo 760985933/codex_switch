@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '../stores/app'
@@ -9,117 +9,126 @@ const props = defineProps<{
   profileId: string
 }>()
 
-const emit = defineEmits<{
-  completed: [id: string]
-}>()
-
 const store = useAppStore()
 const codexStore = useCodexStore()
 const message = useMessage()
 const { t } = useI18n()
 
-const activeAction = ref<'plugin' | 'noaccount' | null>(null)
-const loadingId = ref<string | null>(null)
-const completedLogins = ref<Set<string>>(new Set())
+const busyAction = ref<'plugin' | 'noaccount' | null>(null)
 
-function isActive(id: string) {
-  return loadingId.value === id
+const profile = computed(() => store.config.profiles[props.profileId])
+
+const pluginBtnType = computed(() => {
+  if (busyAction.value === 'plugin') return 'error' as const
+  return profile.value?.apiKey ? ('primary' as const) : (undefined as any)
+})
+
+const pluginBtnLabel = computed(() => {
+  if (busyAction.value === 'plugin') return t('guide.actions.stop')
+  return t('guide.actions.pluginUnlockLogin')
+})
+
+const noAccountBtnType = computed(() => {
+  if (busyAction.value === 'noaccount') return 'error' as const
+  return profile.value?.apiKey ? ('primary' as const) : (undefined as any)
+})
+
+const noAccountBtnLabel = computed(() => {
+  if (busyAction.value === 'noaccount') return t('guide.actions.stop')
+  return t('guide.actions.noAccountLogin')
+})
+
+const disabled = computed(() => !profile.value?.apiKey)
+
+function onPluginClick() {
+  if (busyAction.value === 'plugin') {
+    busyAction.value = null
+    message.info(t('guide.actions.stopped'))
+  } else {
+    handlePluginLogin()
+  }
 }
 
-function isCompleted(id: string) {
-  return store.config.profiles[id]
-    ? completedLogins.value.has(id)
-    : false
+function onNoAccountClick() {
+  if (busyAction.value === 'noaccount') {
+    busyAction.value = null
+    message.info(t('guide.actions.stopped'))
+  } else {
+    handleNoAccountLogin()
+  }
 }
 
 async function handlePluginLogin() {
-  const profile = store.config.profiles[props.profileId]
-  if (!profile?.apiKey) {
+  if (!profile.value?.apiKey) {
     message.warning(t('guide.monitor.noKey'))
     return
   }
-  loadingId.value = props.profileId
-  activeAction.value = 'plugin'
+  busyAction.value = 'plugin'
   try {
     if (props.profileId !== store.config.currentProfileId) {
       await store.setCurrentProfile(props.profileId)
     }
     if (!store.isRunning) await store.startProxy()
     const path = await codexStore.pluginUnlockLogin()
-    if (loadingId.value !== props.profileId || activeAction.value !== 'plugin') return
-    completedLogins.value.add(props.profileId)
-    emit('completed', props.profileId)
+    if (busyAction.value !== 'plugin') return
     message.success(t('app.toast.codexTomlWritten', { path }))
   } catch (error) {
-    if (loadingId.value === props.profileId && activeAction.value === 'plugin') {
+    if (busyAction.value === 'plugin') {
       message.error(error instanceof Error ? error.message : String(error))
     }
   } finally {
-    if (loadingId.value === props.profileId && activeAction.value === 'plugin') {
-      loadingId.value = null
-      activeAction.value = null
+    if (busyAction.value === 'plugin') {
+      busyAction.value = null
     }
   }
 }
 
 async function handleNoAccountLogin() {
-  const profile = store.config.profiles[props.profileId]
-  if (!profile?.apiKey) {
+  if (!profile.value?.apiKey) {
     message.warning(t('guide.monitor.noKey'))
     return
   }
-  loadingId.value = props.profileId
-  activeAction.value = 'noaccount'
+  busyAction.value = 'noaccount'
   try {
     if (props.profileId !== store.config.currentProfileId) {
       await store.setCurrentProfile(props.profileId)
     }
     if (!store.isRunning) await store.startProxy()
     const path = await codexStore.writeCodexConfigTomlProfiles()
-    if (loadingId.value !== props.profileId || activeAction.value !== 'noaccount') return
-    completedLogins.value.add(props.profileId)
-    emit('completed', props.profileId)
+    if (busyAction.value !== 'noaccount') return
     message.success(t('app.toast.codexTomlWritten', { path }))
   } catch (error) {
-    if (loadingId.value === props.profileId && activeAction.value === 'noaccount') {
+    if (busyAction.value === 'noaccount') {
       message.error(error instanceof Error ? error.message : String(error))
     }
   } finally {
-    if (loadingId.value === props.profileId && activeAction.value === 'noaccount') {
-      loadingId.value = null
-      activeAction.value = null
+    if (busyAction.value === 'noaccount') {
+      busyAction.value = null
     }
   }
-}
-
-function handleStop() {
-  loadingId.value = null
-  activeAction.value = null
-  message.info(t('guide.actions.stopped'))
 }
 </script>
 
 <template>
-  <template v-if="store.config.profiles[profileId]">
-    <n-button
-      size="small"
-      :type="isActive(profileId) && activeAction === 'plugin' ? 'error' : (isCompleted(profileId) ? 'success' : (store.config.profiles[profileId].apiKey ? 'primary' : undefined))"
-      :disabled="!store.config.profiles[profileId].apiKey || (isCompleted(profileId) && !(isActive(profileId) && activeAction === 'plugin'))"
-      :title="store.config.profiles[profileId].apiKey ? t('guide.actions.pluginUnlockLoginTooltip') : t('guide.monitor.noKey')"
-      @click.stop="isActive(profileId) && activeAction === 'plugin' ? handleStop() : handlePluginLogin()"
-    >
-      {{ isActive(profileId) && activeAction === 'plugin' ? t('guide.actions.stop') : (isCompleted(profileId) ? t('guide.actions.completed') : t('guide.actions.pluginUnlockLogin')) }}
-    </n-button>
-    <n-button
-      size="small"
-      :type="isActive(profileId) && activeAction === 'noaccount' ? 'error' : (isCompleted(profileId) ? 'success' : (store.config.profiles[profileId].apiKey ? 'primary' : undefined))"
-      :disabled="!store.config.profiles[profileId].apiKey || (isCompleted(profileId) && !(isActive(profileId) && activeAction === 'noaccount'))"
-      @click.stop="isActive(profileId) && activeAction === 'noaccount' ? handleStop() : handleNoAccountLogin()"
-    >
-      {{ isActive(profileId) && activeAction === 'noaccount' ? t('guide.actions.stop') : (isCompleted(profileId) ? t('guide.actions.completed') : t('guide.actions.noAccountLogin')) }}
-    </n-button>
-    <span class="actions-sep">|</span>
-  </template>
+  <n-button
+    v-if="profile"
+    size="small"
+    :type="pluginBtnType"
+    :disabled="disabled"
+    @click.stop="onPluginClick"
+  >
+    {{ pluginBtnLabel }}
+  </n-button>
+  <n-button
+    v-if="profile"
+    size="small"
+    :type="noAccountBtnType"
+    :disabled="disabled"
+    @click.stop="onNoAccountClick"
+  >
+    {{ noAccountBtnLabel }}
+  </n-button>
+  <span v-if="profile" class="actions-sep">|</span>
 </template>
 
 <style scoped>

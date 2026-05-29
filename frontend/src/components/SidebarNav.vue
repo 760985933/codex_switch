@@ -183,13 +183,7 @@ onMounted(async () => {
           class="footer-update-check"
           :class="{ checking: updateChecking }"
           @click="checkUpdates(true, true)"
-          title="检查更新"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 4 23 10 17 10"/>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-          </svg>
-        </span>
+        >检查更新</span>
         <span class="footer-help" @click="emit('show-help')" title="帮助">?</span>
         <span
           class="footer-debug"
@@ -459,19 +453,15 @@ onMounted(async () => {
 }
 
 .footer-update-check {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  font-size: 11px;
   color: var(--muted);
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 160ms ease, color 160ms ease;
+  white-space: nowrap;
+  transition: color 160ms ease;
+  user-select: none;
 }
 .footer-update-check:hover {
-  background: rgba(22, 119, 255, 0.1);
   color: var(--accent);
 }
 
