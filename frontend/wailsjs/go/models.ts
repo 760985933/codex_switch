@@ -11,8 +11,8 @@ export namespace main {
 	    maxRetries: number;
 	    mappings: Record<string, string>;
 	    headers: Record<string, string>;
-	    apiType: string;
-
+	    apiType?: string;
+	
 	    static createFrom(source: any = {}) {
 	        return new Profile(source);
 	    }

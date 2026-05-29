@@ -364,7 +364,7 @@ func (b *ProxyRuntime) handleChatCompletions(w http.ResponseWriter, r *http.Requ
 	startedAt := time.Now()
 	w.Header().Set("x-proxy-request-id", requestID)
 
-	body, err := io.ReadAll(io.LimitReader(r.Body, 4<<20))
+	body, err := io.ReadAll(io.LimitReader(r.Body, 20<<20))
 	if err != nil {
 		b.app.appendLog("error", "proxy", "chat/completions 读取请求体失败", requestID)
 		b.writeProxyError(w, http.StatusBadRequest, "读取请求体失败")
@@ -514,7 +514,7 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := io.ReadAll(io.LimitReader(r.Body, 4<<20))
+	body, err := io.ReadAll(io.LimitReader(r.Body, 20<<20))
 	if err != nil {
 		b.app.appendLog("error", "proxy", "responses 读取请求体失败", requestID)
 		b.writeProxyError(w, http.StatusBadRequest, "读取请求体失败")
@@ -1092,7 +1092,7 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 	startedAt := time.Now()
 	w.Header().Set("x-proxy-request-id", requestID)
 
-	body, err := io.ReadAll(io.LimitReader(r.Body, 4<<20))
+	body, err := io.ReadAll(io.LimitReader(r.Body, 20<<20))
 	if err != nil {
 		b.app.appendLog("error", "proxy", "messages 读取请求体失败", requestID)
 		b.writeProxyError(w, http.StatusBadRequest, "读取请求体失败")
@@ -1391,22 +1391,53 @@ func translateMessagesToChatCompletions(body []byte, cfg AppConfig) ([]byte, boo
 		delete(payload, "system")
 	}
 
-	// Convert Messages API content blocks to simple text
+	// Convert Messages API content blocks to Chat Completions format
 	for i, item := range messages {
 		msg, ok := item.(map[string]any)
 		if !ok {
 			continue
 		}
-		if content, ok := msg["content"].([]any); ok {
+		if contentArr, ok := msg["content"].([]any); ok {
 			var texts []string
-			for _, block := range content {
-				if b, ok := block.(map[string]any); ok {
+			hasImage := false
+			chatParts := make([]any, 0, len(contentArr))
+			for _, block := range contentArr {
+				b, ok := block.(map[string]any)
+				if !ok {
+					continue
+				}
+				switch b["type"] {
+				case "image":
+					hasImage = true
+					source, _ := b["source"].(map[string]any)
+					if source != nil {
+						mediaType, _ := source["media_type"].(string)
+						data, _ := source["data"].(string)
+						chatParts = append(chatParts, map[string]any{
+							"type": "image_url",
+							"image_url": map[string]any{"url": "data:" + mediaType + ";base64," + data},
+						})
+					}
+				case "text":
+					t, _ := b["text"].(string)
+					chatParts = append(chatParts, map[string]any{
+						"type": "text",
+						"text": t,
+					})
+					texts = append(texts, t)
+				default:
 					if t, ok := b["text"].(string); ok {
+						chatParts = append(chatParts, map[string]any{
+							"type": "text",
+							"text": t,
+						})
 						texts = append(texts, t)
 					}
 				}
 			}
-			if len(texts) > 0 {
+			if hasImage {
+				msg["content"] = chatParts
+			} else if len(texts) > 0 {
 				msg["content"] = strings.Join(texts, "\n")
 			}
 		}
@@ -2391,6 +2422,17 @@ func responsesInputToMessages(payload map[string]any) ([]any, error) {
 				switch strings.TrimSpace(t) {
 				case "message":
 					// fallthrough to role/content parsing below
+				case "input_image":
+					imageURL, _ := msg["image_url"].(string)
+					chatParts := []any{map[string]any{
+						"type": "image_url",
+						"image_url": map[string]any{"url": imageURL},
+					}}
+					messages = append(messages, map[string]any{
+						"role":    "user",
+						"content": chatParts,
+					})
+					continue
 				case "input_text":
 					if text := strings.TrimSpace(flattenResponsesContent(msg)); text != "" {
 						messages = append(messages, map[string]any{"role": "user", "content": text})
@@ -2405,10 +2447,10 @@ func responsesInputToMessages(payload map[string]any) ([]any, error) {
 						callID, _ = msg["id"].(string)
 					}
 					if callID == "" {
-						continue
+					continue
 					}
 					if callIDsInInput[callID] {
-						continue
+					continue
 					}
 					messages = append(messages, map[string]any{
 						"role":         "tool",
@@ -2422,11 +2464,11 @@ func responsesInputToMessages(payload map[string]any) ([]any, error) {
 						callID, _ = msg["id"].(string)
 					}
 					if callID == "" {
-						continue
+					continue
 					}
 					toolOutput, hasOutput := outputsByCallID[callID]
 					if !hasOutput {
-						continue
+					continue
 					}
 
 					name, _ := msg["name"].(string)
@@ -2440,7 +2482,7 @@ func responsesInputToMessages(payload map[string]any) ([]any, error) {
 						}
 					}
 					if strings.TrimSpace(name) == "" && strings.TrimSpace(arguments) == "" {
-						continue
+					continue
 					}
 
 					messages = append(messages, map[string]any{
@@ -2470,15 +2512,18 @@ func responsesInputToMessages(payload map[string]any) ([]any, error) {
 			role, _ := msg["role"].(string)
 			role = normalizeChatRole(role)
 
-			content := flattenResponsesContent(msg["content"])
-			if strings.TrimSpace(content) == "" {
-				content = flattenResponsesContent(msg)
+			content := convertResponsesContentToChatContent(msg["content"])
+			if contentStr, ok := content.(string); ok {
+				if strings.TrimSpace(contentStr) == "" {
+					content = flattenResponsesContent(msg)
+				}
 			}
 			reasoning := ""
 			if role == "assistant" {
 				reasoning = strings.TrimSpace(extractResponsesReasoningContent(msg))
 			}
-			if strings.TrimSpace(content) == "" && reasoning == "" {
+			contentStr, _ := content.(string)
+			if strings.TrimSpace(contentStr) == "" && reasoning == "" {
 				continue
 			}
 			chatMsg := map[string]any{"role": role, "content": content}
@@ -2490,15 +2535,16 @@ func responsesInputToMessages(payload map[string]any) ([]any, error) {
 	case map[string]any:
 		role, _ := typed["role"].(string)
 		role = normalizeChatRole(role)
-		content := flattenResponsesContent(typed["content"])
-		if strings.TrimSpace(content) == "" {
+		content := convertResponsesContentToChatContent(typed["content"])
+		if s, ok := content.(string); ok && strings.TrimSpace(s) == "" {
 			content = flattenResponsesContent(typed)
 		}
 		reasoning := ""
 		if role == "assistant" {
 			reasoning = strings.TrimSpace(extractResponsesReasoningContent(typed))
 		}
-		if strings.TrimSpace(content) != "" || reasoning != "" {
+		s, _ := content.(string)
+		if strings.TrimSpace(s) != "" || reasoning != "" {
 			chatMsg := map[string]any{"role": role, "content": content}
 			if role == "assistant" && reasoning != "" {
 				chatMsg["reasoning_content"] = reasoning
@@ -2548,6 +2594,65 @@ func extractResponsesReasoningContent(msg map[string]any) string {
 		}
 	}
 	return strings.Join(parts, "")
+}
+
+// convertResponsesContentToChatContent converts Responses API content (string or array of parts)
+// to Chat Completions format. When images are present, returns an array of content parts;
+// otherwise returns a plain string.
+func convertResponsesContentToChatContent(content any) any {
+	s, ok := content.(string)
+	if ok {
+		return s
+	}
+	parts, ok := content.([]any)
+	if !ok {
+		return flattenResponsesContent(content)
+	}
+	hasImage := false
+	chatParts := make([]any, 0, len(parts))
+	for _, item := range parts {
+		p, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		t, _ := p["type"].(string)
+		switch t {
+		case "input_image":
+			hasImage = true
+			imageURL, _ := p["image_url"].(string)
+			chatParts = append(chatParts, map[string]any{
+				"type": "image_url",
+				"image_url": map[string]any{
+					"url": imageURL,
+				},
+			})
+		case "input_text":
+			text, _ := p["text"].(string)
+			chatParts = append(chatParts, map[string]any{
+				"type": "text",
+				"text": text,
+			})
+		default:
+			if text := flattenAnyText(p["text"]); text != "" {
+				chatParts = append(chatParts, map[string]any{
+					"type": "text",
+					"text": text,
+				})
+			}
+		}
+	}
+	if hasImage {
+		return chatParts
+	}
+	var texts []string
+	for _, cp := range chatParts {
+		if m, ok := cp.(map[string]any); ok {
+			if t, ok := m["text"].(string); ok {
+				texts = append(texts, t)
+			}
+		}
+	}
+	return strings.Join(texts, "")
 }
 
 func flattenResponsesContent(value any) string {

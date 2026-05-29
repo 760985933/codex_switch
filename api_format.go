@@ -219,9 +219,6 @@ func TranslateResponseBody(upstreamBody []byte, sourceFormat, targetFormat APITy
 	case sourceFormat == APIMessages && targetFormat == APIChatCompletions:
 		return translateChatCompletionToMessages(upstreamBody, model)
 
-	case sourceFormat == APIMessages && targetFormat == APIMessages:
-		return nil, nil
-
 	case sourceFormat == APIResponses && targetFormat == APIMessages:
 		return translateMessagesToResponses(upstreamBody, model)
 
@@ -250,7 +247,8 @@ func passthroughRequest(body []byte, format APIType, cfg AppConfig) ([]byte, boo
 		upstreamBody, err := passThroughMessagesBody(body, cfg)
 		return upstreamBody, streaming, extractModelFromBody(body), err
 	case APIResponses:
-		return translateResponsesToChatCompletions(body, cfg)
+		upstreamBody, err := passThroughResponsesBody(body, cfg)
+		return upstreamBody, streaming, extractModelFromBody(body), err
 	default:
 		upstreamBody, err := translateChatCompletions(body, cfg)
 		return upstreamBody, streaming, extractModelFromBody(body), err
@@ -258,6 +256,23 @@ func passthroughRequest(body []byte, format APIType, cfg AppConfig) ([]byte, boo
 }
 
 func passThroughMessagesBody(body []byte, cfg AppConfig) ([]byte, error) {
+	var payload map[string]any
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, fmt.Errorf("请求体不是有效的 JSON: %w", err)
+	}
+	if rawModel, ok := payload["model"].(string); ok && strings.TrimSpace(rawModel) != "" {
+		if mapped, ok := cfg.Mappings[rawModel]; ok && strings.TrimSpace(mapped) != "" {
+			payload["model"] = mapped
+		} else {
+			payload["model"] = strings.TrimSpace(cfg.DefaultModel)
+		}
+	} else {
+		payload["model"] = strings.TrimSpace(cfg.DefaultModel)
+	}
+	return json.Marshal(payload)
+}
+
+func passThroughResponsesBody(body []byte, cfg AppConfig) ([]byte, error) {
 	var payload map[string]any
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return nil, fmt.Errorf("请求体不是有效的 JSON: %w", err)
