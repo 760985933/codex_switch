@@ -131,9 +131,6 @@ async function handleRemoveProxy(id: string) {
         <div class="card-header">
           <span class="card-title">{{ t('dashboard.currentProfile') }}</span>
           <div class="card-header-actions">
-            <n-button text size="small" @click="showAddDialog = true">
-              {{ t('models.addProfile') }}
-            </n-button>
             <n-button text size="small" type="primary" @click="router.push('/models')">
               {{ t('dashboard.manageModels') }}
             </n-button>
