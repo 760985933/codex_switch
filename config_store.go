@@ -45,6 +45,9 @@ func (s *ConfigStore) Load() (AppConfig, error) {
 	if err := json.Unmarshal(content, &cfg); err != nil {
 		return defaultConfig(), err
 	}
+	// Hoist transport fields from old-style profile objects (pre-Phase-1 format)
+	// that json.Unmarshal silently dropped from the Profile struct.
+	hoistOldProfileTransport(&cfg, content)
 	return normalizeConfig(cfg), nil
 }
 
@@ -63,6 +66,58 @@ func (s *ConfigStore) Save(cfg AppConfig) error {
 	}
 
 	return os.WriteFile(s.path, content, 0o600)
+}
+
+// hoistOldProfileTransport extracts transport fields (requestTimeoutMs, maxRetries,
+// headers) from old-style profile objects in the raw JSON and promotes them to
+// AppConfig-level fields. This handles the migration case where a config saved by
+// a pre-Phase-1 version had these fields only inside profile objects — after the
+// Profile struct removed them, json.Unmarshal would silently drop the values.
+func hoistOldProfileTransport(cfg *AppConfig, raw []byte) {
+	if cfg == nil {
+		return
+	}
+	var doc map[string]any
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		return
+	}
+	profilesRaw, ok := doc["profiles"]
+	if !ok {
+		return
+	}
+	profilesMap, ok := profilesRaw.(map[string]any)
+	if !ok || len(profilesMap) == 0 {
+		return
+	}
+
+	// Hoist all transport fields from profile objects — the old config format
+	// kept these in profiles as the canonical copy (normalizeConfig synced
+	// profile → top-level). After Unmarshal, any profile-level-only fields
+	// are lost from the struct, so we restore them from raw JSON here.
+	for _, v := range profilesMap {
+		p, ok := v.(map[string]any)
+		if !ok {
+			continue
+		}
+		if val, ok := p["requestTimeoutMs"].(float64); ok && val > 0 {
+			cfg.RequestTimeoutMs = int(val)
+		}
+		if val, ok := p["maxRetries"].(float64); ok && val >= 0 {
+			cfg.MaxRetries = int(val)
+		}
+		if val, ok := p["headers"].(map[string]any); ok && len(val) > 0 {
+			headers := make(map[string]string, len(val))
+			for k, hv := range val {
+				if s, ok := hv.(string); ok {
+					headers[k] = s
+				}
+			}
+			if len(headers) > 0 {
+				cfg.Headers = headers
+			}
+		}
+		break // all profiles were synced; one is enough
+	}
 }
 
 func defaultConfig() AppConfig {

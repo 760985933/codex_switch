@@ -55,6 +55,36 @@ const codexBaseURL = computed(() => {
 
 const currentProfile = computed(() => store.currentProfile)
 
+// ── Add profile ──
+const showAddDialog = ref(false)
+const newProfileName = ref('')
+const newProfileProvider = ref('deepseek')
+
+const providerOptions = [
+  { label: 'DeepSeek', value: 'deepseek' },
+  { label: '阿里通义千问', value: 'alibaba' },
+  { label: '小米 MiMo', value: 'xiaomi' },
+  { label: '智谱 GLM', value: 'zhipu' },
+  { label: '百度千帆', value: 'baidu' },
+  { label: '火山引擎豆包', value: 'volcano' },
+  { label: '腾讯混元', value: 'tencent' },
+  { label: '硅基流动', value: 'silicon' },
+  { label: 'Kimi', value: 'kimi' },
+  { label: 'MiniMax 海螺', value: 'minimax' },
+  { label: 'Google Gemini', value: 'google' },
+  { label: 'Anthropic Claude', value: 'anthropic' },
+  { label: '自定义', value: 'custom' },
+]
+
+async function handleAddProfile() {
+  if (!newProfileName.value.trim()) return
+  await store.addProfile(newProfileName.value.trim(), newProfileProvider.value)
+  newProfileName.value = ''
+  newProfileProvider.value = 'deepseek'
+  showAddDialog.value = false
+  message.success(t('models.toast.added'))
+}
+
 // ── Login actions ──
 const activeLoginAction = ref<'plugin' | 'noaccount' | null>(null)
 const loginProfileId = ref<string | null>(null)
@@ -110,9 +140,14 @@ async function handleNoAccountLogin() {
     <div class="card">
       <div class="card-header">
         <span class="card-title">{{ t('dashboard.currentProfile') }}</span>
-        <n-button text size="small" type="primary" @click="router.push('/models')">
-          {{ t('dashboard.manageModels') }}
-        </n-button>
+        <div class="card-header-actions">
+          <n-button text size="small" @click="showAddDialog = true">
+            {{ t('models.addProfile') }}
+          </n-button>
+          <n-button text size="small" type="primary" @click="router.push('/models')">
+            {{ t('dashboard.manageModels') }}
+          </n-button>
+        </div>
       </div>
       <div v-if="currentProfile" class="profile-summary">
         <div class="profile-summary-main">
@@ -146,9 +181,11 @@ async function handleNoAccountLogin() {
       </div>
       <div v-else class="no-profile">
         <p>{{ t('dashboard.noProfile') }}</p>
-        <n-button size="small" type="primary" @click="router.push('/models')">
-          {{ t('dashboard.goToModels') }}
-        </n-button>
+        <div class="no-profile-actions">
+          <n-button size="small" type="primary" @click="showAddDialog = true">
+            {{ t('models.addProfile') }}
+          </n-button>
+        </div>
       </div>
     </div>
 
@@ -221,6 +258,18 @@ async function handleNoAccountLogin() {
         </n-button>
       </div>
     </div>
+
+    <!-- Add Profile Dialog -->
+    <n-modal v-model:show="showAddDialog" preset="dialog" :title="t('models.addProfile')" :positive-text="t('models.confirmAdd')" :negative-text="t('models.cancel')" @positive-click="handleAddProfile">
+      <n-form label-placement="top" size="small">
+        <n-form-item :label="t('models.profileName')">
+          <n-input v-model:value="newProfileName" :placeholder="t('models.profileNamePlaceholder')" />
+        </n-form-item>
+        <n-form-item :label="t('models.provider')">
+          <n-select v-model:value="newProfileProvider" :options="providerOptions" />
+        </n-form-item>
+      </n-form>
+    </n-modal>
   </div>
 </template>
 
@@ -250,6 +299,12 @@ async function handleNoAccountLogin() {
   font-size: 14px;
   font-weight: 600;
   color: var(--text);
+}
+
+.card-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* Profile Summary */
@@ -313,6 +368,11 @@ async function handleNoAccountLogin() {
   margin: 0;
   font-size: 13px;
   color: var(--muted);
+}
+
+.no-profile-actions {
+  display: flex;
+  gap: 8px;
 }
 
 /* Status */

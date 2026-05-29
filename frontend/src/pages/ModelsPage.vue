@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '../stores/app'
-import type { Profile } from '../types'
 import ModelEditorPanel from '../components/ModelEditorPanel.vue'
 import ProfileList from '../components/ProfileList.vue'
 
@@ -69,16 +68,18 @@ function handleEditorSave() {
       </n-button>
     </div>
 
-    <ProfileList
-      :profiles="store.profileList"
-      :current-profile-id="store.config.currentProfileId"
-      :loading="store.isBusy"
-      :proxy-running="store.isRunning"
-      :login-profile-id="null"
-      :active-login-action="null"
-      @edit="handleEdit"
-      @delete="handleDelete"
-    />
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">{{ t('models.title') }}</span>
+      </div>
+      <ProfileList
+        :profiles="store.profileList"
+        :current-profile-id="store.config.currentProfileId"
+        :loading="store.isBusy"
+        @edit="handleEdit"
+        @delete="handleDelete"
+      />
+    </div>
 
     <!-- Add Profile Dialog -->
     <n-modal v-model:show="showAddDialog" preset="dialog" :title="t('models.addProfile')" :positive-text="t('models.confirmAdd')" :negative-text="t('models.cancel')" @positive-click="handleAdd">
@@ -109,6 +110,7 @@ function handleEditorSave() {
 .models-page {
   display: grid;
   gap: 20px;
+  max-width: 720px;
 }
 
 .page-header {
@@ -128,5 +130,23 @@ function handleEditorSave() {
   margin: 0;
   font-size: 12px;
   color: var(--muted);
+}
+
+.card {
+  padding: 16px 18px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 10px 30px rgba(14, 30, 68, 0.08);
+}
+
+.card-header {
+  margin-bottom: 12px;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
 }
 </style>

@@ -7,10 +7,7 @@ export namespace main {
 	    baseURL: string;
 	    apiKey: string;
 	    defaultModel: string;
-	    requestTimeoutMs: number;
-	    maxRetries: number;
 	    mappings: Record<string, string>;
-	    headers: Record<string, string>;
 	    apiType?: string;
 	
 	    static createFrom(source: any = {}) {
@@ -25,10 +22,7 @@ export namespace main {
 	        this.baseURL = source["baseURL"];
 	        this.apiKey = source["apiKey"];
 	        this.defaultModel = source["defaultModel"];
-	        this.requestTimeoutMs = source["requestTimeoutMs"];
-	        this.maxRetries = source["maxRetries"];
 	        this.mappings = source["mappings"];
-	        this.headers = source["headers"];
 	        this.apiType = source["apiType"];
 	    }
 	}

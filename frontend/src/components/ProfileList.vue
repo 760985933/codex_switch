@@ -10,17 +10,11 @@ const props = defineProps<{
   profiles: Profile[]
   currentProfileId: string
   loading: boolean
-  proxyRunning: boolean
-  loginProfileId: string | null
-  activeLoginAction: 'plugin' | 'noaccount' | null
 }>()
 
 const emit = defineEmits<{
   edit: [id: string]
   delete: [id: string]
-  stop: []
-  pluginLogin: [id: string]
-  noaccountLogin: [id: string]
 }>()
 
 const store = useAppStore()
@@ -59,17 +53,6 @@ function handleDelete(id: string) {
     return
   }
   emit('delete', id)
-}
-
-function isLoginDisabled(id: string, action: 'plugin' | 'noaccount') {
-  if (props.loginProfileId === null) return false
-  if (props.loginProfileId !== id) return true
-  return props.activeLoginAction !== null && props.activeLoginAction !== action
-}
-
-function hasApiKey(id: string) {
-  const profile = props.profiles.find(p => p.id === id)
-  return !!profile?.apiKey
 }
 </script>
 
@@ -112,53 +95,17 @@ function hasApiKey(id: string) {
             </n-button>
           </div>
           <div class="profile-item-actions" @click.stop>
-          <template v-if="proxyRunning && profile.id === currentProfileId">
-            <n-button
-              size="small"
-              type="error"
-              :loading="loading"
-              @click="emit('stop')"
-            >
-              <template #icon>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-              </template>
-              {{ t('config.actions.stop') }}
+            <n-button size="small" tertiary @click="handleEdit(profile.id)">
+              {{ t('guide.step.one.edit') }}
             </n-button>
-          </template>
-          <template v-else>
-            <n-button
-              size="small"
-              type="primary"
-              :title="t('guide.actions.pluginUnlockLoginTooltip')"
-              :disabled="isLoginDisabled(profile.id, 'noaccount') || !hasApiKey(profile.id)"
-              :loading="loginProfileId === profile.id && activeLoginAction === 'plugin'"
-              @click="emit('pluginLogin', profile.id)"
-            >
-              {{ t('guide.actions.pluginUnlockLogin') }}
+            <n-button size="small" tertiary type="error" @click="handleDelete(profile.id)">
+              {{ t('common.delete') }}
             </n-button>
-            <n-button
-              size="small"
-              secondary
-              type="primary"
-              :disabled="isLoginDisabled(profile.id, 'plugin') || !hasApiKey(profile.id)"
-              :loading="loginProfileId === profile.id && activeLoginAction === 'noaccount'"
-              @click="emit('noaccountLogin', profile.id)"
-            >
-              {{ t('guide.actions.noAccountLogin') }}
-            </n-button>
-          </template>
-          <div class="profile-item-actions-sep"></div>
-          <n-button size="small" tertiary @click="handleEdit(profile.id)">
-            {{ t('guide.step.one.edit') }}
-          </n-button>
-          <n-button size="small" tertiary type="error" @click="handleDelete(profile.id)">
-            {{ t('common.delete') }}
-          </n-button>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 </template>
 
 <style scoped>
@@ -249,13 +196,6 @@ function hasApiKey(id: string) {
   flex-shrink: 0;
   align-items: center;
   flex-wrap: wrap;
-}
-
-.profile-item-actions-sep {
-  width: 1px;
-  height: 14px;
-  background: var(--border);
-  margin: 0 4px;
 }
 
 .profile-item-usage {
