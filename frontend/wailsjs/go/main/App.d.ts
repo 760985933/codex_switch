@@ -80,9 +80,9 @@ export function RunSync(arg1:string):Promise<main.SyncResult>;
 
 export function SaveAppConfig(arg1:main.AppConfig):Promise<main.AppConfig>;
 
-export function SetDebugMode(arg1:boolean):Promise<void>;
-
 export function SetCurrentProfile(arg1:string):Promise<main.AppConfig>;
+
+export function SetDebugMode(arg1:boolean):Promise<void>;
 
 export function SetSandboxConfig(arg1:main.SandboxWorkspaceConfig):Promise<main.SandboxWorkspaceConfig>;
 
