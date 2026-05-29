@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useMessage } from 'naive-ui'
+import { useMessage, useDialog } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
@@ -30,6 +30,7 @@ const store = useAppStore()
 const ui = useUiStore()
 const router = useRouter()
 const message = useMessage()
+const dialog = useDialog()
 const { t } = useI18n()
 
 const statusLabel = computed(() => {
@@ -60,11 +61,18 @@ const codexBaseURL = computed(() => {
 
 const currentProfile = computed(() => store.currentProfile)
 
-// ── Add profile ──
+// ── Add proxy entry ──
 const showAddDialog = ref(false)
+const addMode = ref<'new' | 'link'>('new')
 const newProfileName = ref('')
 const newProfileProvider = ref('deepseek')
 const newProfileApiKey = ref('')
+const linkProfileId = ref<string | null>(null)
+
+const unlinkedProfiles = computed(() => {
+  const proxyIds = new Set(store.proxyProfiles.map(p => p.id))
+  return store.profileList.filter(p => !proxyIds.has(p.id))
+})
 
 const providerOptions = [
   { label: 'DeepSeek', value: 'deepseek' },
@@ -82,14 +90,32 @@ const providerOptions = [
   { label: '自定义', value: 'custom' },
 ]
 
-async function handleAddProfile() {
-  if (!newProfileName.value.trim()) return
-  await store.addProfile(newProfileName.value.trim(), newProfileProvider.value, undefined, newProfileApiKey.value || undefined)
+const linkProfileOptions = computed(() =>
+  unlinkedProfiles.value.map(p => ({ label: `${p.name} (${p.provider})`, value: p.id }))
+)
+
+function openAddDialog() {
+  addMode.value = 'new'
   newProfileName.value = ''
   newProfileProvider.value = 'deepseek'
   newProfileApiKey.value = ''
+  linkProfileId.value = null
+  showAddDialog.value = true
+}
+
+async function handleAddProxy() {
+  if (addMode.value === 'new') {
+    if (!newProfileName.value.trim()) return
+    await store.addProfile(newProfileName.value.trim(), newProfileProvider.value, undefined, newProfileApiKey.value || undefined)
+    message.success(t('models.toast.added'))
+  } else {
+    if (!linkProfileId.value) return
+    const ids = [...(store.config.proxyProfileIds || []), linkProfileId.value]
+    const updated = { ...store.config, proxyProfileIds: ids }
+    await store.saveConfig(updated)
+    message.success(t('dashboard.linkedProxy'))
+  }
   showAddDialog.value = false
-  message.success(t('models.toast.added'))
 }
 
 // ── Edit / Delete ──
@@ -118,8 +144,16 @@ function handleEditorSave() {
 }
 
 async function handleRemoveProxy(id: string) {
-  await store.removeFromProxy(id)
-  message.success(t('dashboard.removedProxy'))
+  dialog.warning({
+    title: t('dashboard.removeProxy'),
+    content: t('dashboard.removeProxyConfirm'),
+    positiveText: t('common.delete'),
+    negativeText: t('models.cancel'),
+    onPositiveClick: async () => {
+      await store.removeFromProxy(id)
+      message.success(t('dashboard.removedProxy'))
+    },
+  })
 }
 </script>
 
@@ -131,6 +165,9 @@ async function handleRemoveProxy(id: string) {
         <div class="card-header">
           <span class="card-title">{{ t('dashboard.currentProfile') }}</span>
           <div class="card-header-actions">
+            <n-button text size="small" @click="openAddDialog">
+              {{ t('dashboard.addProxy') }}
+            </n-button>
             <n-button text size="small" type="primary" @click="router.push('/models')">
               {{ t('dashboard.manageModels') }}
             </n-button>
@@ -231,23 +268,43 @@ async function handleRemoveProxy(id: string) {
       </div>
     </div>
 
-    <!-- Add Profile Dialog -->
-    <n-modal v-model:show="showAddDialog" preset="dialog" :title="t('models.addProfile')" :positive-text="t('models.confirmAdd')" :negative-text="t('models.cancel')" @positive-click="handleAddProfile">
+    <!-- Add Proxy Dialog -->
+    <n-modal v-model:show="showAddDialog" preset="dialog" :title="t('dashboard.addProxy')" :positive-text="t('models.confirmAdd')" :negative-text="t('models.cancel')" @positive-click="handleAddProxy">
       <n-form label-placement="top" size="small">
-        <n-form-item :label="t('models.profileName')">
-          <n-input v-model:value="newProfileName" :placeholder="t('models.profileNamePlaceholder')" />
+        <n-form-item :label="t('dashboard.addMode')">
+          <n-radio-group v-model:value="addMode">
+            <n-radio value="new">{{ t('dashboard.addModeNew') }}</n-radio>
+            <n-radio value="link">{{ t('dashboard.addModeLink') }}</n-radio>
+          </n-radio-group>
         </n-form-item>
-        <n-form-item :label="t('models.provider')">
-          <n-select v-model:value="newProfileProvider" :options="providerOptions" />
-        </n-form-item>
-        <n-form-item label="API Key">
-          <n-input
-            v-model:value="newProfileApiKey"
-            type="password"
-            show-password-on="click"
-            :placeholder="getProviderPreset(newProfileProvider)?.placeholderApiKey ?? 'sk-...'"
-          />
-        </n-form-item>
+
+        <template v-if="addMode === 'new'">
+          <n-form-item :label="t('models.profileName')">
+            <n-input v-model:value="newProfileName" :placeholder="t('models.profileNamePlaceholder')" />
+          </n-form-item>
+          <n-form-item :label="t('models.provider')">
+            <n-select v-model:value="newProfileProvider" :options="providerOptions" />
+          </n-form-item>
+          <n-form-item label="API Key">
+            <n-input
+              v-model:value="newProfileApiKey"
+              type="password"
+              show-password-on="click"
+              :placeholder="getProviderPreset(newProfileProvider)?.placeholderApiKey ?? 'sk-...'"
+            />
+          </n-form-item>
+        </template>
+
+        <template v-else>
+          <n-form-item :label="t('dashboard.linkExisting')">
+            <n-select
+              v-model:value="linkProfileId"
+              :options="linkProfileOptions"
+              :placeholder="t('dashboard.linkExistingPlaceholder')"
+            />
+          </n-form-item>
+          <n-empty v-if="unlinkedProfiles.length === 0" :description="t('dashboard.noUnlinked')" style="padding:12px 0" />
+        </template>
       </n-form>
     </n-modal>
 
