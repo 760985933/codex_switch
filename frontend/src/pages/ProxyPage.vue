@@ -134,10 +134,9 @@ onMounted(async () => {
 <style scoped>
 .proxy-page {
   display: grid;
-  gap: 20px;
-  max-width: 780px;
+  gap: 16px;
+  width: 100%;
 }
-
 /* ── Tab bar ── */
 .tab-bar {
   display: inline-flex;

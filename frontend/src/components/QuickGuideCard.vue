@@ -198,7 +198,7 @@ function handleEditorSave() {
 
             <div class="cmd">
               <div class="cmd-label">{{ t('guide.step.three.quickVerify') }}</div>
-              <div class="mono">浏览器访问 {{ props.listenAddress || 'http://127.0.0.1:11434' }}/health</div>
+              <div class="mono">访问 {{ props.listenAddress || 'http://127.0.0.1:11434' }}/health</div>
             </div>
           </div>
         </div>
@@ -270,18 +270,27 @@ function handleEditorSave() {
 .dashboard {
   display: grid;
   gap: 16px;
+  width: 100%;
 }
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 2fr 1fr;
   gap: 16px;
   align-items: start;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .right-col {
   display: grid;
   gap: 16px;
+  min-width: 0;
 }
 
 .card {
@@ -312,6 +321,11 @@ function handleEditorSave() {
 }
 
 /* Status */
+.status-section {
+  display: grid;
+  gap: 12px;
+}
+
 .s-status {
   display: flex;
   align-items: center;
