@@ -84,6 +84,7 @@ function makeDefaultProfile(id: string, name: string, provider?: string): Profil
     maxRetries: 1,
     mappings: {},
     headers: {},
+    apiType: preset?.apiType ?? defaultPreset.apiType,
   }
 }
 

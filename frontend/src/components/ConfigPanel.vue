@@ -32,6 +32,12 @@ const providerOptions = PROVIDER_PRESETS.map((p) => ({
   value: p.id,
 }))
 
+const apiTypeOptions = [
+  { label: 'Chat Completions（OpenAI 兼容）', value: 'chat_completions' },
+  { label: 'Responses（Codex / OpenAI）', value: 'responses' },
+  { label: 'Messages（Anthropic Claude）', value: 'messages' },
+]
+
 // Sync form when switching profiles
 watch(
   () => props.profileId ?? store.config.currentProfileId,
@@ -50,6 +56,7 @@ function syncForm() {
       ...p,
       mappings: { ...p.mappings },
       headers: { ...p.headers },
+      apiType: p.apiType || getProviderPreset(p.provider)?.apiType || 'chat_completions',
     }
   }
 }
@@ -67,6 +74,7 @@ function onProviderChange(providerId: string) {
   if (preset && providerId !== 'custom') {
     formProfile.value.baseURL = preset.defaultBaseURL
     formProfile.value.defaultModel = preset.defaultModel
+    formProfile.value.apiType = preset.apiType
   }
 }
 
@@ -127,6 +135,13 @@ async function submitSave() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </n-button>
           </div>
+        </n-form-item>
+        <n-form-item label="API 格式">
+          <n-select
+            v-model:value="formProfile.apiType"
+            :options="apiTypeOptions"
+            size="small"
+          />
         </n-form-item>
         <n-form-item :label="t('config.fields.defaultModel')">
           <n-input

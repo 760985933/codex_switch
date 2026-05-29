@@ -14,16 +14,17 @@ import (
 type ProviderID string
 
 const (
-	ProviderDeepSeek ProviderID = "deepseek"
-	ProviderAlibaba  ProviderID = "alibaba"
-	ProviderXiaomi   ProviderID = "xiaomi"
-	ProviderZhipu    ProviderID = "zhipu"
-	ProviderBaidu    ProviderID = "baidu"
-	ProviderVolcano  ProviderID = "volcano"
-	ProviderTencent  ProviderID = "tencent"
-	ProviderSilicon  ProviderID = "silicon"
-	ProviderKimi     ProviderID = "kimi"
-	ProviderCustom   ProviderID = "custom"
+	ProviderDeepSeek  ProviderID = "deepseek"
+	ProviderAlibaba   ProviderID = "alibaba"
+	ProviderXiaomi    ProviderID = "xiaomi"
+	ProviderZhipu     ProviderID = "zhipu"
+	ProviderBaidu     ProviderID = "baidu"
+	ProviderVolcano   ProviderID = "volcano"
+	ProviderTencent   ProviderID = "tencent"
+	ProviderSilicon   ProviderID = "silicon"
+	ProviderKimi      ProviderID = "kimi"
+	ProviderAnthropic ProviderID = "anthropic"
+	ProviderCustom    ProviderID = "custom"
 )
 
 // ProviderInfo 描述一个 LLM 提供商的元信息
@@ -36,6 +37,7 @@ type ProviderInfo struct {
 	DefaultMappings map[string]string // Codex 模型 → 提供商模型映射
 	HasBalanceAPI   bool              // 是否有公开余额查询接口
 	BalanceCheckFn  func(apiKey, baseURL string) (*UsageBalance, error) // 余额查询函数（nil 表示不支持）
+	APIType         APIType           // 该提供商原生支持的 API 格式
 }
 
 // GetProvider 根据 ID 获取提供商信息；未知 ID 返回 nil
@@ -127,6 +129,7 @@ var registeredProviders = map[string]*ProviderInfo{
 		DocsURL:         "https://api-docs.deepseek.com/",
 		HasBalanceAPI:   true,
 		BalanceCheckFn:  deepseekBalanceCheck,
+		APIType:         APIChatCompletions,
 		DefaultMappings: deepseekDefaultMappings(),
 	},
 	string(ProviderAlibaba): {
@@ -137,6 +140,7 @@ var registeredProviders = map[string]*ProviderInfo{
 		DocsURL:         "https://help.aliyun.com/zh/model-studio/models",
 		HasBalanceAPI:   false,
 		BalanceCheckFn:  nil,
+		APIType:         APIChatCompletions,
 		DefaultMappings: alibabaDefaultMappings(),
 	},
 	string(ProviderXiaomi): {
@@ -147,6 +151,7 @@ var registeredProviders = map[string]*ProviderInfo{
 		DocsURL:         "https://platform.xiaomimimo.com/#/docs/welcome",
 		HasBalanceAPI:   false,
 		BalanceCheckFn:  nil,
+		APIType:         APIChatCompletions,
 		DefaultMappings: xiaomiDefaultMappings(),
 	},
 	string(ProviderZhipu): {
@@ -157,6 +162,7 @@ var registeredProviders = map[string]*ProviderInfo{
 		DocsURL:         "https://docs.bigmodel.cn/",
 		HasBalanceAPI:   false,
 		BalanceCheckFn:  nil,
+		APIType:         APIChatCompletions,
 		DefaultMappings: zhipuDefaultMappings(),
 	},
 	string(ProviderBaidu): {
@@ -167,6 +173,7 @@ var registeredProviders = map[string]*ProviderInfo{
 		DocsURL:         "https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu",
 		HasBalanceAPI:   false,
 		BalanceCheckFn:  nil,
+		APIType:         APIChatCompletions,
 		DefaultMappings: baiduDefaultMappings(),
 	},
 	string(ProviderVolcano): {
@@ -177,6 +184,7 @@ var registeredProviders = map[string]*ProviderInfo{
 		DocsURL:         "https://www.volcengine.com/docs/82379/1330310",
 		HasBalanceAPI:   false,
 		BalanceCheckFn:  nil,
+		APIType:         APIChatCompletions,
 		DefaultMappings: volcanoDefaultMappings(),
 	},
 	string(ProviderTencent): {
@@ -187,6 +195,7 @@ var registeredProviders = map[string]*ProviderInfo{
 		DocsURL:         "https://cloud.tencent.com/document/product/1729/104753",
 		HasBalanceAPI:   false,
 		BalanceCheckFn:  nil,
+		APIType:         APIChatCompletions,
 		DefaultMappings: tencentDefaultMappings(),
 	},
 	string(ProviderSilicon): {
@@ -197,6 +206,7 @@ var registeredProviders = map[string]*ProviderInfo{
 		DocsURL:         "https://docs.siliconflow.cn/",
 		HasBalanceAPI:   false,
 		BalanceCheckFn:  nil,
+		APIType:         APIChatCompletions,
 		DefaultMappings: siliconDefaultMappings(),
 	},
 	string(ProviderKimi): {
@@ -207,7 +217,19 @@ var registeredProviders = map[string]*ProviderInfo{
 		DocsURL:         "https://platform.moonshot.cn/docs",
 		HasBalanceAPI:   false,
 		BalanceCheckFn:  nil,
+		APIType:         APIChatCompletions,
 		DefaultMappings: kimiDefaultMappings(),
+	},
+	string(ProviderAnthropic): {
+		ID:              ProviderAnthropic,
+		Name:            "Anthropic Claude",
+		DefaultBaseURL:  "https://api.anthropic.com",
+		DefaultModel:    "claude-sonnet-4-6",
+		DocsURL:         "https://docs.anthropic.com/en/api",
+		HasBalanceAPI:   false,
+		BalanceCheckFn:  nil,
+		APIType:         APIMessages,
+		DefaultMappings: anthropicDefaultMappings(),
 	},
 }
 
@@ -334,6 +356,20 @@ func kimiDefaultMappings() map[string]string {
 		"gpt-4o-mini":            "kimi-k2.6",
 		"o4-mini":                "kimi-k2.6-thinking",
 		"codex-auto-review":      "kimi-k2.6",
+	}
+}
+
+func anthropicDefaultMappings() map[string]string {
+	return map[string]string{
+		"gpt-5.5":           "claude-opus-4-7",
+		"gpt-5.4":           "claude-opus-4-7",
+		"gpt-5.4-mini":      "claude-sonnet-4-6",
+		"gpt-5.3-codex":     "claude-sonnet-4-6",
+		"gpt-4.1":           "claude-sonnet-4-6",
+		"gpt-4o":            "claude-sonnet-4-6",
+		"gpt-4o-mini":       "claude-haiku-4-5",
+		"o4-mini":           "claude-sonnet-4-6",
+		"codex-auto-review": "claude-haiku-4-5",
 	}
 }
 

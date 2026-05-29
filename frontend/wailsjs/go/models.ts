@@ -11,7 +11,8 @@ export namespace main {
 	    maxRetries: number;
 	    mappings: Record<string, string>;
 	    headers: Record<string, string>;
-	
+	    apiType: string;
+
 	    static createFrom(source: any = {}) {
 	        return new Profile(source);
 	    }
@@ -28,6 +29,7 @@ export namespace main {
 	        this.maxRetries = source["maxRetries"];
 	        this.mappings = source["mappings"];
 	        this.headers = source["headers"];
+	        this.apiType = source["apiType"];
 	    }
 	}
 	export class AppConfig {

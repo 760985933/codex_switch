@@ -6,6 +6,13 @@ export interface ProviderPreset {
   docsURL: string
   placeholderApiKey: string
   placeholderModel: string
+  apiType: 'chat_completions' | 'responses' | 'messages'
+}
+
+export const API_TYPE_LABELS: Record<string, string> = {
+  chat_completions: 'Chat Completions (OpenAI)',
+  responses: 'Responses (Codex)',
+  messages: 'Messages (Anthropic)',
 }
 
 export const PROVIDER_PRESETS: ProviderPreset[] = [
@@ -17,6 +24,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     docsURL: 'https://api-docs.deepseek.com/',
     placeholderApiKey: 'sk-...',
     placeholderModel: 'deepseek-v4-flash',
+    apiType: 'chat_completions',
   },
   {
     id: 'alibaba',
@@ -26,6 +34,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     docsURL: 'https://help.aliyun.com/zh/model-studio/models',
     placeholderApiKey: 'sk-...',
     placeholderModel: 'qwen3.6-plus',
+    apiType: 'chat_completions',
   },
   {
     id: 'xiaomi',
@@ -35,6 +44,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     docsURL: 'https://platform.xiaomimimo.com/#/docs/welcome',
     placeholderApiKey: 'sk-...',
     placeholderModel: 'mimo-v2.5-pro',
+    apiType: 'chat_completions',
   },
   {
     id: 'zhipu',
@@ -44,6 +54,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     docsURL: 'https://docs.bigmodel.cn/',
     placeholderApiKey: 'sk-...',
     placeholderModel: 'glm-4.7-flash',
+    apiType: 'chat_completions',
   },
   {
     id: 'baidu',
@@ -53,6 +64,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     docsURL: 'https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu',
     placeholderApiKey: 'sk-...',
     placeholderModel: 'ernie-5.1',
+    apiType: 'chat_completions',
   },
   {
     id: 'volcano',
@@ -62,6 +74,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     docsURL: 'https://www.volcengine.com/docs/82379/1330310',
     placeholderApiKey: 'sk-...',
     placeholderModel: 'doubao-seed-2-0-lite-260215',
+    apiType: 'chat_completions',
   },
   {
     id: 'tencent',
@@ -71,6 +84,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     docsURL: 'https://cloud.tencent.com/document/product/1729/104753',
     placeholderApiKey: 'sk-...',
     placeholderModel: 'hunyuan-2.0-thinking-20251109',
+    apiType: 'chat_completions',
   },
   {
     id: 'silicon',
@@ -80,6 +94,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     docsURL: 'https://docs.siliconflow.cn/',
     placeholderApiKey: 'sk-...',
     placeholderModel: 'deepseek-ai/DeepSeek-V4-Flash',
+    apiType: 'chat_completions',
   },
   {
     id: 'kimi',
@@ -89,6 +104,17 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     docsURL: 'https://platform.moonshot.cn/docs',
     placeholderApiKey: 'sk-...',
     placeholderModel: 'kimi-k2.6',
+    apiType: 'chat_completions',
+  },
+  {
+    id: 'anthropic',
+    label: 'Anthropic Claude',
+    defaultBaseURL: 'https://api.anthropic.com',
+    defaultModel: 'claude-sonnet-4-6',
+    docsURL: 'https://docs.anthropic.com/en/api',
+    placeholderApiKey: 'sk-ant-...',
+    placeholderModel: 'claude-sonnet-4-6',
+    apiType: 'messages',
   },
   {
     id: 'custom',
@@ -98,6 +124,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     docsURL: '',
     placeholderApiKey: 'sk-...',
     placeholderModel: 'gpt-4o',
+    apiType: 'chat_completions',
   },
 ]
 

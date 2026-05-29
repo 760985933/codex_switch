@@ -22,6 +22,7 @@ type Profile struct {
 	MaxRetries       int               `json:"maxRetries"`
 	Mappings         map[string]string `json:"mappings"`
 	Headers          map[string]string `json:"headers"`
+	APIType          string            `json:"apiType,omitempty"` // 覆盖提供商的默认 API 格式
 }
 
 type AppConfig struct {

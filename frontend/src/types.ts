@@ -11,6 +11,7 @@ export interface Profile {
   maxRetries: number
   mappings: Record<string, string>
   headers: Record<string, string>
+  apiType: string
 }
 
 export interface AppConfig {

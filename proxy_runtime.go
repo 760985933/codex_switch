@@ -1099,17 +1099,14 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chatBody, streaming, model, err := translateMessagesToChatCompletions(body, cfg)
+	sourceFormat := APIMessages
+	targetFormat := ResolveProviderFormat(cfg)
+
+	// 翻译请求体
+	upstreamBody, streaming, model, err := TranslateRequestBody(body, sourceFormat, targetFormat, cfg)
 	if err != nil {
 		b.app.appendLog("warn", "proxy", "messages 请求体解析失败: "+err.Error()+" keys="+summarizeJSONKeys(body), requestID)
 		b.writeProxyError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	resourceURL, err := upstreamResourceURL(cfg.DeepseekBaseURL, "chat/completions")
-	if err != nil {
-		b.app.appendLog("error", "proxy", "messages 上游地址错误: "+err.Error(), requestID)
-		b.writeProxyError(w, http.StatusBadGateway, err.Error())
 		return
 	}
 
@@ -1119,7 +1116,6 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 			b.writeProxyError(w, http.StatusBadGateway, "客户端不支持流式输出")
 			return
 		}
-
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("Connection", "keep-alive")
@@ -1127,7 +1123,8 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 		flusher.Flush()
 	}
 
-	req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, resourceURL, bytes.NewReader(chatBody))
+	// 构建格式感知的上游请求
+	req, err := BuildUpstreamRequest(r, upstreamBody, targetFormat, cfg)
 	if err != nil {
 		b.app.appendLog("error", "proxy", "messages 构造上游请求失败: "+err.Error(), requestID)
 		if streaming {
@@ -1137,10 +1134,10 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	req.Header.Set("Content-Type", "application/json")
-	copyRequestHeaders(req.Header, r.Header, cfg.Headers)
-	req.GetBody = func() (io.ReadCloser, error) {
-		return io.NopCloser(bytes.NewReader(chatBody)), nil
+
+	// 同格式直通时，流式也需要 Accept 头
+	if sourceFormat == targetFormat && streaming {
+		req.Header.Set("Accept", "text/event-stream")
 	}
 
 	resp, err := b.doUpstream(req, cfg, streaming)
@@ -1178,29 +1175,43 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 	b.clearLastUpstreamFailure()
 
 	if streaming {
-		b.streamChatToMessages(w, resp.Body, model)
+		if sourceFormat == targetFormat {
+			// 直通：Messages SSE → Messages SSE
+			b.streamPassthrough(w, resp.Body)
+		} else {
+			b.streamChatToMessages(w, resp.Body, model)
+		}
 		durationMs := time.Since(startedAt).Milliseconds()
 		b.recordUsage(cfg, model, "messages", 0, 0, 0, 200, durationMs, true)
 	} else {
 		upstreamRaw, _ := io.ReadAll(io.LimitReader(resp.Body, 10<<20))
-		var pt, ct, tt int64
-		if usageMap, ok := extractUsage(upstreamRaw); ok {
-			pt = usageMap["prompt_tokens"]
-			ct = usageMap["completion_tokens"]
-			tt = usageMap["total_tokens"]
+
+		if sourceFormat == targetFormat {
+			// 直通：无需反向翻译
+			b.copyHeaders(w.Header(), resp.Header)
+			w.WriteHeader(resp.StatusCode)
+			w.Write(upstreamRaw)
+			b.recordUsage(cfg, model, "messages", 0, 0, 0, resp.StatusCode, time.Since(startedAt).Milliseconds(), true)
+		} else {
+			var pt, ct, tt int64
+			if usageMap, ok := extractUsage(upstreamRaw); ok {
+				pt = usageMap["prompt_tokens"]
+				ct = usageMap["completion_tokens"]
+				tt = usageMap["total_tokens"]
+			}
+			b.recordUsage(cfg, model, "messages", pt, ct, tt, resp.StatusCode, time.Since(startedAt).Milliseconds(), resp.StatusCode < http.StatusBadRequest)
+			response, err := translateChatCompletionToMessages(upstreamRaw, model)
+			if err != nil {
+				b.app.appendLog("error", "proxy", "messages 响应转换失败: "+err.Error(), requestID)
+				b.writeProxyError(w, http.StatusInternalServerError, "响应转换失败")
+				return
+			}
+			b.writeJSON(w, http.StatusOK, response)
 		}
-		b.recordUsage(cfg, model, "messages", pt, ct, tt, resp.StatusCode, time.Since(startedAt).Milliseconds(), resp.StatusCode < http.StatusBadRequest)
-		response, err := translateChatCompletionToMessages(upstreamRaw, model)
-		if err != nil {
-			b.app.appendLog("error", "proxy", "messages 响应转换失败: "+err.Error(), requestID)
-			b.writeProxyError(w, http.StatusInternalServerError, "响应转换失败")
-			return
-		}
-		b.writeJSON(w, http.StatusOK, response)
 	}
 
 	duration := time.Since(startedAt).Milliseconds()
-	b.app.appendLog("info", "proxy", fmt.Sprintf("POST /v1/messages -> 200 (%dms)", duration), requestID)
+	b.app.appendLog("info", "proxy", fmt.Sprintf("POST /v1/messages -> 200 (%dms) format=%s→%s", duration, sourceFormat, targetFormat), requestID)
 }
 
 func (b *ProxyRuntime) streamMessagesError(w http.ResponseWriter, errType string, message string) {
@@ -1587,7 +1598,10 @@ func summarizeTools(value any) string {
 }
 
 func (b *ProxyRuntime) doUpstream(req *http.Request, cfg AppConfig, streaming bool) (*http.Response, error) {
-	req.Header.Set("Authorization", "Bearer "+cfg.APIKey)
+	// 仅在没有预设认证头时才设置默认 Bearer 认证
+	if req.Header.Get("Authorization") == "" && req.Header.Get("x-api-key") == "" {
+		req.Header.Set("Authorization", "Bearer "+cfg.APIKey)
+	}
 	if req.Header.Get("Accept") == "" && streaming {
 		req.Header.Set("Accept", "text/event-stream")
 	}
@@ -1646,6 +1660,26 @@ func (b *ProxyRuntime) streamResponse(w http.ResponseWriter, body io.Reader) {
 		return
 	}
 
+	buf := make([]byte, 2048)
+	for {
+		n, err := body.Read(buf)
+		if n > 0 {
+			_, _ = w.Write(buf[:n])
+			flusher.Flush()
+		}
+		if err != nil {
+			return
+		}
+	}
+}
+
+// streamPassthrough 同格式直通时的 SSE 流复制
+func (b *ProxyRuntime) streamPassthrough(w http.ResponseWriter, body io.Reader) {
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		_, _ = io.Copy(w, body)
+		return
+	}
 	buf := make([]byte, 2048)
 	for {
 		n, err := body.Read(buf)
