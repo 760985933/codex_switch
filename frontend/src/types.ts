@@ -7,10 +7,7 @@ export interface Profile {
   baseURL: string
   apiKey: string
   defaultModel: string
-  requestTimeoutMs: number
-  maxRetries: number
   mappings: Record<string, string>
-  headers: Record<string, string>
   apiType: string
 }
 

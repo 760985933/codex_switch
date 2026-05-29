@@ -142,6 +142,8 @@ async function checkUpdates(showUpToDateToast: boolean, showDialogOnUpdate: bool
 
 const navItems = computed(() => [
   { label: t('app.nav.overview'), to: '/overview' },
+  { label: t('app.nav.models'), to: '/models' },
+  { label: t('app.nav.proxy'), to: '/proxy' },
   { label: t('app.nav.sessions'), to: '/sessions' },
   { label: t('app.nav.monitoring'), to: '/monitoring' },
   { label: t('app.nav.logs'), to: '/logs' },
@@ -449,9 +451,10 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: 999px;
   color: var(--muted);
+  font-size: 13px;
   text-decoration: none;
   transition: background 160ms ease, color 160ms ease;
 }

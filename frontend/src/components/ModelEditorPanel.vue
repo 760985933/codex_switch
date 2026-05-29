@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useMessage } from 'naive-ui'
 import { computed, ref, watch } from 'vue'
+import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '../stores/app'
 import type { Profile } from '../types'
@@ -11,20 +11,18 @@ import { BrowserOpenURL } from '../../wailsjs/runtime/runtime'
 
 const store = useAppStore()
 const props = defineProps<{
-  profileId?: string
+  profileId: string
 }>()
 const emit = defineEmits<{
   save: []
 }>()
 
 const formProfile = ref<Profile>({} as Profile)
-const showAdvanced = ref(true)
 const { t } = useI18n()
 const message = useMessage()
 
 const editingProfile = computed(() => {
-  const id = props.profileId ?? store.config.currentProfileId
-  return store.config.profiles[id] ?? null
+  return store.config.profiles[props.profileId] ?? null
 })
 
 const providerOptions = PROVIDER_PRESETS.map((p) => ({
@@ -39,10 +37,10 @@ const apiTypeOptions = [
   { label: 'Google（Gemini）', value: 'google' },
 ]
 
-// Sync form when switching profiles
 watch(
-  () => props.profileId ?? store.config.currentProfileId,
+  () => props.profileId,
   () => syncForm(),
+  { immediate: true },
 )
 watch(
   () => store.config.profiles,
@@ -56,12 +54,10 @@ function syncForm() {
     formProfile.value = {
       ...p,
       mappings: { ...p.mappings },
-      headers: { ...p.headers },
       apiType: p.apiType || getProviderPreset(p.provider)?.apiType || 'chat_completions',
     }
   }
 }
-syncForm()
 
 const maskedApiKey = computed(() => maskSecret(formProfile.value.apiKey))
 const apiKeyHint = computed(() =>
@@ -80,13 +76,10 @@ function onProviderChange(providerId: string) {
 }
 
 async function submitSave() {
-  const id = props.profileId ?? store.config.currentProfileId
   const profiles = { ...store.config.profiles }
-  profiles[id] = { ...formProfile.value }
-  // If editing a different profile, also switch active profile
+  profiles[props.profileId] = { ...formProfile.value }
   const updated = {
     ...store.config,
-    currentProfileId: id,
     profiles,
   }
   await store.saveConfig(updated)
@@ -103,17 +96,7 @@ async function submitSave() {
 </script>
 
 <template>
-  <div class="config-panel">
-    <div class="panel-head">
-      <div>
-        <h3>{{ t('config.title') }}</h3>
-        <p v-if="editingProfile">
-          {{ t('config.editing') }}: <strong>{{ editingProfile.name }}</strong>
-        </p>
-        <p v-else>{{ t('config.noProfile') }}</p>
-      </div>
-    </div>
-
+  <div class="model-editor">
     <n-form label-placement="top" :model="formProfile" size="small">
       <div class="form-grid">
         <n-form-item :label="t('config.fields.profileName')">
@@ -168,18 +151,6 @@ async function submitSave() {
           />
           <div class="field-hint">{{ apiKeyHint }}</div>
         </n-form-item>
-        <n-form-item :label="t('config.fields.listenHost')">
-          <n-input v-model:value="store.config.listenHost" placeholder="127.0.0.1" size="small" />
-        </n-form-item>
-        <n-form-item :label="t('config.fields.listenPort')">
-          <n-input-number v-model:value="store.config.listenPort" :min="1" :max="65535" size="small" />
-        </n-form-item>
-        <n-form-item :label="t('config.fields.requestTimeout')">
-          <n-input-number v-model:value="formProfile.requestTimeoutMs" :min="1000" :step="1000" size="small" />
-        </n-form-item>
-        <n-form-item :label="t('config.fields.maxRetries')">
-          <n-input-number v-model:value="formProfile.maxRetries" :min="0" :max="5" size="small" />
-        </n-form-item>
       </div>
     </n-form>
 
@@ -189,64 +160,23 @@ async function submitSave() {
       </n-button>
     </div>
 
-    <div v-if="showAdvanced" class="advanced-panel">
-        <KeyValueEditor
-          v-model:model-value="formProfile.mappings"
-          :title="t('config.advanced.modelMapping.title')"
-          :description="t('config.advanced.modelMapping.desc')"
-          :key-placeholder="t('config.advanced.modelMapping.keyPlaceholder')"
-          :value-placeholder="t('config.advanced.modelMapping.valuePlaceholder')"
-          size="small"
-        />
-        <KeyValueEditor
-          v-model:model-value="formProfile.headers"
-          :title="t('config.advanced.headers.title')"
-          :description="t('config.advanced.headers.desc')"
-          :key-placeholder="t('config.advanced.headers.keyPlaceholder')"
-          :value-placeholder="t('config.advanced.headers.valuePlaceholder')"
-          size="small"
-        />
-      </div>
-
-    <n-button text type="primary" @click="showAdvanced = !showAdvanced">
-      {{ showAdvanced ? t('config.actions.collapseAdvanced') : t('config.actions.expandAdvanced') }}
-    </n-button>
+    <div class="advanced-section">
+      <KeyValueEditor
+        v-model:model-value="formProfile.mappings"
+        :title="t('config.advanced.modelMapping.title')"
+        :description="t('config.advanced.modelMapping.desc')"
+        :key-placeholder="t('config.advanced.modelMapping.keyPlaceholder')"
+        :value-placeholder="t('config.advanced.modelMapping.valuePlaceholder')"
+        size="small"
+      />
+    </div>
   </div>
 </template>
 
 <style scoped>
-.config-panel {
+.model-editor {
   display: grid;
-  gap: 8px;
-  padding: 16px;
-  border-radius: 22px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  box-shadow: 0 10px 30px rgba(14, 30, 68, 0.08);
-}
-
-.panel-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.panel-head h3 {
-  margin: 0 0 2px;
-  font-size: 15px;
-  color: var(--text);
-}
-
-.panel-head p {
-  margin: 0;
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--muted);
-}
-
-.panel-head strong {
-  color: var(--text);
+  gap: 16px;
 }
 
 .form-grid {
@@ -283,19 +213,13 @@ async function submitSave() {
   gap: 8px;
 }
 
-.advanced-panel {
+.advanced-section {
   display: grid;
   gap: 14px;
   padding-top: 4px;
 }
 
 @media (max-width: 920px) {
-  .panel-head,
-  .action-bar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
   .form-grid {
     grid-template-columns: 1fr;
   }

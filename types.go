@@ -12,17 +12,14 @@ const (
 )
 
 type Profile struct {
-	ID               string            `json:"id"`
-	Name             string            `json:"name"`
-	Provider         string            `json:"provider"`
-	BaseURL          string            `json:"baseURL"`
-	APIKey           string            `json:"apiKey"`
-	DefaultModel     string            `json:"defaultModel"`
-	RequestTimeoutMs int               `json:"requestTimeoutMs"`
-	MaxRetries       int               `json:"maxRetries"`
-	Mappings         map[string]string `json:"mappings"`
-	Headers          map[string]string `json:"headers"`
-	APIType          string            `json:"apiType,omitempty"` // 覆盖提供商的默认 API 格式
+	ID           string            `json:"id"`
+	Name         string            `json:"name"`
+	Provider     string            `json:"provider"`
+	BaseURL      string            `json:"baseURL"`
+	APIKey       string            `json:"apiKey"`
+	DefaultModel string            `json:"defaultModel"`
+	Mappings     map[string]string `json:"mappings"`
+	APIType      string            `json:"apiType,omitempty"`
 }
 
 type AppConfig struct {

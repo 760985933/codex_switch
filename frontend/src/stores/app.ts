@@ -80,10 +80,7 @@ function makeDefaultProfile(id: string, name: string, provider?: string): Profil
     baseURL: preset?.defaultBaseURL ?? defaultPreset.defaultBaseURL,
     apiKey: '',
     defaultModel: preset?.defaultModel ?? defaultPreset.defaultModel,
-    requestTimeoutMs: 60000,
-    maxRetries: 1,
     mappings: {},
-    headers: {},
     apiType: preset?.apiType ?? defaultPreset.apiType,
   }
 }

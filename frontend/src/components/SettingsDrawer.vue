@@ -226,34 +226,14 @@ async function clearAllBackups() {
   >
     <n-drawer-content :title="t('settings.title')" closable>
       <div class="drawer-body">
-        <div class="settings-group">
-          <div class="settings-group-label">{{ t('settings.groupLabels.behavior') }}</div>
+        <n-alert type="info" :bordered="false" closable>
+          <template #header>{{ t('settings.behaviorMoved') }}</template>
+          {{ t('settings.behaviorMovedDesc') }}
+        </n-alert>
 
-          <div class="switches-row">
-            <div class="switch-item">
-              <n-switch v-model:value="localConfig.enableAutoStart" size="small" />
-              <span>{{ t('settings.switches.autoStart') }}</span>
-            </div>
-            <div class="switch-item">
-              <n-switch v-model:value="localConfig.minimizeToTray" size="small" />
-              <span>{{ t('settings.switches.minimizeToTray') }}</span>
-            </div>
-            <div class="switch-item">
-              <n-switch v-model:value="localConfig.compactMode" size="small" />
-              <span>{{ t('settings.switches.compactMode') }}</span>
-            </div>
-          </div>
-
-          <div class="log-days-row">
-            <span class="log-days-label">{{ t('settings.form.logRetentionDays') }}</span>
-            <n-input-number v-model:value="localConfig.logRetentionDays" :min="1" :max="30" size="small" style="width: 80px" />
-          </div>
-
-          <n-space class="settings-actions">
-            <n-button type="primary" size="small" @click="submit">{{ t('settings.actions.save') }}</n-button>
-            <n-button secondary size="small" @click="emit('export')">{{ t('settings.actions.exportConfig') }}</n-button>
-          </n-space>
-        </div>
+        <n-space class="settings-actions">
+          <n-button secondary size="small" @click="emit('export')">{{ t('settings.actions.exportConfig') }}</n-button>
+        </n-space>
 
         <n-card size="small" embedded>
           <n-space vertical size="small">

@@ -68,16 +68,13 @@ func (s *ConfigStore) Save(cfg AppConfig) error {
 func defaultConfig() AppConfig {
 	p := GetDefaultProvider()
 	defaultProfile := Profile{
-		ID:               "default",
-		Name:             p.Name,
-		Provider:         string(p.ID),
-		BaseURL:          p.DefaultBaseURL,
-		APIKey:           "",
-		DefaultModel:     p.DefaultModel,
-		RequestTimeoutMs: 60000,
-		MaxRetries:       1,
-		Mappings:         copyMap(p.DefaultMappings),
-		Headers:          map[string]string{},
+		ID:           "default",
+		Name:         p.Name,
+		Provider:     string(p.ID),
+		BaseURL:      p.DefaultBaseURL,
+		APIKey:       "",
+		DefaultModel: p.DefaultModel,
+		Mappings:     copyMap(p.DefaultMappings),
 	}
 
 	return AppConfig{
@@ -132,6 +129,7 @@ func normalizeConfig(cfg AppConfig) AppConfig {
 		cfg.Headers = map[string]string{}
 	}
 
+	// 从 provider 默认值补充缺失的 mappings
 	for key, value := range defaults.Mappings {
 		if _, ok := cfg.Mappings[key]; !ok {
 			cfg.Mappings[key] = value
@@ -143,15 +141,12 @@ func normalizeConfig(cfg AppConfig) AppConfig {
 	// Migration: if no profiles exist, create one from old flat fields
 	if len(cfg.Profiles) == 0 {
 		profile := &Profile{
-			ID:               "default",
-			Name:             "DeepSeek",
-			BaseURL:          cfg.DeepseekBaseURL,
-			APIKey:           cfg.APIKey,
-			DefaultModel:     cfg.DefaultModel,
-			RequestTimeoutMs: cfg.RequestTimeoutMs,
-			MaxRetries:       cfg.MaxRetries,
-			Mappings:         copyMap(cfg.Mappings),
-			Headers:          copyMap(cfg.Headers),
+			ID:           "default",
+			Name:         "DeepSeek",
+			BaseURL:      cfg.DeepseekBaseURL,
+			APIKey:       cfg.APIKey,
+			DefaultModel: cfg.DefaultModel,
+			Mappings:     copyMap(cfg.Mappings),
 		}
 		cfg.Profiles = map[string]*Profile{"default": profile}
 		cfg.CurrentProfileID = "default"
@@ -165,17 +160,13 @@ func normalizeConfig(cfg AppConfig) AppConfig {
 		}
 	}
 
-	// Normalize each profile and sync current profile → flat fields
+	// Normalize current profile and sync identity fields back to flat fields for backward compat
 	if profile, ok := cfg.Profiles[cfg.CurrentProfileID]; ok {
 		normalizeProfile(profile, defaults)
-		// Sync current profile back to flat fields for backward compat
 		cfg.DeepseekBaseURL = profile.BaseURL
 		cfg.APIKey = profile.APIKey
 		cfg.DefaultModel = profile.DefaultModel
-		cfg.RequestTimeoutMs = profile.RequestTimeoutMs
-		cfg.MaxRetries = profile.MaxRetries
 		cfg.Mappings = profile.Mappings
-		cfg.Headers = profile.Headers
 	}
 
 	// Normalize non-current profiles too
@@ -212,17 +203,8 @@ func normalizeProfile(p *Profile, defaults AppConfig) {
 			p.DefaultModel = defaults.DefaultModel
 		}
 	}
-	if p.RequestTimeoutMs <= 0 {
-		p.RequestTimeoutMs = defaults.RequestTimeoutMs
-	}
-	if p.MaxRetries < 0 {
-		p.MaxRetries = defaults.MaxRetries
-	}
 	if p.Mappings == nil {
 		p.Mappings = map[string]string{}
-	}
-	if p.Headers == nil {
-		p.Headers = map[string]string{}
 	}
 	// Fill in missing mappings from provider defaults first, then global defaults
 	provMappings := defaults.Mappings

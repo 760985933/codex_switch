@@ -39,7 +39,7 @@ export function detectInitialLocale(): SupportedLocale {
 export const messages = {
   'zh-CN': {
     app: {
-      nav: { overview: '主工作台', monitoring: '监控统计', logs: '最近日志', sessions: '会话管理', contact: '联系与赞助' },
+      nav: { overview: '主工作台', models: '模型管理', monitoring: '监控统计', logs: '最近日志', sessions: '会话管理', contact: '联系与赞助' },
       status: { running: '运行中', starting: '启动中', error: '异常', stopped: '未启动' },
       actions: { preferences: '偏好设置' },
       toast: {
@@ -87,6 +87,52 @@ export const messages = {
         ok: '健康检查通过',
         bad: '健康检查存在异常，请查看控制台详情',
       },
+    },
+    models: {
+      title: '模型管理',
+      description: '管理你的 LLM 提供商和模型配置',
+      addProfile: '添加配置',
+      profileName: '配置名称',
+      profileNamePlaceholder: '如 DeepSeek Pro',
+      provider: '提供商',
+      confirmAdd: '确认添加',
+      cancel: '取消',
+      editor: { title: '编辑模型配置' },
+      toast: { added: '新配置已添加' },
+    },
+    proxy: {
+      title: '代理设置',
+      description: '配置代理服务参数和行为',
+      save: '保存设置',
+      section: {
+        network: '网络设置',
+        transport: '请求行为',
+        headers: '自定义请求头',
+        behavior: '行为设置',
+      },
+      listenHost: '监听地址',
+      listenPort: '监听端口',
+      proxyAddress: '代理地址（填入 Codex Desktop）',
+      requestTimeout: '请求超时 (ms)',
+      maxRetries: '最大重试次数',
+      customHeaders: '附加请求头',
+      customHeadersDesc: '只有在接入网关或代理平台时再填写，未设置时保持为空。',
+      headerKeyPlaceholder: '如 X-Source',
+      headerValuePlaceholder: '如 codex-desktop',
+      autoStart: '自动启动代理',
+      minimizeToTray: '关闭时最小化到托盘',
+      compactMode: '紧凑模式',
+      logRetentionDays: '日志保留天数',
+      toast: { saved: '代理设置已保存' },
+    },
+    dashboard: {
+      currentProfile: '当前模型',
+      manageModels: '管理模型 →',
+      proxyStatus: '代理状态',
+      proxySettings: '代理设置 →',
+      quickActions: '快速操作',
+      noProfile: '暂无活跃的模型配置',
+      goToModels: '前往模型管理',
     },
   monitoring: {
     title: '监控统计',
@@ -156,6 +202,8 @@ export const messages = {
       title: '偏好设置',
       language: '语言',
       groupLabels: { behavior: '行为' },
+      behaviorMoved: '行为设置已迁移',
+      behaviorMovedDesc: '自动启动、托盘行为、紧凑模式、日志保留等设置已移至「代理设置」页面。',
       switches: {
         autoStart: '自动启动代理',
         minimizeToTray: '关闭时隐藏窗口',
@@ -357,7 +405,7 @@ export const messages = {
   },
   'en-US': {
     app: {
-      nav: { overview: 'Dashboard', monitoring: 'Monitoring', logs: 'Recent Logs', sessions: 'Sessions', contact: 'Contact & Sponsor' },
+      nav: { overview: 'Dashboard', models: 'Models', monitoring: 'Monitoring', logs: 'Recent Logs', sessions: 'Sessions', contact: 'Contact & Sponsor' },
       status: { running: 'Running', starting: 'Starting', error: 'Error', stopped: 'Stopped' },
       actions: { preferences: 'Preferences' },
       toast: {
@@ -404,6 +452,52 @@ export const messages = {
         ok: 'Health check passed',
         bad: 'Health check reported issues. See console for details.',
       },
+    },
+    models: {
+      title: 'Models',
+      description: 'Manage your LLM providers and model configurations',
+      addProfile: 'Add Profile',
+      profileName: 'Profile Name',
+      profileNamePlaceholder: 'e.g. DeepSeek Pro',
+      provider: 'Provider',
+      confirmAdd: 'Add',
+      cancel: 'Cancel',
+      editor: { title: 'Edit Model Config' },
+      toast: { added: 'New profile added' },
+    },
+    proxy: {
+      title: 'Proxy Settings',
+      description: 'Configure proxy server parameters and behavior',
+      save: 'Save Settings',
+      section: {
+        network: 'Network',
+        transport: 'Request Behavior',
+        headers: 'Custom Headers',
+        behavior: 'Behavior',
+      },
+      listenHost: 'Listen Host',
+      listenPort: 'Listen Port',
+      proxyAddress: 'Proxy address (enter in Codex Desktop)',
+      requestTimeout: 'Request Timeout (ms)',
+      maxRetries: 'Max Retries',
+      customHeaders: 'Custom Headers',
+      customHeadersDesc: 'Only fill in when using a gateway or proxy platform. Leave empty otherwise.',
+      headerKeyPlaceholder: 'e.g. X-Source',
+      headerValuePlaceholder: 'e.g. codex-desktop',
+      autoStart: 'Auto-start proxy',
+      minimizeToTray: 'Minimize to tray on close',
+      compactMode: 'Compact mode',
+      logRetentionDays: 'Log retention (days)',
+      toast: { saved: 'Proxy settings saved' },
+    },
+    dashboard: {
+      currentProfile: 'Active Model',
+      manageModels: 'Manage Models →',
+      proxyStatus: 'Proxy Status',
+      proxySettings: 'Proxy Settings →',
+      quickActions: 'Quick Actions',
+      noProfile: 'No active model profile',
+      goToModels: 'Go to Models',
     },
   monitoring: {
     title: 'Monitoring',
@@ -473,6 +567,8 @@ export const messages = {
       title: 'Preferences',
       language: 'Language',
       groupLabels: { behavior: 'Behavior' },
+      behaviorMoved: 'Behavior settings moved',
+      behaviorMovedDesc: 'Auto-start, minimize to tray, compact mode, log retention etc. have moved to the "Proxy Settings" page.',
       switches: { autoStart: 'Auto-start proxy', minimizeToTray: 'Hide window on close', compactMode: 'Compact layout' },
       form: { logRetentionDays: 'Log retention (days)' },
       actions: { save: 'Save', exportConfig: 'Export', copyToml: 'Copy TOML', writeFile: 'Write File', writeFileProfiles: 'Write File (profiles.local)' },
@@ -665,7 +761,7 @@ export const messages = {
   },
   'ja-JP': {
     app: {
-      nav: { overview: 'ダッシュボード', monitoring: 'モニタリング', logs: '最近のログ', sessions: 'セッション', contact: '連絡とスポンサー' },
+      nav: { overview: 'ダッシュボード', models: 'モデル管理', monitoring: 'モニタリング', logs: '最近のログ', sessions: 'セッション', contact: '連絡とスポンサー' },
       status: { running: '稼働中', starting: '起動中', error: 'エラー', stopped: '停止中' },
       actions: { preferences: '設定' },
       toast: {
@@ -934,7 +1030,7 @@ export const messages = {
   },
   'ko-KR': {
     app: {
-      nav: { overview: '대시보드', monitoring: '모니터링', logs: '최근 로그', sessions: '세션', contact: '연락 및 후원' },
+      nav: { overview: '대시보드', models: '모델 관리', monitoring: '모니터링', logs: '최근 로그', sessions: '세션', contact: '연락 및 후원' },
       status: { running: '실행 중', starting: '시작 중', error: '오류', stopped: '중지됨' },
       actions: { preferences: '설정' },
       toast: {
@@ -1203,7 +1299,7 @@ export const messages = {
   },
   'fr-FR': {
     app: {
-      nav: { overview: 'Tableau', monitoring: 'Surveillance', logs: 'Journaux', sessions: 'Sessions', contact: 'Contact & Sponsor' },
+      nav: { overview: 'Tableau', models: 'Modèles', monitoring: 'Surveillance', logs: 'Journaux', sessions: 'Sessions', contact: 'Contact & Sponsor' },
       status: { running: 'En cours', starting: 'Démarrage', error: 'Erreur', stopped: 'Arrêté' },
       actions: { preferences: 'Préférences' },
       toast: {
@@ -1472,7 +1568,7 @@ export const messages = {
   },
   'de-DE': {
     app: {
-      nav: { overview: 'Übersicht', monitoring: 'Überwachung', logs: 'Logs', sessions: 'Sitzungen', contact: 'Kontakt & Sponsoring' },
+      nav: { overview: 'Übersicht', models: 'Modelle', monitoring: 'Überwachung', logs: 'Logs', sessions: 'Sitzungen', contact: 'Kontakt & Sponsoring' },
       status: { running: 'Läuft', starting: 'Startet', error: 'Fehler', stopped: 'Gestoppt' },
       actions: { preferences: 'Einstellungen' },
       toast: {
@@ -1735,7 +1831,7 @@ export const messages = {
   },
   'es-AR': {
     app: {
-      nav: { overview: 'Panel', monitoring: 'Monitoreo', logs: 'Registros', sessions: 'Sesiones', contact: 'Contacto y Patrocinio' },
+      nav: { overview: 'Panel', models: 'Modelos', monitoring: 'Monitoreo', logs: 'Registros', sessions: 'Sesiones', contact: 'Contacto y Patrocinio' },
       status: { running: 'En ejecución', starting: 'Iniciando', error: 'Error', stopped: 'Detenido' },
       actions: { preferences: 'Preferencias' },
       toast: {
