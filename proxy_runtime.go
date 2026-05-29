@@ -1069,9 +1069,9 @@ func (b *ProxyRuntime) doUpstream(req *http.Request, cfg AppConfig, streaming bo
 		if err != nil {
 			lastErr = err
 		} else if resp.StatusCode >= http.StatusInternalServerError && attempt < attempts {
-			io.Copy(io.Discard, io.LimitReader(resp.Body, 2048))
+			raw, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
 			_ = resp.Body.Close()
-			lastErr = fmt.Errorf("API 返回状态 %d", resp.StatusCode)
+			lastErr = fmt.Errorf("%s", upstreamError(resp.StatusCode, raw))
 		} else {
 			return resp, nil
 		}

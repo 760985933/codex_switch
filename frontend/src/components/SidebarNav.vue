@@ -45,8 +45,6 @@ const iconMap: Record<string, string> = {
     '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="6" height="6"/><rect x="12" y="2" width="6" height="6"/><rect x="2" y="12" width="6" height="6"/><rect x="12" y="12" width="6" height="6"/></svg>',
   '/models':
     '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="10,2 18,6 10,10 2,6"/><polyline points="2,14 10,18 18,14"/><polyline points="2,10 10,14 18,10"/></svg>',
-  '/proxy':
-    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,1 19,5 15,9"/><path d="M1,9V7a4,4,0,0,1,4-4H19"/><polyline points="5,19 1,15 5,11"/><path d="M19,11v2a4,4,0,0,1-4,4H1"/></svg>',
   '/sessions':
     '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18,13a2,2,0,0,1-2,2H5L2,18V4a2,2,0,0,1,2-2H16a2,2,0,0,1,2,2Z"/></svg>',
   '/monitoring':
@@ -60,7 +58,6 @@ const iconMap: Record<string, string> = {
 const navItems = computed(() => [
   { label: t('app.nav.overview'), to: '/overview' },
   { label: t('app.nav.models'), to: '/models' },
-  { label: t('app.nav.proxy'), to: '/proxy' },
   { label: t('app.nav.sessions'), to: '/sessions' },
   { label: t('app.nav.monitoring'), to: '/monitoring' },
   { label: t('app.nav.logs'), to: '/logs' },

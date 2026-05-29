@@ -8,6 +8,7 @@ import { useUiStore } from '../stores/ui'
 import { getProviderPreset } from '../utils/providers'
 import ProfileList from './ProfileList.vue'
 import ModelEditorPanel from './ModelEditorPanel.vue'
+import ProxySettingsPanel from './ProxySettingsPanel.vue'
 import type { ProxyStatusPayload, HealthCheckResult } from '../types'
 
 const emit = defineEmits<{
@@ -93,6 +94,9 @@ async function handleAddProfile() {
 // ── Edit / Delete ──
 const editingProfileId = ref<string | null>(null)
 const showEditor = ref(false)
+
+// ── Proxy settings drawer ──
+const showProxySettings = ref(false)
 
 function handleEdit(id: string) {
   editingProfileId.value = id
@@ -227,7 +231,7 @@ async function handleNoAccountLogin(id: string) {
     <div class="card">
       <div class="card-header">
         <span class="card-title">{{ t('dashboard.proxyStatus') }}</span>
-        <n-button text size="small" type="primary" @click="router.push('/proxy')">
+        <n-button text size="small" type="primary" @click="showProxySettings = true">
           {{ t('dashboard.proxySettings') }}
         </n-button>
       </div>
@@ -320,6 +324,16 @@ async function handleNoAccountLogin(id: string) {
           v-if="editingProfileId"
           :profile-id="editingProfileId"
           @save="handleEditorSave"
+        />
+      </n-drawer-content>
+    </n-drawer>
+
+    <!-- Proxy Settings Drawer -->
+    <n-drawer v-model:show="showProxySettings" :width="520" placement="right">
+      <n-drawer-content :title="t('proxy.title')" closable>
+        <ProxySettingsPanel
+          :config="store.config"
+          @save="showProxySettings = false"
         />
       </n-drawer-content>
     </n-drawer>
