@@ -185,6 +185,29 @@ export const useAppStore = defineStore('app', {
       this.config = await saveAppConfigBridge(updated)
       return this.config
     },
+    async reorderProfiles(orderedIds: string[]) {
+      const updated = { ...this.config, proxyProfileIds: orderedIds }
+      this.config = await saveAppConfigBridge(updated)
+      return this.config
+    },
+    async reorderAllProfiles(orderedIds: string[]) {
+      // Reconstruct profiles Record in the new order
+      const reordered: Record<string, Profile> = {}
+      for (const id of orderedIds) {
+        if (this.config.profiles[id]) {
+          reordered[id] = this.config.profiles[id]
+        }
+      }
+      // Preserve any profiles not in the ordered list
+      for (const id of Object.keys(this.config.profiles)) {
+        if (!reordered[id]) {
+          reordered[id] = this.config.profiles[id]
+        }
+      }
+      const updated = { ...this.config, profiles: reordered }
+      this.config = await saveAppConfigBridge(updated)
+      return this.config
+    },
     async deleteProfile(id: string) {
       if (id === this.config.currentProfileId) {
         // Switch to another profile first

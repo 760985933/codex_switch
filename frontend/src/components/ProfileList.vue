@@ -11,14 +11,17 @@ const props = withDefaults(defineProps<{
   currentProfileId: string
   loading: boolean
   showDelete?: boolean
+  sortable?: boolean
 }>(), {
   showDelete: true,
+  sortable: false,
 })
 
 const emit = defineEmits<{
   edit: [id: string]
   delete: [id: string]
   select: [id: string]
+  reorder: [ids: string[]]
 }>()
 
 const store = useAppStore()
@@ -45,6 +48,10 @@ watch(() => props.profiles, (profiles) => {
   profiles.forEach(p => {
     if (p.apiKey && !usageData[p.id]) fetchUsage(p.id)
   })
+  // Reset local display list when prop changes from outside
+  if (!isDragging.value) {
+    displayProfiles.value = [...profiles]
+  }
 }, { immediate: true })
 
 function handleEdit(id: string) {
@@ -94,17 +101,116 @@ function confirmDelete() {
 function cancelDelete() {
   deleteConfirmId.value = null
 }
+
+// ── Drag-and-drop with live reordering ──
+const isDragging = ref(false)
+const dragIndex = ref<number | null>(null)
+const displayProfiles = ref<Profile[]>([...props.profiles])
+
+function onDragStart(e: DragEvent, index: number) {
+  if (!props.sortable) return
+  isDragging.value = true
+  dragIndex.value = index
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(index))
+  }
+}
+
+function onDragOver(e: DragEvent, targetIndex: number) {
+  if (!props.sortable || dragIndex.value === null) return
+  e.preventDefault()
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'move'
+  }
+  if (dragIndex.value === targetIndex) return
+
+  // Live reorder: move the dragged item to the target position
+  const items = [...displayProfiles.value]
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  const midY = rect.top + rect.height / 2
+  const insertAt = e.clientY < midY ? targetIndex : targetIndex + 1
+
+  // Remove from old position (adjust for the fact that the source index may shift)
+  const sourceIndex = items.findIndex(p => p.id === displayProfiles.value[dragIndex.value].id)
+  const [moved] = items.splice(sourceIndex, 1)
+  const adjustedInsert = sourceIndex < insertAt ? insertAt - 1 : insertAt
+  items.splice(adjustedInsert, 0, moved)
+
+  displayProfiles.value = items
+  dragIndex.value = adjustedInsert
+}
+
+function onDragLeave() {
+  // Only triggered on the parent container — reset if drag leaves the whole list
+}
+
+function onDrop(e: DragEvent) {
+  e.preventDefault()
+  if (!props.sortable || dragIndex.value === null) return
+
+  const ids = displayProfiles.value.map(p => p.id)
+  isDragging.value = false
+  dragIndex.value = null
+  emit('reorder', ids)
+}
+
+function onDragEnd() {
+  if (isDragging.value) {
+    // Drag was cancelled (not dropped on valid target) — revert
+    displayProfiles.value = [...props.profiles]
+  }
+  isDragging.value = false
+  dragIndex.value = null
+}
+
+// Keep displayProfiles in sync when props change externally (e.g. after save)
+watch(() => props.profiles, (profiles) => {
+  if (!isDragging.value) {
+    displayProfiles.value = [...profiles]
+  }
+}, { deep: true })
 </script>
 
 <template>
-  <div class="profile-list">
+  <TransitionGroup
+    name="profile-move"
+    tag="div"
+    class="profile-list"
+    @dragleave="onDragLeave"
+  >
     <div
-      v-for="profile in profiles"
+      v-for="(profile, index) in displayProfiles"
       :key="profile.id"
       class="profile-item"
-      :class="{ active: profile.id === currentProfileId }"
+      :class="{
+        active: profile.id === currentProfileId,
+        dragging: isDragging && dragIndex === index,
+      }"
       @click="emit('select', profile.id)"
+      @dragover="onDragOver($event, index)"
+      @drop="onDrop($event)"
     >
+      <!-- Drag handle -->
+      <div
+        v-if="sortable"
+        class="drag-handle"
+        :title="t('profile.dragToReorder')"
+        draggable="true"
+        @click.stop
+        @dragstart="onDragStart($event, index)"
+        @dragend="onDragEnd"
+      >
+        <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
+          <circle cx="3" cy="3" r="1.2" />
+          <circle cx="9" cy="3" r="1.2" />
+          <circle cx="3" cy="8" r="1.2" />
+          <circle cx="9" cy="8" r="1.2" />
+          <circle cx="3" cy="13" r="1.2" />
+          <circle cx="9" cy="13" r="1.2" />
+        </svg>
+      </div>
+
       <div class="profile-item-main">
         <div class="profile-item-info">
           <div class="profile-item-name-row">
@@ -150,7 +256,7 @@ function cancelDelete() {
         </div>
       </div>
     </div>
-  </div>
+  </TransitionGroup>
 
   <!-- Delete Confirmation Dialog -->
   <n-modal
@@ -167,18 +273,38 @@ function cancelDelete() {
 </template>
 
 <style scoped>
+/* ── TransitionGroup move animation ── */
+.profile-move-move {
+  transition: transform 0.25s ease;
+}
+.profile-move-enter-active,
+.profile-move-leave-active {
+  transition: all 0.25s ease;
+}
+.profile-move-enter-from,
+.profile-move-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+.profile-move-leave-active {
+  position: absolute;
+}
+
 .profile-list {
   display: grid;
   gap: 8px;
+  position: relative;
 }
 
 .profile-item {
+  display: flex;
+  align-items: stretch;
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.5);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, opacity 0.15s, box-shadow 0.2s;
 }
 
 .profile-item:hover {
@@ -192,11 +318,41 @@ function cancelDelete() {
   background: rgba(22, 119, 255, 0.06);
 }
 
+.profile-item.dragging {
+  opacity: 0.45;
+  box-shadow: 0 4px 16px rgba(14, 30, 68, 0.12);
+}
+
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  min-width: 20px;
+  margin-right: 8px;
+  color: rgba(11, 18, 32, 0.3);
+  cursor: grab;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  align-self: center;
+}
+
+.drag-handle:hover {
+  color: rgba(11, 18, 32, 0.6);
+  background: rgba(11, 18, 32, 0.06);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
 .profile-item-main {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  flex: 1;
+  min-width: 0;
 }
 
 .profile-item-right {

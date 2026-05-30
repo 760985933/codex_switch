@@ -415,6 +415,8 @@ profile: {
   delete: 'Delete profile',
   confirmDelete: 'Are you sure you want to delete "{name}"?',
   switchWhileRunning: 'Proxy is running. Please stop it first to switch profiles.',
+  cannotDeleteLast: 'At least one profile must remain',
+  dragToReorder: 'Drag to reorder',
 },
 globalConfig: {
   title: 'Global Config',

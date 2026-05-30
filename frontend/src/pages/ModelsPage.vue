@@ -79,8 +79,10 @@ function handleEditorSave() {
         :profiles="store.profileList"
         :current-profile-id="store.config.currentProfileId"
         :loading="store.isBusy"
+        sortable
         @edit="handleEdit"
         @delete="handleDelete"
+        @reorder="(ids) => store.reorderAllProfiles(ids)"
       />
     </div>
 

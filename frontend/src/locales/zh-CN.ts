@@ -425,6 +425,8 @@ profile: {
   delete: '删除配置',
   confirmDelete: '确认删除配置"{name}"？',
   switchWhileRunning: '代理运行中，请先停止后再切换配置',
+  cannotDeleteLast: '至少需要保留一个配置',
+  dragToReorder: '拖动排序',
 },
 globalConfig: {
   title: '全局配置',

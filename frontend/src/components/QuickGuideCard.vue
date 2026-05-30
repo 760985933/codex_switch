@@ -182,9 +182,11 @@ async function handleRemoveProxy(id: string) {
           :current-profile-id="store.config.currentProfileId"
           :loading="store.isBusy"
           :show-delete="false"
+          sortable
           @edit="handleEdit"
           @delete="handleDelete"
           @select="store.setCurrentProfile"
+          @reorder="store.reorderProfiles"
         >
           <template #actions="{ profile }">
             <CodexLoginActions :profile-id="profile.id" />
