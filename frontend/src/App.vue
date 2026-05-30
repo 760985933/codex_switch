@@ -16,10 +16,10 @@ const { t, locale } = useI18n()
 
 // ── Global event subscriptions (never unmounted) ──
 onMounted(() => {
-  EventsOn('log:entry', (entry: LogEntry) => {
+  void EventsOn('log:entry', (entry: LogEntry) => {
     store.pushLog(entry)
   })
-  EventsOn('proxy:status', (payload: ProxyStatusPayload) => {
+  void EventsOn('proxy:status', (payload: ProxyStatusPayload) => {
     store.applyStatus(payload)
   })
 })
