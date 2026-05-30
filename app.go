@@ -340,6 +340,10 @@ func (a *App) SetCurrentProfile(id string) (AppConfig, error) {
 	}
 
 	cfg.CurrentProfileID = id
+	// 同步到 codex 实例，避免 normalizeConfig 用旧值覆盖
+	if codexInst, ok := cfg.Instances[SourceCodex]; ok {
+		codexInst.CurrentProfileID = id
+	}
 	cfg = normalizeConfig(cfg)
 
 	if err := a.store.Save(cfg); err != nil {
