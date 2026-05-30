@@ -309,6 +309,33 @@ func extractGoogleUsage(body []byte) (promptTokens, completionTokens, totalToken
 	return 0, 0, 0
 }
 
+// extractMessagesUsage extracts token counts from Messages API format responses.
+// Messages format: {"usage":{"input_tokens":X,"output_tokens":Y}} or Chat: {"usage":{"prompt_tokens":X,...}}
+func extractMessagesUsage(body []byte) (promptTokens, completionTokens, totalTokens int64) {
+	var payload map[string]any
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return 0, 0, 0
+	}
+	usage, ok := payload["usage"].(map[string]any)
+	if !ok {
+		return 0, 0, 0
+	}
+	if v, ok := usage["prompt_tokens"].(float64); ok {
+		promptTokens = int64(v)
+	} else if v, ok := usage["input_tokens"].(float64); ok {
+		promptTokens = int64(v)
+	}
+	if v, ok := usage["completion_tokens"].(float64); ok {
+		completionTokens = int64(v)
+	} else if v, ok := usage["output_tokens"].(float64); ok {
+		completionTokens = int64(v)
+	}
+	if v, ok := usage["total_tokens"].(float64); ok {
+		totalTokens = int64(v)
+	}
+	return
+}
+
 func extractChatCompletionText(payload map[string]any) string {
 	choicesAny, ok := payload["choices"]
 	if !ok {

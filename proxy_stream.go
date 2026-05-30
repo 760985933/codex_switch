@@ -43,16 +43,17 @@ func (b *ProxyRuntime) streamMessagesError(w http.ResponseWriter, errType string
 }
 
 // streamChatToMessages converts a Chat Completions SSE stream to Messages API SSE events.
-func (b *ProxyRuntime) streamChatToMessages(w http.ResponseWriter, body io.Reader, model string) {
+func (b *ProxyRuntime) streamChatToMessages(w http.ResponseWriter, body io.Reader, model string) (int64, int64, int64) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		return
+		return 0, 0, 0
 	}
 
 	respID := fmt.Sprintf("msg_%d", time.Now().UnixNano())
 	var contentText strings.Builder
 	var stopReason string
 	var outputTokens int
+	var pt, ct, tt int64
 
 	writeSSE := func(event string, data any) {
 		payload, _ := json.Marshal(data)
@@ -126,8 +127,15 @@ func (b *ProxyRuntime) streamChatToMessages(w http.ResponseWriter, body io.Reade
 		}
 
 		if usage, ok := chunk["usage"].(map[string]any); ok {
-			if ct, ok := usage["completion_tokens"].(float64); ok {
-				outputTokens = int(ct)
+			if v, ok := usage["prompt_tokens"].(float64); ok {
+				pt = int64(v)
+			}
+			if v, ok := usage["completion_tokens"].(float64); ok {
+				ct = int64(v)
+				outputTokens = int(v)
+			}
+			if v, ok := usage["total_tokens"].(float64); ok {
+				tt = int64(v)
 			}
 		}
 	}
@@ -145,6 +153,7 @@ func (b *ProxyRuntime) streamChatToMessages(w http.ResponseWriter, body io.Reade
 		})
 		writeSSE("message_stop", map[string]any{"type": "message_stop"})
 	}
+	return pt, ct, tt
 }
 
 func (b *ProxyRuntime) streamResponse(w http.ResponseWriter, body io.Reader) {
@@ -376,23 +385,50 @@ func googleSSEToChatSSEPipe(body io.Reader, model string) io.ReadCloser {
 	return pr
 }
 
-func (b *ProxyRuntime) streamPassthrough(w http.ResponseWriter, body io.Reader) {
+func (b *ProxyRuntime) streamPassthrough(w http.ResponseWriter, body io.Reader) (int64, int64, int64) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		_, _ = io.Copy(w, body)
-		return
+		return 0, 0, 0
 	}
-	buf := make([]byte, 2048)
-	for {
-		n, err := body.Read(buf)
-		if n > 0 {
-			_, _ = w.Write(buf[:n])
-			flusher.Flush()
-		}
-		if err != nil {
-			return
+	var pt, ct, tt int64
+	scanner := bufio.NewScanner(body)
+	scanner.Buffer(make([]byte, 0, 64*1024), 2*1024*1024)
+	for scanner.Scan() {
+		line := scanner.Text()
+		// Forward the line as-is
+		fmt.Fprintf(w, "%s\n", line)
+		flusher.Flush()
+
+		// Try to extract usage from data chunks (Messages SSE or Chat SSE)
+		if strings.HasPrefix(line, "data:") || strings.HasPrefix(line, "data: ") {
+			data := strings.TrimSpace(strings.TrimPrefix(line, "data:"))
+			data = strings.TrimSpace(strings.TrimPrefix(data, "data: "))
+			if data == "[DONE]" {
+				continue
+			}
+			var chunk map[string]any
+			if json.Unmarshal([]byte(data), &chunk) != nil {
+				continue
+			}
+			if usage, ok := chunk["usage"].(map[string]any); ok {
+				if v, ok := usage["prompt_tokens"].(float64); ok {
+					pt = int64(v)
+				} else if v, ok := usage["input_tokens"].(float64); ok {
+					pt = int64(v)
+				}
+				if v, ok := usage["completion_tokens"].(float64); ok {
+					ct = int64(v)
+				} else if v, ok := usage["output_tokens"].(float64); ok {
+					ct = int64(v)
+				}
+				if v, ok := usage["total_tokens"].(float64); ok {
+					tt = int64(v)
+				}
+			}
 		}
 	}
+	return pt, ct, tt
 }
 
 func (b *ProxyRuntime) streamChatToResponses(w http.ResponseWriter, body io.Reader, model string) (int, []string, int64, int64, int64) {

@@ -968,19 +968,20 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 	b.clearLastUpstreamFailure()
 
 	if streaming {
+		var pt, ct, tt int64
 		if sourceFormat == targetFormat {
 			// 直通：Messages SSE → Messages SSE
-			b.streamPassthrough(w, resp.Body)
+			pt, ct, tt = b.streamPassthrough(w, resp.Body)
 		} else if targetFormat == APIGoogle {
 			// Google SSE → Chat SSE → Messages SSE
 			chatBody := googleSSEToChatSSEPipe(resp.Body, model)
 			defer chatBody.Close()
-			b.streamChatToMessages(w, chatBody, model)
+			pt, ct, tt = b.streamChatToMessages(w, chatBody, model)
 		} else {
-			b.streamChatToMessages(w, resp.Body, model)
+			pt, ct, tt = b.streamChatToMessages(w, resp.Body, model)
 		}
 		durationMs := time.Since(startedAt).Milliseconds()
-		b.recordUsage(cfg, model, "messages", 0, 0, 0, 200, durationMs, true)
+		b.recordUsage(cfg, model, "messages", pt, ct, tt, 200, durationMs, true)
 	} else {
 		upstreamRaw, _ := io.ReadAll(io.LimitReader(resp.Body, 10<<20))
 
@@ -989,7 +990,8 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 			b.copyHeaders(w.Header(), resp.Header)
 			w.WriteHeader(resp.StatusCode)
 			w.Write(upstreamRaw)
-			b.recordUsage(cfg, model, "messages", 0, 0, 0, resp.StatusCode, time.Since(startedAt).Milliseconds(), true)
+			pt, ct, tt := extractMessagesUsage(upstreamRaw)
+			b.recordUsage(cfg, model, "messages", pt, ct, tt, resp.StatusCode, time.Since(startedAt).Milliseconds(), true)
 		} else {
 			var pt, ct, tt int64
 			if targetFormat == APIGoogle {
