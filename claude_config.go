@@ -45,13 +45,15 @@ type claude3pMeta struct {
 }
 
 // generateUUID returns a random UUID v4 string.
-func generateUUID() string {
+func generateUUID() (string, error) {
 	b := make([]byte, 16)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("生成随机 UUID 失败: %w", err)
+	}
 	b[6] = (b[6] & 0x0f) | 0x40 // version 4
 	b[8] = (b[8] & 0x3f) | 0x80 // variant 10
 	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
-		b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
+		b[0:4], b[4:6], b[6:8], b[8:10], b[10:16]), nil
 }
 
 // getClaudeSettingsPath returns the full path to the Claude Code settings file.
@@ -125,7 +127,10 @@ func (a *App) EnableClaudeSettings(profileID string) (string, error) {
 	}
 
 	// Generate a random UUID for the gateway config file.
-	gwUUID := generateUUID()
+	gwUUID, err := generateUUID()
+	if err != nil {
+		return "", err
+	}
 
 	// Update the Claude instance's current profile to this one,
 	// and store the gateway UUID for later cleanup.
@@ -260,7 +265,11 @@ func (a *App) enableClaude3pGateway(uuid, gatewayBaseURL, haikuModel, sonnetMode
 	}
 
 	// Generate a random API key for the gateway.
-	apiKey := "ccs-" + generateUUID()
+	apiKeyStr, err := generateUUID()
+	if err != nil {
+		return "", err
+	}
+	apiKey := "ccs-" + apiKeyStr
 
 	gw := claude3pGatewayConfig{
 		CoworkEgressAllowedHosts:     []string{"*"},
