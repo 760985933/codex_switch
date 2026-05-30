@@ -117,6 +117,17 @@ function onApiTypeChange(apiType: string) {
   }
 }
 
+function toggleModel1M(modelName: string) {
+  const current = formProfile.value.claudeModel1m || []
+  const idx = current.indexOf(modelName)
+  if (idx >= 0) {
+    current.splice(idx, 1)
+  } else {
+    current.push(modelName)
+  }
+  formProfile.value.claudeModel1m = [...current]
+}
+
 async function submitSave() {
   const profiles = { ...store.config.profiles }
   profiles[props.profileId] = { ...formProfile.value }
@@ -216,8 +227,12 @@ async function submitSave() {
         :description="t('config.advanced.modelMapping.desc')"
         :key-placeholder="t('config.advanced.modelMapping.keyPlaceholder')"
         :value-placeholder="t('config.advanced.modelMapping.valuePlaceholder')"
+        :show-checkbox="formProfile.apiType === 'messages'"
+        :checked-keys="formProfile.claudeModel1m"
         size="small"
+        @toggle-check="toggleModel1M"
       />
+
     </div>
   </div>
 </template>

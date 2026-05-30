@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import {
   NButton,
   NCard,
+  NCheckbox,
   NCollapseTransition,
   NConfigProvider,
   NDataTable,
@@ -39,6 +40,7 @@ const naive = create({
   components: [
     NButton,
     NCard,
+    NCheckbox,
     NCollapseTransition,
     NConfigProvider,
     NDataTable,

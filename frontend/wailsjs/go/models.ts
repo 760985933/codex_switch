@@ -9,6 +9,7 @@ export namespace main {
 	    defaultModel: string;
 	    mappings: Record<string, string>;
 	    apiType?: string;
+	    claudeModel1m?: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Profile(source);
@@ -24,6 +25,7 @@ export namespace main {
 	        this.defaultModel = source["defaultModel"];
 	        this.mappings = source["mappings"];
 	        this.apiType = source["apiType"];
+	        this.claudeModel1m = source["claudeModel1m"];
 	    }
 	}
 	export class InstanceConfig {
@@ -35,6 +37,7 @@ export namespace main {
 	    headers: Record<string, string>;
 	    currentProfileId: string;
 	    proxyProfileIds?: string[];
+	    gatewayConfigUuid?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new InstanceConfig(source);
@@ -50,6 +53,7 @@ export namespace main {
 	        this.headers = source["headers"];
 	        this.currentProfileId = source["currentProfileId"];
 	        this.proxyProfileIds = source["proxyProfileIds"];
+	        this.gatewayConfigUuid = source["gatewayConfigUuid"];
 	    }
 	}
 	export class AppConfig {

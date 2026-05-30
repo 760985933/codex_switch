@@ -6,7 +6,7 @@ import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useCodexStore } from '../stores/codex'
 import { useUiStore } from '../stores/ui'
-import { getProviderPreset } from '../utils/providers'
+import { getProviderPreset, getClaudeBaseMappings } from '../utils/providers'
 import ProfileList from './ProfileList.vue'
 import ModelEditorPanel from './ModelEditorPanel.vue'
 import ProxySettingsPanel from './ProxySettingsPanel.vue'
@@ -134,7 +134,7 @@ async function handleAddProxy() {
       apiKey: newProfileApiKey.value || '',
       defaultModel,
       apiType,
-      mappings: {},
+      mappings: isClaude ? getClaudeBaseMappings(preset) : {},
     }
     const newId = 'profile_' + Date.now().toString(36)
     const newInst = store.instanceConfig(props.source)
@@ -206,17 +206,35 @@ async function handleRestoreCodex() {
   }
 }
 
-const enableClaudeLoading = ref(false)
-async function handleEnableClaude() {
-  enableClaudeLoading.value = true
+const enableClaudeLoadingId = ref<string | null>(null)
+async function handleEnableClaude(profileId: string) {
+  enableClaudeLoadingId.value = profileId
   try {
+    const ic = store.instanceConfig('claude')
+    if (ic && ic.currentProfileId !== profileId) {
+      const updated: any = {
+        ...store.config,
+        instances: {
+          ...store.config.instances,
+          claude: {
+            ...ic,
+            currentProfileId: profileId,
+            proxyProfileIds: [...(ic.proxyProfileIds || []), profileId].filter((v: string, i: number, a: string[]) => a.indexOf(v) === i),
+          },
+        },
+      }
+      await store.saveConfig(updated)
+    }
+    if (!store.isRunningForSource('claude')) {
+      await store.startProxyForSource('claude')
+    }
     const { EnableClaudeSettings } = await import('../../wailsjs/go/main/App')
-    const path = await EnableClaudeSettings()
+    const path = await EnableClaudeSettings(profileId)
     message.success(t('guide.actions.enableClaudeSuccess', { path: path || '' }))
   } catch (error) {
     message.error(error instanceof Error ? error.message : String(error))
   } finally {
-    enableClaudeLoading.value = false
+    enableClaudeLoadingId.value = null
   }
 }
 
@@ -286,6 +304,23 @@ async function handleRemoveProxy(id: string) {
         >
           <template #actions="{ profile }">
             <CodexLoginActions v-if="source === 'codex'" :profile-id="profile.id" />
+            <n-button
+              v-if="source === 'claude' && store.isRunningForSource('claude') && store.instanceConfig('claude').currentProfileId === profile.id"
+              size="small"
+              type="error"
+              @click.stop="store.stopProxyForSource('claude')"
+            >
+              {{ t('guide.actions.stop') }}
+            </n-button>
+            <n-button
+              v-if="source === 'claude' && !(store.isRunningForSource('claude') && store.instanceConfig('claude').currentProfileId === profile.id)"
+              size="small"
+              type="primary"
+              :loading="enableClaudeLoadingId === profile.id"
+              @click.stop="handleEnableClaude(profile.id)"
+            >
+              {{ t('guide.actions.enableClaude') }}
+            </n-button>
           </template>
           <template #actions-after="{ profile }">
             <n-button size="small" tertiary type="warning" @click="handleRemoveProxy(profile.id)">
@@ -329,15 +364,6 @@ async function handleRemoveProxy(id: string) {
             <n-button v-if="source === 'codex'" tertiary @click="ui.openSettings(source)">{{ t('guide.actions.preferences') }}</n-button>
             <n-button v-if="source === 'codex'" tertiary @click="handleRestoreCodex">{{ t('guide.actions.restoreDefault') }}</n-button>
             <n-button v-if="source === 'claude'" tertiary @click="handleRestoreClaude">{{ t('guide.actions.restoreDefault') }}</n-button>
-            <n-button
-              v-if="source === 'claude'"
-              tertiary
-              type="primary"
-              :loading="enableClaudeLoading"
-              @click="handleEnableClaude"
-            >
-              {{ t('guide.actions.enableClaude') }}
-            </n-button>
             <n-button
               tertiary
               type="primary"

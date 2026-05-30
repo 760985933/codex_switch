@@ -11,6 +11,7 @@ export interface Profile {
   defaultModel: string
   mappings: Record<string, string>
   apiType: string
+  claudeModel1m?: string[] // model names with supports1M enabled
 }
 
 export interface InstanceConfig {

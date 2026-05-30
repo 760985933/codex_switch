@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '../stores/app'
@@ -15,8 +15,14 @@ const showAddDialog = ref(false)
 const newProfileName = ref('')
 const newProfileProvider = ref('deepseek')
 const newProfileApiKey = ref('')
+const billingMode = ref<'paygo' | 'tokenplan'>('paygo')
 const editingProfileId = ref<string | null>(null)
 const showEditor = ref(false)
+
+const hasTokenPlan = computed(() => {
+  const p = getProviderPreset(newProfileProvider.value)
+  return !!(p?.tokenPlanOpenAIBaseURL || p?.tokenPlanAnthropicBaseURL)
+})
 
 const providerOptions = [
   { label: 'DeepSeek', value: 'deepseek' },
@@ -36,7 +42,22 @@ const providerOptions = [
 
 async function handleAdd() {
   if (!newProfileName.value.trim()) return
-  await store.addProfile(newProfileName.value.trim(), newProfileProvider.value, undefined, newProfileApiKey.value || undefined)
+  const preset = getProviderPreset(newProfileProvider.value)
+  const isMessages = preset?.apiType === 'messages'
+  const isTokenPlan = billingMode.value === 'tokenplan'
+  let baseURL: string | undefined
+  if (preset) {
+    if (isTokenPlan) {
+      baseURL = isMessages && preset.tokenPlanAnthropicBaseURL
+        ? preset.tokenPlanAnthropicBaseURL
+        : preset.tokenPlanOpenAIBaseURL ?? preset.defaultBaseURL
+    } else {
+      baseURL = isMessages && preset.anthropicBaseURL
+        ? preset.anthropicBaseURL
+        : preset.defaultBaseURL
+    }
+  }
+  await store.addProfile(newProfileName.value.trim(), newProfileProvider.value, undefined, newProfileApiKey.value || undefined, baseURL)
   newProfileName.value = ''
   newProfileProvider.value = 'deepseek'
   newProfileApiKey.value = ''
@@ -94,6 +115,12 @@ function handleEditorSave() {
         </n-form-item>
         <n-form-item :label="t('models.provider')">
           <n-select v-model:value="newProfileProvider" :options="providerOptions" />
+        </n-form-item>
+        <n-form-item v-if="hasTokenPlan" :label="t('models.billingMode')">
+          <n-radio-group v-model:value="billingMode" size="small">
+            <n-radio value="paygo">{{ t('models.billingPaygo') }}</n-radio>
+            <n-radio value="tokenplan">{{ t('models.billingTokenplan') }}</n-radio>
+          </n-radio-group>
         </n-form-item>
         <n-form-item label="API Key">
           <n-input

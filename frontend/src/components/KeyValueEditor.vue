@@ -13,10 +13,13 @@ const props = defineProps<{
   modelValue: Record<string, string>
   keyPlaceholder: string
   valuePlaceholder: string
+  showCheckbox?: boolean
+  checkedKeys?: string[]
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: Record<string, string>]
+  'toggleCheck': [key: string]
 }>()
 
 const { t } = useI18n()
@@ -69,6 +72,10 @@ function removeEntry(key: string) {
   localItems.value = localItems.value.filter((e) => e.key !== key)
   syncToParent()
 }
+
+function isChecked(key: string): boolean {
+  return props.checkedKeys ? props.checkedKeys.includes(key) : false
+}
 </script>
 
 <template>
@@ -84,26 +91,37 @@ function removeEntry(key: string) {
       <div
         v-for="(item, index) in displayItems"
         :key="index"
-        class="kv-row"
+        class="kv-entry"
       >
-        <n-input
-          :value="item.key"
-          :placeholder="keyPlaceholder"
-          @update:value="(value: string) => updateEntry(index, 'key', value)"
-        />
-        <n-input
-          :value="item.value"
-          :placeholder="valuePlaceholder"
-          @update:value="(value: string) => updateEntry(index, 'value', value)"
-        />
-        <n-button
-          tertiary
-          type="error"
-          :disabled="!item.key"
-          @click="removeEntry(item.key)"
-        >
-          {{ t('common.delete') }}
-        </n-button>
+        <div class="kv-row">
+          <n-input
+            :value="item.key"
+            :placeholder="keyPlaceholder"
+            @update:value="(value: string) => updateEntry(index, 'key', value)"
+          />
+          <n-input
+            :value="item.value"
+            :placeholder="valuePlaceholder"
+            @update:value="(value: string) => updateEntry(index, 'value', value)"
+          />
+          <n-button
+            tertiary
+            type="error"
+            :disabled="!item.key"
+            @click="removeEntry(item.key)"
+          >
+            {{ t('common.delete') }}
+          </n-button>
+        </div>
+        <div v-if="showCheckbox && item.key" class="kv-checkbox-row">
+          <n-checkbox
+            :checked="isChecked(item.key)"
+            size="small"
+            @update:checked="$emit('toggleCheck', item.key)"
+          >
+            1M Context
+          </n-checkbox>
+        </div>
       </div>
     </div>
   </div>
@@ -132,10 +150,19 @@ function removeEntry(key: string) {
   gap: 10px;
 }
 
+.kv-entry {
+  display: grid;
+  gap: 4px;
+}
+
 .kv-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 72px;
   gap: 10px;
+}
+
+.kv-checkbox-row {
+  padding-left: 4px;
 }
 
 @media (max-width: 920px) {

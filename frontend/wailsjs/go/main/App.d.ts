@@ -16,7 +16,7 @@ export function DeleteCodexSession(arg1:string):Promise<void>;
 
 export function DeleteCodexSessionBackup(arg1:string):Promise<string>;
 
-export function EnableClaudeSettings():Promise<string>;
+export function EnableClaudeSettings(arg1:string):Promise<string>;
 
 export function ExportConfig():Promise<string>;
 

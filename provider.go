@@ -63,6 +63,55 @@ func GetDefaultProvider() *ProviderInfo {
 	return GetProvider(ProviderDeepSeek)
 }
 
+// ClaudeBaseMappings returns model mappings suitable for Claude source profiles.
+// It maps standard Claude model IDs to the provider's equivalent tier models.
+// Returns nil when the provider has no Anthropic-compatible endpoint.
+func (p *ProviderInfo) ClaudeBaseMappings() map[string]string {
+	if p == nil {
+		return nil
+	}
+	// Resolve provider-side models per tier
+	haiku := p.AnthropicHaikuModel
+	if haiku == "" {
+		haiku = p.AnthropicModel
+	}
+	if haiku == "" {
+		haiku = p.DefaultModel
+	}
+	sonnet := p.AnthropicSonnetModel
+	if sonnet == "" {
+		sonnet = p.AnthropicModel
+	}
+	if sonnet == "" {
+		sonnet = p.DefaultModel
+	}
+	opus := p.AnthropicOpusModel
+	if opus == "" {
+		opus = p.AnthropicModel
+	}
+	if opus == "" {
+		opus = p.DefaultModel
+	}
+	// Resolve Claude-side model IDs
+	claudeHaiku := p.ClaudeHaikuModel
+	if claudeHaiku == "" {
+		claudeHaiku = "claude-haiku-4-5"
+	}
+	claudeSonnet := p.ClaudeSonnetModel
+	if claudeSonnet == "" {
+		claudeSonnet = "claude-sonnet-4-6"
+	}
+	claudeOpus := p.ClaudeOpusModel
+	if claudeOpus == "" {
+		claudeOpus = "claude-opus-4-7"
+	}
+	return map[string]string{
+		claudeHaiku:  haiku,
+		claudeSonnet: sonnet,
+		claudeOpus:   opus,
+	}
+}
+
 // AllProviders 返回所有预置提供商列表（不含 "custom"）
 func AllProviders() []ProviderInfo {
 	list := make([]ProviderInfo, 0, len(registeredProviders))

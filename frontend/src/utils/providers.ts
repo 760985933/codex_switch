@@ -13,6 +13,25 @@ export interface ProviderPreset {
   apiType: 'chat_completions' | 'responses' | 'messages' | 'google'
 }
 
+// ClaudeBaseMappings generates Claude-specific model mappings for a provider.
+// It maps standard Claude model IDs to the provider's equivalent models.
+export function getClaudeBaseMappings(preset: ProviderPreset): Record<string, string> {
+  const target = preset.anthropicModel || preset.defaultModel
+  // Anthropic provider maps Claude IDs to themselves.
+  if (preset.id === 'anthropic') {
+    return {
+      'claude-opus-4-7': 'claude-opus-4-7',
+      'claude-sonnet-4-6': 'claude-sonnet-4-6',
+      'claude-haiku-4-5': 'claude-haiku-4-5',
+    }
+  }
+  return {
+    'claude-opus-4-7': target,
+    'claude-sonnet-4-6': target,
+    'claude-haiku-4-5': target,
+  }
+}
+
 export const BILLING_MODE_LABELS: Record<string, string> = {
   paygo: '按量计费',
   tokenplan: 'Token Plan',

@@ -30,6 +30,7 @@ type Profile struct {
 	DefaultModel string            `json:"defaultModel"`
 	Mappings     map[string]string `json:"mappings"`
 	APIType      string            `json:"apiType,omitempty"`
+	ClaudeModel1M []string         `json:"claudeModel1m,omitempty"` // model names that support 1M context
 }
 
 // InstanceConfig holds the per-source proxy instance configuration.
@@ -40,8 +41,9 @@ type InstanceConfig struct {
 	MaxRetries       int               `json:"maxRetries"`
 	Mappings         map[string]string `json:"mappings"`
 	Headers          map[string]string `json:"headers"`
-	CurrentProfileID string            `json:"currentProfileId"`
-	ProxyProfileIDs  []string          `json:"proxyProfileIds,omitempty"`
+	CurrentProfileID  string            `json:"currentProfileId"`
+	ProxyProfileIDs   []string          `json:"proxyProfileIds,omitempty"`
+	GatewayConfigUUID string            `json:"gatewayConfigUuid,omitempty"`
 }
 
 type AppConfig struct {

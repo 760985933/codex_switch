@@ -30,8 +30,8 @@ export function DeleteCodexSessionBackup(arg1) {
   return window['go']['main']['App']['DeleteCodexSessionBackup'](arg1);
 }
 
-export function EnableClaudeSettings() {
-  return window['go']['main']['App']['EnableClaudeSettings']();
+export function EnableClaudeSettings(arg1) {
+  return window['go']['main']['App']['EnableClaudeSettings'](arg1);
 }
 
 export function ExportConfig() {
