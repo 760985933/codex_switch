@@ -30,6 +30,10 @@ export function DeleteCodexSessionBackup(arg1) {
   return window['go']['main']['App']['DeleteCodexSessionBackup'](arg1);
 }
 
+export function EnableClaudeSettings() {
+  return window['go']['main']['App']['EnableClaudeSettings']();
+}
+
 export function ExportConfig() {
   return window['go']['main']['App']['ExportConfig']();
 }
@@ -152,6 +156,10 @@ export function RestartProxy() {
 
 export function RestartProxyForSource(arg1) {
   return window['go']['main']['App']['RestartProxyForSource'](arg1);
+}
+
+export function RestoreClaudeSettings() {
+  return window['go']['main']['App']['RestoreClaudeSettings']();
 }
 
 export function RestoreCodexConfigToml() {

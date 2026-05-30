@@ -354,7 +354,7 @@ console: {
 },
 guide: {
   title: '接入指引',
-  actions: { copyBaseUrl: '复制 Base URL', preferences:'偏好设置', pluginUnlockLogin: '插件解锁登录', pluginUnlockLoginTooltip: '该模式 codex 可能会短暂请求外网，需要确保可以访问外部网络，否则有可能界面一直进不去。', noAccountLogin: '无帐号登录', restoreDefault: '恢复默认', sandbox: '沙盒测试', completed: '已启用', stop: '停止', stopped: '已停止' },
+  actions: { copyBaseUrl: '复制 Base URL', preferences:'偏好设置', pluginUnlockLogin: '插件解锁登录', pluginUnlockLoginTooltip: '该模式 codex 可能会短暂请求外网，需要确保可以访问外部网络，否则有可能界面一直进不去。', noAccountLogin: '无帐号登录', restoreDefault: '恢复默认', sandbox: '沙盒测试', completed: '已启用', stop: '停止', stopped: '已停止', enableClaude: '启用 Claude Code', enableClaudeSuccess: 'Claude Code 设置已写入: {path}', restoreClaudeSuccess: 'Claude Code 设置已恢复默认: {path}' },
   sandbox: {
     title: 'API 沙盒',
     networkAccess: '互联网访问',

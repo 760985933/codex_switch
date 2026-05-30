@@ -37,6 +37,9 @@ type ProviderInfo struct {
 	DefaultModel            string            // 默认模型
 	AnthropicBaseURL        string            // Anthropic 兼容 API 地址 (按量计费)
 	AnthropicModel          string            // Anthropic 兼容默认模型
+	AnthropicHaikuModel     string            // Anthropic 兼容 Haiku 级模型（快速）
+	AnthropicSonnetModel    string            // Anthropic 兼容 Sonnet 级模型（均衡）
+	AnthropicOpusModel      string            // Anthropic 兼容 Opus 级模型（最强）
 	TokenPlanOpenAIBaseURL  string            // Token Plan OpenAI 兼容地址
 	TokenPlanAnthropicBaseURL string          // Token Plan Anthropic 兼容地址
 	DocsURL                 string            // API 文档地址
@@ -128,17 +131,20 @@ func deepseekBalanceCheck(apiKey, baseURL string) (*UsageBalance, error) {
 // registeredProviders 是全局提供商注册表
 var registeredProviders = map[string]*ProviderInfo{
 	string(ProviderDeepSeek): {
-		ID:               ProviderDeepSeek,
-		Name:             "DeepSeek",
-		DefaultBaseURL:   "https://api.deepseek.com/v1",
-		DefaultModel:     "deepseek-v4-flash",
-		AnthropicBaseURL: "https://api.deepseek.com/anthropic",
-		AnthropicModel:   "deepseek-v4-flash",
-		DocsURL:          "https://api-docs.deepseek.com/",
-		HasBalanceAPI:    true,
-		BalanceCheckFn:   deepseekBalanceCheck,
-		APIType:          APIChatCompletions,
-		DefaultMappings:  deepseekDefaultMappings(),
+		ID:                   ProviderDeepSeek,
+		Name:                 "DeepSeek",
+		DefaultBaseURL:       "https://api.deepseek.com/v1",
+		DefaultModel:         "deepseek-v4-flash",
+		AnthropicBaseURL:     "https://api.deepseek.com/anthropic",
+		AnthropicModel:       "deepseek-v4-flash",
+		AnthropicHaikuModel:  "deepseek-v4-flash",
+		AnthropicSonnetModel: "deepseek-v4-pro",
+		AnthropicOpusModel:   "deepseek-v4-pro",
+		DocsURL:              "https://api-docs.deepseek.com/",
+		HasBalanceAPI:        true,
+		BalanceCheckFn:       deepseekBalanceCheck,
+		APIType:              APIChatCompletions,
+		DefaultMappings:      deepseekDefaultMappings(),
 	},
 	string(ProviderAlibaba): {
 		ID:               ProviderAlibaba,

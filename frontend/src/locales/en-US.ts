@@ -334,7 +334,7 @@ console: {
 },
 guide: {
   title: 'Quick Start',
-  actions: { copyBaseUrl: 'Copy Base URL', preferences:'Preferences', pluginUnlockLogin: 'Plugin Unlock Login', pluginUnlockLoginTooltip: 'Codex may briefly access the internet. Make sure external network is accessible, otherwise the UI may get stuck.', noAccountLogin: 'No-Account Login', restoreDefault: 'Restore default', sandbox: 'Sandbox', completed: 'Enabled', stop: 'Stop', stopped: 'Stopped' },
+  actions: { copyBaseUrl: 'Copy Base URL', preferences:'Preferences', pluginUnlockLogin: 'Plugin Unlock Login', pluginUnlockLoginTooltip: 'Codex may briefly access the internet. Make sure external network is accessible, otherwise the UI may get stuck.', noAccountLogin: 'No-Account Login', restoreDefault: 'Restore default', sandbox: 'Sandbox', completed: 'Enabled', stop: 'Stop', stopped: 'Stopped', enableClaude: 'Enable Claude Code', enableClaudeSuccess: 'Claude Code settings written: {path}', restoreClaudeSuccess: 'Claude Code settings restored: {path}' },
   sandbox: {
     title: 'API Sandbox',
     networkAccess: 'Network Access',

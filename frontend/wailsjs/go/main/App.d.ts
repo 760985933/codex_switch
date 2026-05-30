@@ -16,6 +16,8 @@ export function DeleteCodexSession(arg1:string):Promise<void>;
 
 export function DeleteCodexSessionBackup(arg1:string):Promise<string>;
 
+export function EnableClaudeSettings():Promise<string>;
+
 export function ExportConfig():Promise<string>;
 
 export function GenerateCodexConfigToml():Promise<string>;
@@ -77,6 +79,8 @@ export function ReadCodexConfigToml():Promise<string>;
 export function RestartProxy():Promise<main.ProxyStatusPayload>;
 
 export function RestartProxyForSource(arg1:main.SourceID):Promise<main.ProxyStatusPayload>;
+
+export function RestoreClaudeSettings():Promise<string>;
 
 export function RestoreCodexConfigToml():Promise<string>;
 

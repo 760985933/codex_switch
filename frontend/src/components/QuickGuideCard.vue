@@ -206,6 +206,30 @@ async function handleRestoreCodex() {
   }
 }
 
+const enableClaudeLoading = ref(false)
+async function handleEnableClaude() {
+  enableClaudeLoading.value = true
+  try {
+    const { EnableClaudeSettings } = await import('../../wailsjs/go/main/App')
+    const path = await EnableClaudeSettings()
+    message.success(t('guide.actions.enableClaudeSuccess', { path: path || '' }))
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  } finally {
+    enableClaudeLoading.value = false
+  }
+}
+
+async function handleRestoreClaude() {
+  try {
+    const { RestoreClaudeSettings } = await import('../../wailsjs/go/main/App')
+    const path = await RestoreClaudeSettings()
+    message.success(t('guide.actions.restoreClaudeSuccess', { path: path || '' }))
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  }
+}
+
 async function handleRemoveProxy(id: string) {
   dialog.warning({
     title: t('dashboard.removeProxy'),
@@ -304,6 +328,16 @@ async function handleRemoveProxy(id: string) {
           <div class="actions">
             <n-button v-if="source === 'codex'" tertiary @click="ui.openSettings(source)">{{ t('guide.actions.preferences') }}</n-button>
             <n-button v-if="source === 'codex'" tertiary @click="handleRestoreCodex">{{ t('guide.actions.restoreDefault') }}</n-button>
+            <n-button v-if="source === 'claude'" tertiary @click="handleRestoreClaude">{{ t('guide.actions.restoreDefault') }}</n-button>
+            <n-button
+              v-if="source === 'claude'"
+              tertiary
+              type="primary"
+              :loading="enableClaudeLoading"
+              @click="handleEnableClaude"
+            >
+              {{ t('guide.actions.enableClaude') }}
+            </n-button>
             <n-button
               tertiary
               type="primary"
