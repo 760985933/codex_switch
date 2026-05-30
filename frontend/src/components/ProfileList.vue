@@ -123,7 +123,8 @@ function onDragOver(e: DragEvent, targetIndex: number) {
   if (e.dataTransfer) {
     e.dataTransfer.dropEffect = 'move'
   }
-  if (dragIndex.value === targetIndex) return
+  const srcIndex = dragIndex.value
+  if (srcIndex === targetIndex) return
 
   // Live reorder: move the dragged item to the target position
   const items = [...displayProfiles.value]
@@ -132,7 +133,7 @@ function onDragOver(e: DragEvent, targetIndex: number) {
   const insertAt = e.clientY < midY ? targetIndex : targetIndex + 1
 
   // Remove from old position (adjust for the fact that the source index may shift)
-  const sourceIndex = items.findIndex(p => p.id === displayProfiles.value[dragIndex.value].id)
+  const sourceIndex = items.findIndex(p => p.id === displayProfiles.value[srcIndex].id)
   const [moved] = items.splice(sourceIndex, 1)
   const adjustedInsert = sourceIndex < insertAt ? insertAt - 1 : insertAt
   items.splice(adjustedInsert, 0, moved)
