@@ -2,7 +2,7 @@
 
 const messages = {
 app: {
-  nav: { overview: 'Vermittlungsproxy', models: 'Modelle', proxy: 'Proxy', settings: 'Globale Konfiguration', monitoring: 'Überwachung', logs: 'Logs', sessions: 'Sitzungen', contact: 'Kontakt & Sponsoring' },
+  nav: { overview: 'Vermittlungsproxy', models: 'Modelle', proxy: 'Proxy', settings: 'Globale Konfiguration', monitoring: 'Überwachung', logs: 'Logs', sessions: 'Sitzungen', changelog: 'Änderungsprotokoll', contact: 'Kontakt & Sponsoring' },
   status: { running: 'Läuft', starting: 'Startet', error: 'Fehler', stopped: 'Gestoppt' },
   actions: { preferences: 'Einstellungen' },
   toast: {
@@ -305,6 +305,12 @@ profile: {
   switchWhileRunning: 'Proxy läuft. Bitte zuerst stoppen.',
   cannotDeleteLast: 'Mindestens eine Konfiguration muss bestehen bleiben',
   dragToReorder: 'Zum Neuanordnen ziehen',
+},
+changelog: {
+  title: 'Änderungsprotokoll',
+  loading: 'Wird geladen...',
+  retry: 'Wiederholen',
+  fromCache: 'Zwischengespeichert',
 },
 common: { delete: 'Löschen' },
 } as const

@@ -120,6 +120,20 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class ChangelogResult {
+	    content: string;
+	    fromCache: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ChangelogResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.content = source["content"];
+	        this.fromCache = source["fromCache"];
+	    }
+	}
 	export class CodexSession {
 	    id: string;
 	    title: string;

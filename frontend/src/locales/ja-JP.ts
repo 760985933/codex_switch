@@ -2,7 +2,7 @@
 
 const messages = {
 app: {
-  nav: { overview: '中継プロキシ', models: 'モデル管理', proxy: 'プロキシ設定', settings: 'グローバル設定', monitoring: 'モニタリング', logs: '最近のログ', sessions: 'セッション', contact: '連絡とスポンサー' },
+  nav: { overview: '中継プロキシ', models: 'モデル管理', proxy: 'プロキシ設定', settings: 'グローバル設定', monitoring: 'モニタリング', logs: '最近のログ', sessions: 'セッション', changelog: '更新履歴', contact: '連絡とスポンサー' },
   status: { running: '稼働中', starting: '起動中', error: 'エラー', stopped: '停止中' },
   actions: { preferences: '設定' },
   toast: {
@@ -311,6 +311,12 @@ profile: {
   switchWhileRunning: 'プロキシ実行中です。先に停止してから切り替えてください。',
   cannotDeleteLast: '少なくとも1つの設定が必要です',
   dragToReorder: 'ドラッグで並べ替え',
+},
+changelog: {
+  title: '更新履歴',
+  loading: '読み込み中...',
+  retry: '再試行',
+  fromCache: 'キャッシュ',
 },
 common: { delete: '削除' },
 } as const

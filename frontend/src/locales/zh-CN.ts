@@ -2,7 +2,7 @@
 
 const messages = {
 app: {
-  nav: { overview: '中转代理', models: '模型管理', proxy: '代理设置', settings: '全局配置', monitoring: '监控统计', logs: '最近日志', sessions: '会话管理', contact: '联系与赞助' },
+  nav: { overview: '中转代理', models: '模型管理', proxy: '代理设置', settings: '全局配置', monitoring: '监控统计', logs: '最近日志', sessions: '会话管理', changelog: '更新记录', contact: '联系与赞助' },
   status: { running: '运行中', starting: '启动中', error: '异常', stopped: '未启动' },
   actions: { preferences: '偏好设置' },
   toast: {
@@ -447,6 +447,12 @@ globalConfig: {
   title: '全局配置',
   behavior: '行为',
   save: '保存设置',
+},
+changelog: {
+  title: '更新记录',
+  loading: '加载中...',
+  retry: '重试',
+  fromCache: '缓存',
 },
 } as const
 

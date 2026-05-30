@@ -38,6 +38,10 @@ export function ExportConfig() {
   return window['go']['main']['App']['ExportConfig']();
 }
 
+export function FetchChangelog() {
+  return window['go']['main']['App']['FetchChangelog']();
+}
+
 export function GenerateCodexConfigToml() {
   return window['go']['main']['App']['GenerateCodexConfigToml']();
 }

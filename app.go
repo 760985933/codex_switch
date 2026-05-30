@@ -28,6 +28,7 @@ var forceQuit atomic.Bool
 
 const appVersion = "0.0.9"
 const updateManifestURL = "https://nettopo.com/nettopo-switch-version.txt"
+const changelogURL = "https://nettopo.com/nettopo-switch-changelog.txt"
 const updateDownloadURLTemplate = ""
 
 type App struct {
@@ -183,6 +184,45 @@ func (a *App) CheckForUpdates() (UpdateCheckResult, error) {
 	}
 
 	return result, nil
+}
+
+var changelogCachePath string
+
+func (a *App) FetchChangelog() (ChangelogResult, error) {
+	if changelogCachePath == "" {
+		changelogCachePath = filepath.Join(filepath.Dir(a.store.Path()), "changelog-cache.txt")
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, err := http.NewRequest(http.MethodGet, changelogURL, nil)
+	if err != nil {
+		return a.loadChangelogCache()
+	}
+	req.Header.Set("User-Agent", "nettopo-switch/"+appVersion)
+	resp, err := client.Do(req)
+	if err != nil {
+		return a.loadChangelogCache()
+	}
+	defer resp.Body.Close()
+
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, 256*1024))
+	if err != nil {
+		return a.loadChangelogCache()
+	}
+
+	content := string(raw)
+	if err := os.WriteFile(changelogCachePath, []byte(content), 0644); err != nil {
+		a.appendLog("warn", "app", "写入更新记录缓存失败: "+err.Error(), "")
+	}
+	return ChangelogResult{Content: content, FromCache: false}, nil
+}
+
+func (a *App) loadChangelogCache() (ChangelogResult, error) {
+	raw, err := os.ReadFile(changelogCachePath)
+	if err != nil {
+		return ChangelogResult{}, err
+	}
+	return ChangelogResult{Content: string(raw), FromCache: true}, nil
 }
 
 func parseUpdateManifest(raw []byte) (string, string, string, error) {

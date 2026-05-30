@@ -2,7 +2,7 @@
 
 const messages = {
 app: {
-  nav: { overview: 'Transit Proxy', models: 'Models', proxy: 'Proxy', settings: 'Global Config', monitoring: 'Monitoring', logs: 'Recent Logs', sessions: 'Sessions', contact: 'Contact & Sponsor' },
+  nav: { overview: 'Transit Proxy', models: 'Models', proxy: 'Proxy', settings: 'Global Config', monitoring: 'Monitoring', logs: 'Recent Logs', sessions: 'Sessions', changelog: 'Changelog', contact: 'Contact & Sponsor' },
   status: { running: 'Running', starting: 'Starting', error: 'Error', stopped: 'Stopped' },
   actions: { preferences: 'Preferences' },
   toast: {
@@ -427,6 +427,12 @@ globalConfig: {
   title: 'Global Config',
   behavior: 'Behavior',
   save: 'Save',
+},
+changelog: {
+  title: 'Changelog',
+  loading: 'Loading...',
+  retry: 'Retry',
+  fromCache: 'Cached',
 },
 } as const
 

@@ -2,7 +2,7 @@
 
 const messages = {
 app: {
-  nav: { overview: '중계 프록시', models: '모델 관리', proxy: '프록시 설정', settings: '글로벌 설정', monitoring: '모니터링', logs: '최근 로그', sessions: '세션', contact: '연락 및 후원' },
+  nav: { overview: '중계 프록시', models: '모델 관리', proxy: '프록시 설정', settings: '글로벌 설정', monitoring: '모니터링', logs: '최근 로그', sessions: '세션', changelog: '업데이트 기록', contact: '연락 및 후원' },
   status: { running: '실행 중', starting: '시작 중', error: '오류', stopped: '중지됨' },
   actions: { preferences: '설정' },
   toast: {
@@ -311,6 +311,12 @@ profile: {
   switchWhileRunning: '프록시 실행 중입니다. 먼저 중지 후 전환하세요.',
   cannotDeleteLast: '최소 하나의 설정이 필요합니다',
   dragToReorder: '드래그하여 순서 변경',
+},
+changelog: {
+  title: '업데이트 기록',
+  loading: '로딩 중...',
+  retry: '재시도',
+  fromCache: '캐시됨',
 },
 common: { delete: '삭제' },
 } as const

@@ -176,6 +176,11 @@ type UpdateCheckResult struct {
 	CheckedAt      string `json:"checkedAt"`
 }
 
+type ChangelogResult struct {
+	Content string `json:"content"`
+	FromCache bool `json:"fromCache"`
+}
+
 type SandboxWorkspaceConfig struct {
 	NetworkAccess  bool   `json:"networkAccess" toml:"network_access"`
 	SandboxMode    string `json:"sandboxMode" toml:"sandbox_mode"`

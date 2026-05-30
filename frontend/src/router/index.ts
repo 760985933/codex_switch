@@ -6,6 +6,7 @@ import ContactPage from '../pages/ContactPage.vue'
 import MonitoringPage from '../pages/MonitoringPage.vue'
 import ModelsPage from '../pages/ModelsPage.vue'
 import SettingsPage from '../pages/SettingsPage.vue'
+import ChangelogPage from '../pages/ChangelogPage.vue'
 
 export const router = createRouter({
   history: createWebHashHistory(),
@@ -48,6 +49,11 @@ export const router = createRouter({
       path: '/settings',
       name: 'settings',
       component: SettingsPage,
+    },
+    {
+      path: '/changelog',
+      name: 'changelog',
+      component: ChangelogPage,
     },
   ],
 })

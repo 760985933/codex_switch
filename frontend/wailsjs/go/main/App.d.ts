@@ -20,6 +20,8 @@ export function EnableClaudeSettings(arg1:string):Promise<string>;
 
 export function ExportConfig():Promise<string>;
 
+export function FetchChangelog():Promise<main.ChangelogResult>;
+
 export function GenerateCodexConfigToml():Promise<string>;
 
 export function GenerateCodexConfigTomlProfiles():Promise<string>;

@@ -2,7 +2,7 @@
 
 const messages = {
 app: {
-  nav: { overview: 'Proxy relais', models: 'Modèles', proxy: 'Proxy', settings: 'Configuration globale', monitoring: 'Surveillance', logs: 'Journaux', sessions: 'Sessions', contact: 'Contact & Sponsor' },
+  nav: { overview: 'Proxy relais', models: 'Modèles', proxy: 'Proxy', settings: 'Configuration globale', monitoring: 'Surveillance', logs: 'Journaux', sessions: 'Sessions', changelog: 'Journal des modifications', contact: 'Contact & Sponsor' },
   status: { running: 'En cours', starting: 'Démarrage', error: 'Erreur', stopped: 'Arrêté' },
   actions: { preferences: 'Préférences' },
   toast: {
@@ -311,6 +311,12 @@ profile: {
   switchWhileRunning: 'Le proxy est en cours. Arrêtez-le d\'abord.',
   cannotDeleteLast: 'Au moins une configuration doit être conservée',
   dragToReorder: 'Glisser pour réorganiser',
+},
+changelog: {
+  title: 'Journal des modifications',
+  loading: 'Chargement...',
+  retry: 'Réessayer',
+  fromCache: 'En cache',
 },
 common: { delete: 'Supprimer' },
 } as const

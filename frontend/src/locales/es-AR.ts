@@ -2,7 +2,7 @@
 
 const messages = {
 app: {
-  nav: { overview: 'Proxy de tránsito', models: 'Modelos', proxy: 'Proxy', settings: 'Configuración global', monitoring: 'Monitoreo', logs: 'Registros', sessions: 'Sesiones', contact: 'Contacto y Patrocinio' },
+  nav: { overview: 'Proxy de tránsito', models: 'Modelos', proxy: 'Proxy', settings: 'Configuración global', monitoring: 'Monitoreo', logs: 'Registros', sessions: 'Sesiones', changelog: 'Registro de cambios', contact: 'Contacto y Patrocinio' },
   status: { running: 'En ejecución', starting: 'Iniciando', error: 'Error', stopped: 'Detenido' },
   actions: { preferences: 'Preferencias' },
   toast: {
@@ -305,6 +305,12 @@ profile: {
   switchWhileRunning: 'El proxy está en ejecución. Deténgalo primero.',
   cannotDeleteLast: 'Debe conservarse al menos una configuración',
   dragToReorder: 'Arrastrar para reordenar',
+},
+changelog: {
+  title: 'Registro de cambios',
+  loading: 'Cargando...',
+  retry: 'Reintentar',
+  fromCache: 'En caché',
 },
 common: { delete: 'Eliminar' },
 } as const
