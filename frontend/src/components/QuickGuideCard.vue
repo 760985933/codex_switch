@@ -4,6 +4,7 @@ import { useMessage, useDialog } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
+import { useCodexStore } from '../stores/codex'
 import { useUiStore } from '../stores/ui'
 import { getProviderPreset } from '../utils/providers'
 import ProfileList from './ProfileList.vue'
@@ -29,6 +30,7 @@ const props = defineProps<{
 }>()
 
 const store = useAppStore()
+const codexStore = useCodexStore()
 const ui = useUiStore()
 const router = useRouter()
 const message = useMessage()
@@ -195,6 +197,15 @@ function handleEditorSave() {
   editingProfileId.value = null
 }
 
+async function handleRestoreCodex() {
+  try {
+    const path = await codexStore.restoreCodexConfigToml()
+    message.success(t('settings.toast.restored', { path: path || '' }))
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  }
+}
+
 async function handleRemoveProxy(id: string) {
   dialog.warning({
     title: t('dashboard.removeProxy'),
@@ -291,7 +302,8 @@ async function handleRemoveProxy(id: string) {
             <span class="card-title">{{ t('dashboard.quickActions') }}</span>
           </div>
           <div class="actions">
-            <n-button tertiary @click="ui.openSettings(source)">{{ t('guide.actions.preferences') }}</n-button>
+            <n-button v-if="source === 'codex'" tertiary @click="ui.openSettings(source)">{{ t('guide.actions.preferences') }}</n-button>
+            <n-button v-if="source === 'codex'" tertiary @click="handleRestoreCodex">{{ t('guide.actions.restoreDefault') }}</n-button>
             <n-button
               tertiary
               type="primary"
