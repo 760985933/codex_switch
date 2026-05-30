@@ -97,31 +97,6 @@ async function handleSave() {
       />
     </div>
 
-    <!-- Behavior -->
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">{{ t('proxy.section.behavior') }}</span>
-      </div>
-      <div class="behavior-grid">
-        <div class="behavior-item">
-          <span class="behavior-label">{{ t('proxy.autoStart') }}</span>
-          <n-switch v-model:value="localConfig.enableAutoStart" />
-        </div>
-        <div class="behavior-item">
-          <span class="behavior-label">{{ t('proxy.minimizeToTray') }}</span>
-          <n-switch v-model:value="localConfig.minimizeToTray" />
-        </div>
-        <div class="behavior-item">
-          <span class="behavior-label">{{ t('proxy.compactMode') }}</span>
-          <n-switch v-model:value="localConfig.compactMode" />
-        </div>
-        <div class="behavior-item">
-          <span class="behavior-label">{{ t('proxy.logRetentionDays') }}</span>
-          <n-input-number v-model:value="localConfig.logRetentionDays" :min="1" :max="30" style="width:100px" />
-        </div>
-      </div>
-    </div>
-
     <div class="action-bar">
       <n-button type="primary" :loading="store.isBusy" @click="handleSave">
         {{ t('proxy.save') }}
@@ -180,23 +155,6 @@ async function handleSave() {
   font-weight: 600;
   user-select: all;
   color: rgba(11, 18, 32, 0.9);
-}
-
-.behavior-grid {
-  display: grid;
-  gap: 4px;
-}
-
-.behavior-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 0;
-}
-
-.behavior-label {
-  font-size: 13px;
-  color: rgba(11, 18, 32, 0.86);
 }
 
 .action-bar {
