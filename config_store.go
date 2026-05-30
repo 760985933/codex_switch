@@ -398,16 +398,6 @@ func normalizeProfile(p *Profile, defaults AppConfig) {
 			}
 		}
 	}
-	// Also add Claude-specific model mappings for incoming Messages API requests
-	if prov != nil {
-		if cm := prov.ClaudeBaseMappings(); cm != nil {
-			for key, value := range cm {
-				if _, ok := p.Mappings[key]; !ok {
-					p.Mappings[key] = value
-				}
-			}
-		}
-	}
 }
 
 func copyMap[K comparable, V any](src map[K]V) map[K]V {

@@ -110,6 +110,20 @@ func (cfg AppConfig) EffectiveConfig(source SourceID) (AppConfig, bool) {
 				effective.Mappings[key] = value
 			}
 		}
+		// For Claude source only: add Claude model name → provider model
+		// mappings so the Messages API endpoint can resolve them correctly.
+		if source == SourceClaude {
+			prov := GetProvider(ProviderID(profile.Provider))
+			if prov != nil {
+				if cm := prov.ClaudeBaseMappings(); cm != nil {
+					for key, value := range cm {
+						if _, ok := effective.Mappings[key]; !ok {
+							effective.Mappings[key] = value
+						}
+					}
+				}
+			}
+		}
 	}
 	return effective, true
 }
