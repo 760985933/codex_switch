@@ -194,6 +194,7 @@ logs: {
   title: '最近日志',
   desc: '用于快速定位”启动/请求/健康检查”等关键事件。',
   actions: { refresh: '刷新', copyAll: '复制全部', copy: '复制' },
+  filter: { all: '全部' },
   empty: { noLogs: '暂无日志' },
   toast: { refreshed: '已刷新', copiedAll: '已复制全部日志', copied: '已复制该日志' },
 },

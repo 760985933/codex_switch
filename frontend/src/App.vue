@@ -1,16 +1,28 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { lightTheme, dateDeDE, dateEnUS, dateEsAR, dateFrFR, dateJaJP, dateKoKR, dateZhCN, deDE, enUS, esAR, frFR, jaJP, koKR, zhCN } from 'naive-ui'
 import { RouterView } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { EventsOn } from '../wailsjs/runtime/runtime'
 import SettingsDrawer from './components/SettingsDrawer.vue'
 import SidebarNav from './components/SidebarNav.vue'
 import { useAppStore } from './stores/app'
 import { useUiStore } from './stores/ui'
+import type { LogEntry, ProxyStatusPayload } from './types'
 
 const store = useAppStore()
 const ui = useUiStore()
 const { t, locale } = useI18n()
+
+// ── Global event subscriptions (never unmounted) ──
+onMounted(() => {
+  EventsOn('log:entry', (entry: LogEntry) => {
+    store.pushLog(entry)
+  })
+  EventsOn('proxy:status', (payload: ProxyStatusPayload) => {
+    store.applyStatus(payload)
+  })
+})
 
 watch(() => ui.locale, (value) => { locale.value = value }, { immediate: true })
 

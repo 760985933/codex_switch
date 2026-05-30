@@ -193,6 +193,7 @@ logs: {
   title: 'Recent Logs',
   desc: 'Quickly locate key events like start/requests/health checks.',
   actions: { refresh: 'Refresh', copyAll: 'Copy All', copy: 'Copy' },
+  filter: { all: 'All' },
   empty: { noLogs: 'No logs' },
   toast: { refreshed: 'Refreshed', copiedAll: 'Copied all logs', copied: 'Copied' },
 },

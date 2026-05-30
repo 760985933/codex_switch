@@ -65,7 +65,7 @@ func (b *ProxyRuntime) Start(cfg AppConfig) error {
 		b.status = ProxyError
 		b.lastError = err.Error()
 		b.mu.Unlock()
-		b.app.appendLog("error", "proxy", "监听失败: "+err.Error(), "")
+		b.app.appendLog("error", string(b.source), "监听失败: "+err.Error(), "")
 		b.app.emitStatus(b.source)
 		return err
 	}
@@ -99,17 +99,17 @@ func (b *ProxyRuntime) Start(cfg AppConfig) error {
 	listenAddress := b.listenAddress
 	b.mu.Unlock()
 
-	b.app.appendLog("info", "proxy", "代理服务已监听: "+listenAddress, "")
+	b.app.appendLog("info", string(b.source), "代理服务已监听: "+listenAddress, "")
 	b.app.emitStatus(b.source)
 
 	go func() {
 		err := server.Serve(ln)
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			b.setStatus(ProxyError, err.Error())
-			b.app.appendLog("error", "proxy", "服务异常退出: "+err.Error(), "")
+			b.app.appendLog("error", string(b.source), "服务异常退出: "+err.Error(), "")
 			return
 		}
-		b.app.appendLog("info", "proxy", "服务已退出", "")
+		b.app.appendLog("info", string(b.source), "服务已退出", "")
 	}()
 
 	return nil
@@ -136,7 +136,7 @@ func (b *ProxyRuntime) withAccessLog(next http.Handler) http.Handler {
 		if strings.TrimSpace(requestID) != "" {
 			message += " rid=" + requestID
 		}
-		b.app.appendLog(level, "proxy", message, "")
+		b.app.appendLog(level, string(b.source), message, "")
 	})
 }
 
@@ -165,12 +165,12 @@ func (b *ProxyRuntime) Stop() error {
 	}
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		b.setStatus(ProxyError, err.Error())
-		b.app.appendLog("error", "proxy", "停止服务失败: "+err.Error(), "")
+		b.app.appendLog("error", string(b.source), "停止服务失败: "+err.Error(), "")
 		return err
 	}
 
 	b.setStatus(ProxyStopped, "")
-	b.app.appendLog("info", "proxy", "代理服务已停止", "")
+	b.app.appendLog("info", string(b.source), "代理服务已停止", "")
 	return nil
 }
 
@@ -328,14 +328,14 @@ func (b *ProxyRuntime) handleChatCompletions(w http.ResponseWriter, r *http.Requ
 
 	body, err := io.ReadAll(io.LimitReader(r.Body, 20<<20))
 	if err != nil {
-		b.app.appendLog("error", "proxy", "chat/completions 读取请求体失败", requestID)
+		b.app.appendLog("error", string(b.source), "chat/completions 读取请求体失败", requestID)
 		b.writeProxyError(w, http.StatusBadRequest, "读取请求体失败")
 		return
 	}
 
 	translatedBody, err := translateChatCompletions(body, cfg)
 	if err != nil {
-		b.app.appendLog("warn", "proxy", "chat/completions 请求体解析失败: "+err.Error()+" keys="+summarizeJSONKeys(body), requestID)
+		b.app.appendLog("warn", string(b.source), "chat/completions 请求体解析失败: "+err.Error()+" keys="+summarizeJSONKeys(body), requestID)
 		b.writeProxyError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -343,14 +343,14 @@ func (b *ProxyRuntime) handleChatCompletions(w http.ResponseWriter, r *http.Requ
 
 	resourceURL, err := upstreamResourceURL(cfg.DeepseekBaseURL, "chat/completions")
 	if err != nil {
-		b.app.appendLog("error", "proxy", "chat/completions 上游地址错误: "+err.Error(), requestID)
+		b.app.appendLog("error", string(b.source), "chat/completions 上游地址错误: "+err.Error(), requestID)
 		b.writeProxyError(w, http.StatusBadGateway, err.Error())
 		return
 	}
 
 	req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, resourceURL, bytes.NewReader(translatedBody))
 	if err != nil {
-		b.app.appendLog("error", "proxy", "chat/completions 构造上游请求失败: "+err.Error(), requestID)
+		b.app.appendLog("error", string(b.source), "chat/completions 构造上游请求失败: "+err.Error(), requestID)
 		b.writeProxyError(w, http.StatusBadGateway, err.Error())
 		return
 	}
@@ -365,7 +365,7 @@ func (b *ProxyRuntime) handleChatCompletions(w http.ResponseWriter, r *http.Requ
 	resp, err := b.doUpstream(req, cfg, streaming)
 	if err != nil {
 		b.writeProxyError(w, http.StatusBadGateway, err.Error())
-		b.app.appendLog("error", "proxy", "转发失败: "+err.Error(), requestID)
+		b.app.appendLog("error", string(b.source), "转发失败: "+err.Error(), requestID)
 		return
 	}
 	defer resp.Body.Close()
@@ -383,7 +383,7 @@ func (b *ProxyRuntime) handleChatCompletions(w http.ResponseWriter, r *http.Requ
 		if strings.TrimSpace(string(raw)) != "" {
 			msg += " upstream_error=" + truncateForLog(string(raw), 2048)
 		}
-		b.app.appendLog(statusToLevel(resp.StatusCode), "proxy", msg, requestID)
+		b.app.appendLog(statusToLevel(resp.StatusCode), string(b.source), msg, requestID)
 		return
 	}
 
@@ -458,7 +458,7 @@ func (b *ProxyRuntime) handleChatCompletions(w http.ResponseWriter, r *http.Requ
 	duration := time.Since(startedAt).Milliseconds()
 	b.app.appendLog(
 		statusToLevel(resp.StatusCode),
-		"proxy",
+		string(b.source),
 		fmt.Sprintf("POST /v1/chat/completions -> %d (%dms)", resp.StatusCode, duration),
 		requestID,
 	)
@@ -478,7 +478,7 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(io.LimitReader(r.Body, 20<<20))
 	if err != nil {
-		b.app.appendLog("error", "proxy", "responses 读取请求体失败", requestID)
+		b.app.appendLog("error", string(b.source), "responses 读取请求体失败", requestID)
 		b.writeProxyError(w, http.StatusBadRequest, "读取请求体失败")
 		return
 	}
@@ -492,7 +492,7 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 
 	chatBody, streaming, model, err := translateResponsesToChatCompletions(body, cfg)
 	if err != nil {
-		b.app.appendLog("warn", "proxy", "responses 请求体解析失败: "+err.Error()+" keys="+summarizeJSONKeys(body), requestID)
+		b.app.appendLog("warn", string(b.source), "responses 请求体解析失败: "+err.Error()+" keys="+summarizeJSONKeys(body), requestID)
 		b.writeProxyError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -519,7 +519,7 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 
 	resourceURL, err := upstreamResourceURL(cfg.DeepseekBaseURL, "chat/completions")
 	if err != nil {
-		b.app.appendLog("error", "proxy", "responses 上游地址错误: "+err.Error(), requestID)
+		b.app.appendLog("error", string(b.source), "responses 上游地址错误: "+err.Error(), requestID)
 		b.writeProxyError(w, http.StatusBadGateway, err.Error())
 		return
 	}
@@ -542,8 +542,8 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 		req, err := http.NewRequestWithContext(upstreamCtx, http.MethodPost, resourceURL, bytes.NewReader(chatBody))
 		if err != nil {
 			b.streamResponsesFailed(w, "bad_gateway", err.Error())
-			b.app.appendLog("error", "proxy", "responses 构造上游请求失败: "+err.Error(), requestID)
-			b.app.appendLog("error", "proxy", "转发失败: "+err.Error(), requestID)
+			b.app.appendLog("error", string(b.source), "responses 构造上游请求失败: "+err.Error(), requestID)
+			b.app.appendLog("error", string(b.source), "转发失败: "+err.Error(), requestID)
 			return
 		}
 		req.Header.Set("Content-Type", "application/json")
@@ -555,7 +555,7 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 		resp, err := b.doUpstream(req, cfg, true)
 		if err != nil {
 			b.streamResponsesFailed(w, "bad_gateway", err.Error())
-			b.app.appendLog("error", "proxy", "转发失败: "+err.Error(), requestID)
+			b.app.appendLog("error", string(b.source), "转发失败: "+err.Error(), requestID)
 			return
 		}
 		defer resp.Body.Close()
@@ -579,7 +579,7 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 			if b.debugMode.Load() {
 				message += " req_json=" + truncateForLog(string(chatBody), 4096)
 			}
-			b.app.appendLog("error", "proxy", message, requestID)
+			b.app.appendLog("error", string(b.source), message, requestID)
 			return
 		}
 
@@ -601,12 +601,12 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 		if b.debugMode.Load() {
 			message += " req_json=" + truncateForLog(string(chatBody), 4096)
 		}
-		b.app.appendLog("info", "proxy", message, requestID)
+		b.app.appendLog("info", string(b.source), message, requestID)
 		return
 	} else {
 		req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, resourceURL, bytes.NewReader(chatBody))
 		if err != nil {
-			b.app.appendLog("error", "proxy", "responses 构造上游请求失败: "+err.Error(), requestID)
+			b.app.appendLog("error", string(b.source), "responses 构造上游请求失败: "+err.Error(), requestID)
 			b.writeProxyError(w, http.StatusBadGateway, err.Error())
 			return
 		}
@@ -619,7 +619,7 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 		resp, err := b.doUpstream(req, cfg, false)
 		if err != nil {
 			b.writeProxyError(w, http.StatusBadGateway, err.Error())
-			b.app.appendLog("error", "proxy", "转发失败: "+err.Error(), requestID)
+			b.app.appendLog("error", string(b.source), "转发失败: "+err.Error(), requestID)
 			return
 		}
 		defer resp.Body.Close()
@@ -654,7 +654,7 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 			}
 			response, err := translateChatCompletionToResponses(upstreamRaw, model)
 			if err != nil {
-				b.app.appendLog("error", "proxy", "responses 响应转换失败: "+err.Error(), requestID)
+				b.app.appendLog("error", string(b.source), "responses 响应转换失败: "+err.Error(), requestID)
 				b.writeProxyError(w, http.StatusBadGateway, err.Error())
 				b.recordUsage(cfg, model, "responses", pt, ct, tt, resp.StatusCode, time.Since(startedAt).Milliseconds(), false)
 			} else {
@@ -681,7 +681,7 @@ func (b *ProxyRuntime) handleResponses(w http.ResponseWriter, r *http.Request) {
 			message += " resp_json=" + truncateForLog(string(upstreamRaw), 4096)
 		}
 	}
-	b.app.appendLog(statusToLevel(statusCode), "proxy", message, requestID)
+	b.app.appendLog(statusToLevel(statusCode), string(b.source), message, requestID)
 }
 
 func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request) {
@@ -698,7 +698,7 @@ func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request)
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		b.app.appendLog("error", "proxy", "responses WS 升级失败: "+err.Error(), requestID)
+		b.app.appendLog("error", string(b.source), "responses WS 升级失败: "+err.Error(), requestID)
 		return
 	}
 	defer conn.Close()
@@ -721,7 +721,7 @@ func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request)
 
 	_, body, err := conn.ReadMessage()
 	if err != nil {
-		b.app.appendLog("warn", "proxy", "responses WS 读取消息失败: "+err.Error(), requestID)
+		b.app.appendLog("warn", string(b.source), "responses WS 读取消息失败: "+err.Error(), requestID)
 		return
 	}
 
@@ -738,7 +738,7 @@ func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request)
 				"message": err.Error(),
 			},
 		})
-		b.app.appendLog("warn", "proxy", "responses WS 请求转换失败: "+err.Error(), requestID)
+		b.app.appendLog("warn", string(b.source), "responses WS 请求转换失败: "+err.Error(), requestID)
 		return
 	}
 
@@ -765,7 +765,7 @@ func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request)
 				"message": err.Error(),
 			},
 		})
-		b.app.appendLog("error", "proxy", "responses WS 上游地址错误: "+err.Error(), requestID)
+		b.app.appendLog("error", string(b.source), "responses WS 上游地址错误: "+err.Error(), requestID)
 		return
 	}
 
@@ -778,7 +778,7 @@ func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request)
 				"message": err.Error(),
 			},
 		})
-		b.app.appendLog("error", "proxy", "responses WS 构造上游请求失败: "+err.Error(), requestID)
+		b.app.appendLog("error", string(b.source), "responses WS 构造上游请求失败: "+err.Error(), requestID)
 		return
 	}
 	upstreamReq.Header.Set("Content-Type", "application/json")
@@ -795,7 +795,7 @@ func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request)
 				"message": err.Error(),
 			},
 		})
-		b.app.appendLog("error", "proxy", "responses WS 转发失败: "+err.Error(), requestID)
+		b.app.appendLog("error", string(b.source), "responses WS 转发失败: "+err.Error(), requestID)
 		return
 	}
 	defer resp.Body.Close()
@@ -813,7 +813,7 @@ func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request)
 				"message": msg,
 			},
 		})
-		b.app.appendLog("error", "proxy", "responses WS 上游错误: "+msg, requestID)
+		b.app.appendLog("error", string(b.source), "responses WS 上游错误: "+msg, requestID)
 		return
 	}
 
@@ -831,7 +831,7 @@ func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request)
 	if len(toolNames) > 0 {
 		message += " tool_names=" + strings.Join(toolNames, ",")
 	}
-	b.app.appendLog("info", "proxy", message, requestID)
+	b.app.appendLog("info", string(b.source), message, requestID)
 }
 
 func (b *ProxyRuntime) setLastReasoning(value string) {
@@ -892,7 +892,7 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(io.LimitReader(r.Body, 20<<20))
 	if err != nil {
-		b.app.appendLog("error", "proxy", "messages 读取请求体失败", requestID)
+		b.app.appendLog("error", string(b.source), "messages 读取请求体失败", requestID)
 		b.writeProxyError(w, http.StatusBadRequest, "读取请求体失败")
 		return
 	}
@@ -903,7 +903,7 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 	// 翻译请求体
 	upstreamBody, streaming, model, err := TranslateRequestBody(body, sourceFormat, targetFormat, cfg)
 	if err != nil {
-		b.app.appendLog("warn", "proxy", "messages 请求体解析失败: "+err.Error()+" keys="+summarizeJSONKeys(body), requestID)
+		b.app.appendLog("warn", string(b.source), "messages 请求体解析失败: "+err.Error()+" keys="+summarizeJSONKeys(body), requestID)
 		b.writeProxyError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -924,7 +924,7 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 	// 构建格式感知的上游请求
 	req, err := BuildUpstreamRequest(r, upstreamBody, targetFormat, cfg, model, streaming)
 	if err != nil {
-		b.app.appendLog("error", "proxy", "messages 构造上游请求失败: "+err.Error(), requestID)
+		b.app.appendLog("error", string(b.source), "messages 构造上游请求失败: "+err.Error(), requestID)
 		if streaming {
 			b.streamMessagesError(w, "bad_gateway", err.Error())
 		} else {
@@ -940,7 +940,7 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := b.doUpstream(req, cfg, streaming)
 	if err != nil {
-		b.app.appendLog("error", "proxy", "转发失败: "+err.Error(), requestID)
+		b.app.appendLog("error", string(b.source), "转发失败: "+err.Error(), requestID)
 		if streaming {
 			b.streamMessagesError(w, "bad_gateway", err.Error())
 		} else {
@@ -961,7 +961,7 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 		} else {
 			b.writeProxyError(w, http.StatusBadGateway, msg)
 		}
-		b.app.appendLog("error", "proxy", fmt.Sprintf("POST /v1/messages -> %d (%dms) upstream_error=%s", resp.StatusCode, time.Since(startedAt).Milliseconds(), truncateForLog(msg, 2048)), requestID)
+		b.app.appendLog("error", string(b.source), fmt.Sprintf("POST /v1/messages -> %d (%dms) upstream_error=%s", resp.StatusCode, time.Since(startedAt).Milliseconds(), truncateForLog(msg, 2048)), requestID)
 		return
 	}
 
@@ -1004,13 +1004,13 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 			if targetFormat == APIGoogle {
 				chatResp, err := translateGoogleToChatCompletions(upstreamRaw, model)
 				if err != nil {
-					b.app.appendLog("error", "proxy", "messages Google 响应转换失败: "+err.Error(), requestID)
+					b.app.appendLog("error", string(b.source), "messages Google 响应转换失败: "+err.Error(), requestID)
 					b.writeProxyError(w, http.StatusInternalServerError, "响应转换失败")
 					return
 				}
 				msgResp, err := translateChatCompletionToMessages(jsonMarshalBytes(chatResp), model)
 				if err != nil {
-					b.app.appendLog("error", "proxy", "messages Chat→Messages 响应转换失败: "+err.Error(), requestID)
+					b.app.appendLog("error", string(b.source), "messages Chat→Messages 响应转换失败: "+err.Error(), requestID)
 					b.writeProxyError(w, http.StatusInternalServerError, "响应转换失败")
 					return
 				}
@@ -1018,7 +1018,7 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 			} else {
 				response, err := translateChatCompletionToMessages(upstreamRaw, model)
 				if err != nil {
-					b.app.appendLog("error", "proxy", "messages 响应转换失败: "+err.Error(), requestID)
+					b.app.appendLog("error", string(b.source), "messages 响应转换失败: "+err.Error(), requestID)
 					b.writeProxyError(w, http.StatusInternalServerError, "响应转换失败")
 					return
 				}
@@ -1028,7 +1028,7 @@ func (b *ProxyRuntime) handleMessages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	duration := time.Since(startedAt).Milliseconds()
-	b.app.appendLog("info", "proxy", fmt.Sprintf("POST /v1/messages -> 200 (%dms) format=%s→%s", duration, sourceFormat, targetFormat), requestID)
+	b.app.appendLog("info", string(b.source), fmt.Sprintf("POST /v1/messages -> 200 (%dms) format=%s→%s", duration, sourceFormat, targetFormat), requestID)
 }
 
 func (b *ProxyRuntime) doUpstream(req *http.Request, cfg AppConfig, streaming bool) (*http.Response, error) {
@@ -1136,7 +1136,7 @@ func (b *ProxyRuntime) GetDebugMode() bool {
 func (b *ProxyRuntime) logResponsesRequestDebug(body []byte, requestID string) {
 	var payload map[string]any
 	if err := json.Unmarshal(body, &payload); err != nil {
-		b.app.appendLog("info", "proxy", "[DEBUG] 请求体 JSON 解析失败: "+err.Error(), requestID)
+		b.app.appendLog("info", string(b.source), "[DEBUG] 请求体 JSON 解析失败: "+err.Error(), requestID)
 		return
 	}
 
@@ -1212,14 +1212,14 @@ func (b *ProxyRuntime) logResponsesRequestDebug(body []byte, requestID string) {
 	} else {
 		logParts = append(logParts, "NO_IMAGE_FOUND")
 	}
-	b.app.appendLog("info", "proxy", strings.Join(logParts, " | "), requestID)
+	b.app.appendLog("info", string(b.source), strings.Join(logParts, " | "), requestID)
 }
 
 // DEBUG: Chat Completions 翻译结果中图片相关部分
 func (b *ProxyRuntime) logChatBodyDebug(chatBody []byte, model, requestID string) {
 	var payload map[string]any
 	if err := json.Unmarshal(chatBody, &payload); err != nil {
-		b.app.appendLog("info", "proxy", "[DEBUG-CHAT] JSON parse err: "+err.Error(), requestID)
+		b.app.appendLog("info", string(b.source), "[DEBUG-CHAT] JSON parse err: "+err.Error(), requestID)
 		return
 	}
 	messages, _ := payload["messages"].([]any)
@@ -1266,7 +1266,7 @@ func (b *ProxyRuntime) logChatBodyDebug(chatBody []byte, model, requestID string
 			msg += " | IMAGE: " + d
 		}
 	}
-	b.app.appendLog("info", "proxy", msg, requestID)
+	b.app.appendLog("info", string(b.source), msg, requestID)
 }
 
 func (b *ProxyRuntime) writeJSON(w http.ResponseWriter, statusCode int, payload any) {
@@ -1308,14 +1308,14 @@ func (b *ProxyRuntime) handleAudioSpeech(w http.ResponseWriter, r *http.Request)
 
 	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
 	if err != nil {
-		b.app.appendLog("error", "proxy", "audio/speech 读取请求体失败", requestID)
+		b.app.appendLog("error", string(b.source), "audio/speech 读取请求体失败", requestID)
 		b.writeProxyError(w, http.StatusBadRequest, "读取请求体失败")
 		return
 	}
 
 	var payload map[string]any
 	if err := json.Unmarshal(body, &payload); err != nil {
-		b.app.appendLog("warn", "proxy", "audio/speech JSON 解析失败: "+err.Error(), requestID)
+		b.app.appendLog("warn", string(b.source), "audio/speech JSON 解析失败: "+err.Error(), requestID)
 		b.writeProxyError(w, http.StatusBadRequest, "请求体不是有效的 JSON")
 		return
 	}
@@ -1331,21 +1331,21 @@ func (b *ProxyRuntime) handleAudioSpeech(w http.ResponseWriter, r *http.Request)
 
 	upstreamBody, err := json.Marshal(payload)
 	if err != nil {
-		b.app.appendLog("error", "proxy", "audio/speech 序列化失败: "+err.Error(), requestID)
+		b.app.appendLog("error", string(b.source), "audio/speech 序列化失败: "+err.Error(), requestID)
 		b.writeProxyError(w, http.StatusInternalServerError, "序列化失败")
 		return
 	}
 
 	resourceURL, err := upstreamResourceURL(cfg.DeepseekBaseURL, "audio/speech")
 	if err != nil {
-		b.app.appendLog("error", "proxy", "audio/speech 上游地址错误: "+err.Error(), requestID)
+		b.app.appendLog("error", string(b.source), "audio/speech 上游地址错误: "+err.Error(), requestID)
 		b.writeProxyError(w, http.StatusBadGateway, err.Error())
 		return
 	}
 
 	req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, resourceURL, bytes.NewReader(upstreamBody))
 	if err != nil {
-		b.app.appendLog("error", "proxy", "audio/speech 构造上游请求失败: "+err.Error(), requestID)
+		b.app.appendLog("error", string(b.source), "audio/speech 构造上游请求失败: "+err.Error(), requestID)
 		b.writeProxyError(w, http.StatusBadGateway, err.Error())
 		return
 	}
@@ -1359,7 +1359,7 @@ func (b *ProxyRuntime) handleAudioSpeech(w http.ResponseWriter, r *http.Request)
 	resp, err := b.doUpstream(req, cfg, false)
 	if err != nil {
 		b.writeProxyError(w, http.StatusBadGateway, err.Error())
-		b.app.appendLog("error", "proxy", "audio/speech 转发失败: "+err.Error(), requestID)
+		b.app.appendLog("error", string(b.source), "audio/speech 转发失败: "+err.Error(), requestID)
 		return
 	}
 	defer resp.Body.Close()
@@ -1374,7 +1374,7 @@ func (b *ProxyRuntime) handleAudioSpeech(w http.ResponseWriter, r *http.Request)
 		_, _ = w.Write(raw)
 		duration := time.Since(startedAt).Milliseconds()
 		b.recordUsage(cfg, model, "audio/speech", 0, 0, 0, resp.StatusCode, duration, false)
-		b.app.appendLog("error", "proxy", fmt.Sprintf("POST /v1/audio/speech -> %d (%dms) model=%s", resp.StatusCode, duration, model), requestID)
+		b.app.appendLog("error", string(b.source), fmt.Sprintf("POST /v1/audio/speech -> %d (%dms) model=%s", resp.StatusCode, duration, model), requestID)
 		return
 	}
 
@@ -1385,6 +1385,6 @@ func (b *ProxyRuntime) handleAudioSpeech(w http.ResponseWriter, r *http.Request)
 	written, _ := io.Copy(w, resp.Body)
 	duration := time.Since(startedAt).Milliseconds()
 	b.recordUsage(cfg, model, "audio/speech", 0, 0, 0, resp.StatusCode, duration, true)
-	b.app.appendLog("info", "proxy", fmt.Sprintf("POST /v1/audio/speech -> 200 (%dms) model=%s bytes=%d", duration, model, written), requestID)
+	b.app.appendLog("info", string(b.source), fmt.Sprintf("POST /v1/audio/speech -> 200 (%dms) model=%s bytes=%d", duration, model, written), requestID)
 }
 

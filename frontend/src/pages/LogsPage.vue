@@ -9,8 +9,21 @@ const store = useAppStore()
 const message = useMessage()
 const { t } = useI18n()
 const loading = ref(false)
+const filterSource = ref('')
 
-const logs = computed(() => store.recentLogs.slice().reverse())
+const availableSources = computed(() => {
+  const sources = new Set<string>()
+  for (const e of store.recentLogs) {
+    if (typeof e.source === 'string' && e.source) sources.add(e.source)
+  }
+  return Array.from(sources).sort()
+})
+
+const logs = computed(() => {
+  const all = store.recentLogs.slice().reverse()
+  if (!filterSource.value) return all
+  return all.filter((e) => e.source === filterSource.value)
+})
 
 async function refresh() {
   loading.value = true
@@ -39,11 +52,7 @@ async function copyEntry(entry: typeof logs.value[number]) {
 }
 
 onMounted(async () => {
-  if (!store.lastLoadedAt) {
-    await store.initialize()
-  } else if (store.recentLogs.length === 0) {
-    await refresh()
-  }
+  await refresh()
 })
 </script>
 
@@ -55,6 +64,14 @@ onMounted(async () => {
         <p>{{ t('logs.desc') }}</p>
       </div>
       <n-space>
+        <n-select
+          v-if="availableSources.length > 0"
+          size="small"
+          :value="filterSource"
+          :options="[{ label: t('logs.filter.all'), value: '' }, ...availableSources.map(s => ({ label: s, value: s }))]"
+          @update:value="(val: string) => filterSource = val"
+          style="width: 130px"
+        />
         <n-button secondary :loading="loading" @click="refresh">{{ t('logs.actions.refresh') }}</n-button>
         <n-button tertiary :disabled="logs.length === 0" @click="copyAll">{{ t('logs.actions.copyAll') }}</n-button>
       </n-space>

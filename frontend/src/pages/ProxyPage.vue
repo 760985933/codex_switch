@@ -4,7 +4,6 @@ import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { ClipboardSetText } from '../../wailsjs/runtime/runtime'
 import QuickGuideCard from '../components/QuickGuideCard.vue'
-import { useProxyEvents } from '../composables/useProxyEvents'
 import { useAppStore } from '../stores/app'
 import { useUiStore } from '../stores/ui'
 import type { SourceID } from '../types'
@@ -90,15 +89,6 @@ async function handleRefresh(source: SourceID) {
     await store.refreshLogs()
   })
 }
-
-useProxyEvents({
-  onStatus(payload) {
-    store.applyStatus(payload)
-  },
-  onLog(entry) {
-    store.pushLog(entry)
-  },
-})
 
 onMounted(async () => {
   if (!store.lastLoadedAt) {
