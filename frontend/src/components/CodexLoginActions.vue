@@ -116,23 +116,31 @@ async function handleNoAccountLogin() {
 
 <template>
   <n-button
-    v-if="profile"
+    v-if="profile && isThisProfileRunning"
     size="small"
-    :type="pluginBtnType"
-    :disabled="disabled"
-    @click.stop="onPluginClick"
+    type="error"
+    @click.stop="store.stopProxy()"
   >
-    {{ pluginBtnLabel }}
+    {{ t('guide.actions.stop') }}
   </n-button>
-  <n-button
-    v-if="profile"
-    size="small"
-    :type="noAccountBtnType"
-    :disabled="disabled"
-    @click.stop="onNoAccountClick"
-  >
-    {{ noAccountBtnLabel }}
-  </n-button>
+  <template v-if="profile && !isThisProfileRunning">
+    <n-button
+      size="small"
+      :type="pluginBtnType"
+      :disabled="disabled"
+      @click.stop="onPluginClick"
+    >
+      {{ pluginBtnLabel }}
+    </n-button>
+    <n-button
+      size="small"
+      :type="noAccountBtnType"
+      :disabled="disabled"
+      @click.stop="onNoAccountClick"
+    >
+      {{ noAccountBtnLabel }}
+    </n-button>
+  </template>
   <span v-if="profile" class="actions-sep">|</span>
 </template>
 
