@@ -782,6 +782,7 @@ func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	upstreamReq.Header.Set("Content-Type", "application/json")
+	copyRequestHeaders(upstreamReq.Header, r.Header, cfg.Headers)
 	upstreamReq.GetBody = func() (io.ReadCloser, error) {
 		return io.NopCloser(bytes.NewReader(chatBody)), nil
 	}

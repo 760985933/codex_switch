@@ -546,7 +546,7 @@ func translateResponsesToChatCompletions(body []byte, cfg AppConfig) ([]byte, bo
 		chatPayload["parallel_tool_calls"] = v
 	}
 	if v, ok := payload["thinking"]; ok {
-		chatPayload["thinking"] = v
+		chatPayload["thinking"] = normalizeThinkingForChatCompletions(v)
 	} else if thinking := autoThinkingParam(chatPayload["tools"]); thinking != nil {
 		chatPayload["thinking"] = thinking
 	}
@@ -671,6 +671,22 @@ func autoThinkingParam(tools any) any {
 		return map[string]any{"type": "disabled"}
 	}
 	return nil
+}
+
+// normalizeThinkingForChatCompletions 清洗 Responses API 的 thinking 参数，
+// 剥离 DeepSeek 等 OpenAI 兼容提供商不支持的字段（如 budget_tokens）。
+// Responses API 格式：{"type":"enabled","budget_tokens":16000}
+// OpenAI 兼容格式：  {"type":"enabled"}
+func normalizeThinkingForChatCompletions(v any) any {
+	m, ok := v.(map[string]any)
+	if !ok {
+		return v
+	}
+	cleaned := map[string]any{}
+	if t, ok := m["type"].(string); ok {
+		cleaned["type"] = t
+	}
+	return cleaned
 }
 
 func responsesInputToMessages(payload map[string]any) ([]any, error) {
