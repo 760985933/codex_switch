@@ -40,6 +40,9 @@ type ProviderInfo struct {
 	AnthropicHaikuModel     string            // Anthropic 兼容 Haiku 级模型（快速）
 	AnthropicSonnetModel    string            // Anthropic 兼容 Sonnet 级模型（均衡）
 	AnthropicOpusModel      string            // Anthropic 兼容 Opus 级模型（最强）
+	ClaudeHaikuModel        string            // Claude gateway Haiku 级模型 ID
+	ClaudeSonnetModel       string            // Claude gateway Sonnet 级模型 ID
+	ClaudeOpusModel         string            // Claude gateway Opus 级模型 ID
 	TokenPlanOpenAIBaseURL  string            // Token Plan OpenAI 兼容地址
 	TokenPlanAnthropicBaseURL string          // Token Plan Anthropic 兼容地址
 	DocsURL                 string            // API 文档地址
@@ -281,17 +284,20 @@ var registeredProviders = map[string]*ProviderInfo{
 		DefaultMappings: googleDefaultMappings(),
 	},
 	string(ProviderAnthropic): {
-		ID:               ProviderAnthropic,
-		Name:             "Anthropic Claude",
-		DefaultBaseURL:   "https://api.anthropic.com",
-		DefaultModel:     "claude-sonnet-4-6",
-		AnthropicBaseURL: "https://api.anthropic.com",
-		AnthropicModel:   "claude-sonnet-4-6",
-		DocsURL:          "https://docs.anthropic.com/en/api",
-		HasBalanceAPI:    false,
-		BalanceCheckFn:   nil,
-		APIType:          APIMessages,
-		DefaultMappings:  anthropicDefaultMappings(),
+		ID:                ProviderAnthropic,
+		Name:              "Anthropic Claude",
+		DefaultBaseURL:    "https://api.anthropic.com",
+		DefaultModel:      "claude-sonnet-4-6",
+		AnthropicBaseURL:  "https://api.anthropic.com",
+		AnthropicModel:    "claude-sonnet-4-6",
+		ClaudeHaikuModel:  "claude-haiku-4-5",
+		ClaudeSonnetModel: "claude-sonnet-4-6",
+		ClaudeOpusModel:   "claude-opus-4-7",
+		DocsURL:           "https://docs.anthropic.com/en/api",
+		HasBalanceAPI:     false,
+		BalanceCheckFn:    nil,
+		APIType:           APIMessages,
+		DefaultMappings:   anthropicDefaultMappings(),
 	},
 }
 
