@@ -91,19 +91,6 @@ async function handleExport() {
   }
 }
 
-async function handleCodexCopy() {
-  try {
-    const content = await codexStore.generateCodexConfigToml()
-    await ClipboardSetText(content)
-    message.success(t('app.toast.codexTomlCopied'))
-  } catch (error) {
-    dialog.warning({
-      title: t('app.dialog.codexCopy.title'),
-      content: error instanceof Error ? error.message : String(error),
-      positiveText: t('app.dialog.codexCopy.ok'),
-    })
-  }
-}
 
 async function handleCodexWrite() {
   try {
@@ -286,10 +273,6 @@ async function clearAllBackups() {
   >
     <n-drawer-content :title="t('settings.title')" closable>
       <div class="drawer-body">
-        <n-space class="settings-actions">
-          <n-button secondary size="small" @click="handleExport">{{ t('settings.actions.exportConfig') }}</n-button>
-        </n-space>
-
         <n-card size="small" embedded>
           <n-space vertical size="small">
             <div>
@@ -299,7 +282,7 @@ async function clearAllBackups() {
               </n-text>
             </div>
             <n-space>
-              <n-button secondary @click="handleCodexCopy">{{ t('settings.actions.copyToml') }}</n-button>
+              <n-button secondary @click="handleExport">{{ t('settings.actions.exportConfig') }}</n-button>
             </n-space>
             <n-form label-placement="top">
               <n-form-item :label="t('settings.codex.filePath')">
@@ -393,10 +376,6 @@ async function clearAllBackups() {
 .log-days-label {
   font-size: 13px;
   color: rgba(11, 18, 32, 0.86);
-}
-
-.settings-actions {
-  padding-top: 4px;
 }
 
 .warning-text {
