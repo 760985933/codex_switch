@@ -542,6 +542,9 @@ func translateResponsesToChatCompletions(body []byte, cfg AppConfig) ([]byte, bo
 	if v, ok := payload["tool_choice"]; ok {
 		chatPayload["tool_choice"] = normalizeToolChoiceForChatCompletions(v)
 	}
+	if v, ok := payload["parallel_tool_calls"]; ok {
+		chatPayload["parallel_tool_calls"] = v
+	}
 	// Handle reasoning (Responses API) → thinking (Chat Completions) conversion.
 	// Codex 新的 Responses API 使用 reasoning 而非 thinking 来控制推理。
 	if v, ok := payload["reasoning"]; ok {

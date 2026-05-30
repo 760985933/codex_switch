@@ -102,6 +102,14 @@ func (cfg AppConfig) EffectiveConfig(source SourceID) (AppConfig, bool) {
 		effective.DeepseekBaseURL = profile.BaseURL
 		effective.APIKey = profile.APIKey
 		effective.DefaultModel = profile.DefaultModel
+		// Merge profile's model mappings into effective config,
+		// so provider default mappings (e.g. gpt-5.4-mini → deepseek-v4-flash)
+		// are available even when ic.Mappings is empty.
+		for key, value := range profile.Mappings {
+			if _, ok := effective.Mappings[key]; !ok {
+				effective.Mappings[key] = value
+			}
+		}
 	}
 	return effective, true
 }

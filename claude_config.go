@@ -18,6 +18,7 @@ const claudeSettingsFile = "settings.json"
 const claude3pConfigDir = "Claude-3p"
 const claude3pConfigLibrary = "configLibrary"
 const claude3pMetaFile = "_meta.json"
+const claude3pGatewayUUID = "00000000-0000-4000-8000-000000000001"
 
 // claude3pGatewayConfig mirrors the JSON schema that the Claude-3p desktop
 // app uses to declare a gateway inference provider.
@@ -126,17 +127,12 @@ func (a *App) EnableClaudeSettings(profileID string) (string, error) {
 		return "", errors.New("指定的模型配置不存在: " + profileID)
 	}
 
-	// Generate a random UUID for the gateway config file.
-	gwUUID, err := generateUUID()
-	if err != nil {
-		return "", err
-	}
+	// Use fixed UUID so gateway config always overwrites the same file.
+	gwUUID := claude3pGatewayUUID
 
-	// Update the Claude instance's current profile to this one,
-	// and store the gateway UUID for later cleanup.
+	// Update the Claude instance's current profile to this one.
 	if inst, ok := cfg.Instances[SourceClaude]; ok {
 		inst.CurrentProfileID = profileID
-		inst.GatewayConfigUUID = gwUUID
 		// Also add to proxy profile IDs if not already present.
 		found := false
 		for _, id := range inst.ProxyProfileIDs {
@@ -246,7 +242,7 @@ func (a *App) EnableClaudeSettings(profileID string) (string, error) {
 		}
 		model1M[providerModel] = true
 	}
-	if gwPath, gwErr := a.enableClaude3pGateway(gwUUID, gatewayBaseURL, claudeHaiku, claudeSonnet, claudeOpus, profile.Name, model1M); gwErr != nil {
+	if gwPath, gwErr := a.enableClaude3pGateway(gwUUID, gatewayBaseURL, claudeHaiku, claudeSonnet, claudeOpus, model1M); gwErr != nil {
 		a.appendLog("warn", "app", fmt.Sprintf("Claude-3p gateway 配置写入失败: %v", gwErr), "")
 	} else {
 		a.appendLog("info", "app", "已写入 Claude-3p gateway 配置: "+gwPath, "")
@@ -257,7 +253,7 @@ func (a *App) EnableClaudeSettings(profileID string) (string, error) {
 
 // enableClaude3pGateway writes a gateway config JSON file with a random UUID
 // and updates _meta.json under the Claude-3p configLibrary directory.
-func (a *App) enableClaude3pGateway(uuid, gatewayBaseURL, haikuModel, sonnetModel, opusModel, profileName string, model1M map[string]bool) (string, error) {
+func (a *App) enableClaude3pGateway(uuid, gatewayBaseURL, haikuModel, sonnetModel, opusModel string, model1M map[string]bool) (string, error) {
 	libPath, err := getClaude3pConfigLibPath()
 	if err != nil {
 		return "", err
@@ -284,9 +280,9 @@ func (a *App) enableClaude3pGateway(uuid, gatewayBaseURL, haikuModel, sonnetMode
 		InferenceGatewayAuthScheme:   "bearer",
 		InferenceGatewayBaseURL:      strings.TrimRight(gatewayBaseURL, "/"),
 		InferenceModels: []claude3pModelDef{
-			{Name: opusModel, LabelOverride: profileName + " Opus", Supports1M: model1M[opusModel]},
-			{Name: sonnetModel, LabelOverride: profileName + " Sonnet", Supports1M: model1M[sonnetModel]},
-			{Name: haikuModel, LabelOverride: profileName + " Haiku", Supports1M: model1M[haikuModel]},
+			{Name: opusModel, LabelOverride: "Claude Opus", Supports1M: model1M[opusModel]},
+			{Name: sonnetModel, LabelOverride: "Claude Sonnet", Supports1M: model1M[sonnetModel]},
+			{Name: haikuModel, LabelOverride: "Claude Haiku", Supports1M: model1M[haikuModel]},
 		},
 		InferenceProvider: "gateway",
 	}
@@ -302,7 +298,7 @@ func (a *App) enableClaude3pGateway(uuid, gatewayBaseURL, haikuModel, sonnetMode
 
 
 	// Update _meta.json to activate this gateway config.
-	if err := a.updateClaude3pMeta(uuid, profileName); err != nil {
+	if err := a.updateClaude3pMeta(uuid, "Claude"); err != nil {
 		return "", err
 	}
 
@@ -380,14 +376,8 @@ func (a *App) restoreClaude3pGateway() {
 		return
 	}
 
-	// Determine the current gateway UUID from the Claude instance config.
-	cfg, cfgErr := a.GetAppConfig()
-	var uuidToRemove string
-	if cfgErr == nil {
-		if inst, ok := cfg.Instances[SourceClaude]; ok && inst.GatewayConfigUUID != "" {
-			uuidToRemove = inst.GatewayConfigUUID
-		}
-	}
+	// Use the fixed gateway UUID to remove the config file.
+	uuidToRemove := claude3pGatewayUUID
 
 	// Remove the gateway config file(s).
 	gwPath := filepath.Join(libPath, uuidToRemove+".json")

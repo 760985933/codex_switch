@@ -390,9 +390,15 @@ func normalizeProfile(p *Profile, defaults AppConfig) {
 	if p.Mappings == nil {
 		p.Mappings = map[string]string{}
 	}
-	// For all profiles that have a known provider, add Claude-specific model
-	// mappings so that incoming Messages API requests with Claude model names
-	// (e.g. "claude-haiku-4-5") are correctly mapped to the provider's model.
+	// Fill missing mappings from provider defaults (Codex model → provider model)
+	if prov != nil && prov.DefaultMappings != nil {
+		for key, value := range prov.DefaultMappings {
+			if _, ok := p.Mappings[key]; !ok {
+				p.Mappings[key] = value
+			}
+		}
+	}
+	// Also add Claude-specific model mappings for incoming Messages API requests
 	if prov != nil {
 		if cm := prov.ClaudeBaseMappings(); cm != nil {
 			for key, value := range cm {
