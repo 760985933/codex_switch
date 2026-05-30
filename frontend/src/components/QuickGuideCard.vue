@@ -145,7 +145,16 @@ async function handleRemoveProxy(id: string) {
     positiveText: t('common.delete'),
     negativeText: t('models.cancel'),
     onPositiveClick: async () => {
-      await store.removeFromProxy(id)
+      const ic = store.instanceConfig(props.source)
+      const ids = (ic.proxyProfileIds || []).filter(i => i !== id)
+      const updated = {
+        ...store.config,
+        instances: {
+          ...store.config.instances,
+          [props.source]: { ...ic, proxyProfileIds: ids },
+        },
+      }
+      await store.saveConfig(updated as any)
       message.success(t('dashboard.removedProxy'))
     },
   })

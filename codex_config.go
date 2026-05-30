@@ -50,7 +50,11 @@ func (a *App) ReadCodexConfigToml() (string, error) {
 }
 
 func (a *App) GenerateCodexConfigToml() (string, error) {
-	status := a.proxies[SourceCodex].Status()
+	proxy, ok := a.proxies[SourceCodex]
+	if !ok {
+		return "", errors.New("codex代理未初始化")
+	}
+	status := proxy.Status()
 	if strings.TrimSpace(status.ListenAddress) == "" {
 		return "", errors.New("代理服务未启动，无法生成 base_url")
 	}
@@ -103,7 +107,11 @@ func (a *App) WriteCodexConfigTomlRaw(content string) (string, error) {
 }
 
 func (a *App) WriteCodexConfigToml() (string, error) {
-	status := a.proxies[SourceCodex].Status()
+	proxy, ok := a.proxies[SourceCodex]
+	if !ok {
+		return "", errors.New("codex代理未初始化")
+	}
+	status := proxy.Status()
 	if strings.TrimSpace(status.ListenAddress) == "" {
 		return "", errors.New("代理服务未启动，无法生成 base_url")
 	}

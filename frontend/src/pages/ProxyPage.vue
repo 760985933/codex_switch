@@ -4,7 +4,6 @@ import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { ClipboardSetText } from '../../wailsjs/runtime/runtime'
 import QuickGuideCard from '../components/QuickGuideCard.vue'
-import ClaudeSetupGuide from '../components/ClaudeSetupGuide.vue'
 import { useProxyEvents } from '../composables/useProxyEvents'
 import { useAppStore } from '../stores/app'
 import { useUiStore } from '../stores/ui'
@@ -138,8 +137,9 @@ onMounted(async () => {
     </div>
 
     <div v-show="activeTab === 'claude'">
-      <ClaudeSetupGuide
+      <QuickGuideCard
         :source="'claude'"
+        :listen-address="store.statuses.claude.listenAddress"
         :status="store.statuses.claude"
         :health="store.healthCheckForSource('claude')"
         :loading="busy"

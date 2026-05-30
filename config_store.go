@@ -202,8 +202,10 @@ func defaultConfig() AppConfig {
 
 func defaultInstanceConfig(source SourceID) *InstanceConfig {
 	port := 17419
+	proxyProfileIDs := []string{"default"}
 	if source == SourceClaude {
 		port = 17420
+		proxyProfileIDs = []string{}
 	}
 	return &InstanceConfig{
 		ListenHost:       "127.0.0.1",
@@ -213,6 +215,7 @@ func defaultInstanceConfig(source SourceID) *InstanceConfig {
 		Mappings:         map[string]string{},
 		Headers:          map[string]string{},
 		CurrentProfileID: "default",
+		ProxyProfileIDs:  proxyProfileIDs,
 	}
 }
 
@@ -325,7 +328,7 @@ func normalizeConfig(cfg AppConfig) AppConfig {
 		}
 	}
 
-	// Migration: seed ProxyProfileIDs when nil
+	// Migration: seed ProxyProfileIDs when nil (old config migration path)
 	if cfg.ProxyProfileIDs == nil && len(cfg.Profiles) > 0 {
 		ids := make([]string, 0, len(cfg.Profiles))
 		for id := range cfg.Profiles {
@@ -333,18 +336,6 @@ func normalizeConfig(cfg AppConfig) AppConfig {
 		}
 		sort.Strings(ids)
 		cfg.ProxyProfileIDs = ids
-	}
-	// Also sync instance-level proxyProfileIds
-	for _, src := range AllSources() {
-		inst := cfg.Instances[src]
-		if inst.ProxyProfileIDs == nil && len(cfg.Profiles) > 0 {
-			ids := make([]string, 0, len(cfg.Profiles))
-			for id := range cfg.Profiles {
-				ids = append(ids, id)
-			}
-			sort.Strings(ids)
-			inst.ProxyProfileIDs = ids
-		}
 	}
 
 	return cfg
