@@ -102,6 +102,21 @@ function onBillingModeChange(mode: 'paygo' | 'tokenplan') {
   }
 }
 
+function onApiTypeChange(apiType: string) {
+  const preset = getProviderPreset(formProfile.value.provider)
+  if (!preset) return
+  const isAnthropic = apiType === 'messages'
+  if (billingMode.value === 'tokenplan') {
+    formProfile.value.baseURL = isAnthropic && preset.tokenPlanAnthropicBaseURL
+      ? preset.tokenPlanAnthropicBaseURL
+      : preset.tokenPlanOpenAIBaseURL ?? preset.defaultBaseURL
+  } else {
+    formProfile.value.baseURL = isAnthropic && preset.anthropicBaseURL
+      ? preset.anthropicBaseURL
+      : preset.defaultBaseURL
+  }
+}
+
 async function submitSave() {
   const profiles = { ...store.config.profiles }
   profiles[props.profileId] = { ...formProfile.value }
@@ -158,6 +173,7 @@ async function submitSave() {
             v-model:value="formProfile.apiType"
             :options="apiTypeOptions"
             size="small"
+            @update:value="onApiTypeChange"
           />
         </n-form-item>
         <n-form-item :label="t('config.fields.defaultModel')">
