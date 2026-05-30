@@ -146,7 +146,7 @@ onMounted(async () => {
         <p>www.nettopo.com</p>
         <div class="brand-title">
           <strong>codex switch</strong>
-          <span class="app-version">{{ appVersion }}</span>
+          <span class="app-version" @click="checkUpdates(true, true)" title="检查更新">{{ appVersion }}</span>
         </div>
       </div>
     </div>
@@ -320,6 +320,10 @@ onMounted(async () => {
   font-size: 9px;
   color: var(--muted);
   letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.app-version:hover {
+  color: var(--accent);
 }
 
 /* ==================== Navigation ==================== */
