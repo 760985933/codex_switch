@@ -26,7 +26,7 @@ import (
 var mainAppCtx context.Context
 var forceQuit atomic.Bool
 
-const appVersion = "0.0.8"
+const appVersion = "0.0.9"
 const updateManifestURL = "https://nettopo.com/nettopo-switch-version.txt"
 const updateDownloadURLTemplate = ""
 
