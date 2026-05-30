@@ -11,7 +11,7 @@ import ModelEditorPanel from './ModelEditorPanel.vue'
 import ProxySettingsPanel from './ProxySettingsPanel.vue'
 import ProxyStatusCard from './ProxyStatusCard.vue'
 import CodexLoginActions from './CodexLoginActions.vue'
-import type { ProxyStatusPayload, HealthCheckResult, SourceID } from '../types'
+import type { ProxyStatusPayload, HealthCheckResult, SourceID, Profile } from '../types'
 
 const emit = defineEmits<{
   copy: [value: string]
@@ -94,9 +94,45 @@ function openAddDialog() {
 async function handleAddProxy() {
   if (addMode.value === 'new') {
     if (!newProfileName.value.trim()) return
-    await store.addProfile(newProfileName.value.trim(), newProfileProvider.value, undefined, newProfileApiKey.value || undefined)
+    const preset = getProviderPreset(newProfileProvider.value)
+    const isClaude = props.source === 'claude'
+    const baseURL = isClaude && preset?.anthropicBaseURL
+      ? preset.anthropicBaseURL
+      : preset?.defaultBaseURL ?? ''
+    const defaultModel = isClaude && preset?.anthropicModel
+      ? preset.anthropicModel
+      : preset?.defaultModel ?? ''
+    const apiType = isClaude ? 'messages' : preset?.apiType ?? 'chat_completions'
+    const profile: Profile = {
+      id: '',
+      name: newProfileName.value.trim(),
+      provider: newProfileProvider.value,
+      baseURL,
+      apiKey: newProfileApiKey.value || '',
+      defaultModel,
+      apiType,
+      mappings: {},
+    }
+    // Add to shared profiles and link to this instance
+    const newId = 'profile_' + Date.now().toString(36)
+    const newInst = store.instanceConfig(props.source)
+    const newUpdated: any = {
+      ...store.config,
+      profiles: {
+        ...store.config.profiles,
+        [newId]: { ...profile, id: newId },
+      },
+    }
+    newUpdated.instances = {
+      ...store.config.instances,
+      [props.source]: {
+        ...newInst,
+        proxyProfileIds: [...(newInst.proxyProfileIds || []), newId],
+        currentProfileId: newInst.currentProfileId || newId,
+      },
+    }
+    await store.saveConfig(newUpdated as any)
     message.success(t('models.toast.added'))
-  } else {
     if (!linkProfileId.value) return
     const ic = store.instanceConfig(props.source)
     const ids = [...(ic.proxyProfileIds || []), linkProfileId.value]
