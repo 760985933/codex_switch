@@ -7,6 +7,7 @@ import type { AppConfig } from '../types'
 import { useAppStore } from '../stores/app'
 import { useCodexStore } from '../stores/codex'
 import { useUiStore } from '../stores/ui'
+import { GetClaudeSettingsPath, ReadClaudeSettings, WriteClaudeSettings } from '../../wailsjs/go/main/App'
 
 const props = defineProps<{
   modelValue: boolean
@@ -30,6 +31,11 @@ const codexRaw = ref('')
 const codexBusy = ref(false)
 const codexBackups = ref<string[]>([])
 const selectedBackup = ref<string>('')
+
+// Claude settings state
+const claudePath = ref('')
+const claudeRaw = ref('')
+const claudeBusy = ref(false)
 
 const backupOptions = computed(() => {
   return codexBackups.value.map((p) => ({
@@ -62,10 +68,39 @@ watch(
   () => props.modelValue,
   (open) => {
     if (open) {
-      void loadCodexRaw()
+      if (ui.settingsSource === 'claude') {
+        void loadClaudeRaw()
+      } else {
+        void loadCodexRaw()
+      }
     }
   },
 )
+
+// ── Claude settings methods ──
+async function loadClaudeRaw() {
+  claudeBusy.value = true
+  try {
+    claudePath.value = await GetClaudeSettingsPath()
+    claudeRaw.value = await ReadClaudeSettings()
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  } finally {
+    claudeBusy.value = false
+  }
+}
+
+async function saveClaudeRaw() {
+  claudeBusy.value = true
+  try {
+    const path = await WriteClaudeSettings(claudeRaw.value)
+    message.success(t('settings.toast.saved', { path: path || claudePath.value }))
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  } finally {
+    claudeBusy.value = false
+  }
+}
 
 async function submit() {
   try {
@@ -273,7 +308,7 @@ async function clearAllBackups() {
   >
     <n-drawer-content :title="t('settings.title')" closable>
       <div class="drawer-body">
-        <n-card size="small" embedded>
+        <n-card v-if="ui.settingsSource === 'codex'" size="small" embedded>
           <n-space vertical size="small">
             <div>
               <n-text style="font-weight: 600">{{ t('settings.codex.title') }}</n-text>
@@ -323,6 +358,35 @@ async function clearAllBackups() {
               <n-button tertiary :loading="codexBusy" @click="deleteSelectedBackup">{{ t('settings.codexActions.deleteSelected') }}</n-button>
               <n-button tertiary :loading="codexBusy" @click="clearAllBackups">{{ t('settings.codexActions.clearBackups') }}</n-button>
               <n-button tertiary :loading="codexBusy" @click="restoreCodex">{{ t('settings.codexActions.restoreLatest') }}</n-button>
+            </n-space>
+          </n-space>
+        </n-card>
+
+        <!-- Claude Code settings card -->
+        <n-card v-if="ui.settingsSource === 'claude'" size="small" embedded>
+          <n-space vertical size="small">
+            <div>
+              <n-text style="font-weight: 600">{{ t('settings.claude.title') }}</n-text>
+              <n-text depth="3" style="display: block; margin-top: 6px; line-height: 1.6">
+                {{ t('settings.claude.desc') }}
+              </n-text>
+            </div>
+            <n-form label-placement="top">
+              <n-form-item :label="t('settings.claude.filePath')">
+                <n-input :value="claudePath" readonly />
+              </n-form-item>
+              <n-form-item :label="t('settings.claude.content')">
+                <n-input
+                  v-model:value="claudeRaw"
+                  type="textarea"
+                  :autosize="{ minRows: 10, maxRows: 22 }"
+                  :disabled="claudeBusy"
+                />
+              </n-form-item>
+            </n-form>
+            <n-space>
+              <n-button tertiary :loading="claudeBusy" @click="loadClaudeRaw">{{ t('settings.claudeActions.readFile') }}</n-button>
+              <n-button type="primary" :loading="claudeBusy" @click="saveClaudeRaw">{{ t('settings.claudeActions.saveOverwrite') }}</n-button>
             </n-space>
           </n-space>
         </n-card>

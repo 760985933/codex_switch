@@ -290,6 +290,8 @@ models: {
   editModel: 'モデルを編集',
   deleteModel: 'モデルを削除',
 	  billingMode: '課金モード',
+  billingPaygo: '従量課金',
+  billingTokenplan: 'トークンプラン',
 	  invalidProvider: '無効なプロバイダー',
 },
 profile: {

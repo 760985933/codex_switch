@@ -81,6 +81,8 @@ models: {
   profileNamePlaceholder: 'e.g. DeepSeek Pro',
   provider: 'Provider',
   billingMode: 'Billing Mode',
+  billingPaygo: 'Pay-as-you-go',
+  billingTokenplan: 'Token Plan',
   confirmAdd: 'Add',
   cancel: 'Cancel',
   editor: { title: 'Edit Model Config' },

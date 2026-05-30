@@ -82,6 +82,8 @@ models: {
   profileNamePlaceholder: '如 DeepSeek Pro',
   provider: '提供商',
   billingMode: '计费方式',
+  billingPaygo: '按量计费',
+  billingTokenplan: 'Token Plan',
   confirmAdd: '确认添加',
   cancel: '取消',
   editor: { title: '编辑模型配置' },
@@ -259,6 +261,16 @@ settings: {
     deleteSelected: '删除所选',
     clearBackups: '清理备份',
     restoreLatest: '恢复最新',
+  },
+  claude: {
+    title: 'Claude Code settings.json',
+    desc: 'Claude Code 的配置文件，用于设置环境变量、模型偏好等。',
+    filePath: '文件路径',
+    content: '内容（可直接编辑）',
+  },
+  claudeActions: {
+    readFile: '读取文件',
+    saveOverwrite: '保存覆盖',
   },
   dialog: {
     restoreCodex: {

@@ -290,6 +290,8 @@ models: {
   editModel: 'Modifier le modèle',
   deleteModel: 'Supprimer le modèle',
 	  billingMode: 'Mode de facturation',
+  billingPaygo: "Paiement à l'usage",
+  billingTokenplan: 'Token Plan',
 	  invalidProvider: 'Fournisseur invalide',
 },
 profile: {

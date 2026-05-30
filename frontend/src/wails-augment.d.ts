@@ -36,6 +36,10 @@ declare module '../wailsjs/go/main/App' {
  export function WriteCodexConfigToml(): Promise<string>
  export function WriteCodexConfigTomlProfiles(): Promise<string>
  export function WriteCodexConfigTomlRaw(content: string): Promise<string>
+ // Claude Code settings
+ export function GetClaudeSettingsPath(): Promise<string>
+ export function ReadClaudeSettings(): Promise<string>
+ export function WriteClaudeSettings(content: string): Promise<string>
  // Source-aware methods (multi-instance)
  export function StartProxyForSource(source: string): Promise<main.ProxyStatusPayload>
  export function StopProxyForSource(source: string): Promise<main.ProxyStatusPayload>
@@ -59,12 +63,14 @@ interface Window {
  GetAppConfig: () => Promise<main.AppConfig>
  GetAppVersion: () => Promise<string>
  GetProxyStatus: () => Promise<main.ProxyStatusPayload>
+ GetClaudeSettingsPath: () => Promise<string>
  GetCodexConfigPath: () => Promise<string>
  GetLogHistory: (arg1: number) => Promise<Array<main.LogEntry>>
  GetOverviewSnapshot: () => Promise<main.OverviewSnapshot>
  ImportConfig: (arg1: string) => Promise<main.AppConfig>
  ListCodexConfigBackups: () => Promise<string[]>
  PluginUnlockLogin: () => Promise<string>
+ ReadClaudeSettings: () => Promise<string>
  ReadCodexConfigToml: () => Promise<string>
  RestartProxy: () => Promise<main.ProxyStatusPayload>
  RestoreCodexConfigToml: () => Promise<string>
@@ -73,6 +79,7 @@ interface Window {
  SaveAppConfig: (arg1: main.AppConfig) => Promise<main.AppConfig>
  StartProxy: () => Promise<main.ProxyStatusPayload>
  StopProxy: () => Promise<main.ProxyStatusPayload>
+ WriteClaudeSettings: (arg1: string) => Promise<string>
  WriteCodexConfigToml: () => Promise<string>
  WriteCodexConfigTomlProfiles: () => Promise<string>
  WriteCodexConfigTomlRaw: (arg1: string) => Promise<string>

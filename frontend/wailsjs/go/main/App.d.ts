@@ -26,6 +26,8 @@ export function GetAppConfig():Promise<main.AppConfig>;
 
 export function GetAppVersion():Promise<string>;
 
+export function GetClaudeSettingsPath():Promise<string>;
+
 export function GetCodexConfigPath():Promise<string>;
 
 export function GetCodexSessionContent(arg1:string):Promise<main.SessionDetail>;
@@ -68,6 +70,8 @@ export function MigrateSingleCodexSession(arg1:string,arg2:string):Promise<main.
 
 export function PluginUnlockLogin():Promise<string>;
 
+export function ReadClaudeSettings():Promise<string>;
+
 export function ReadCodexConfigToml():Promise<string>;
 
 export function RestartProxy():Promise<main.ProxyStatusPayload>;
@@ -103,6 +107,8 @@ export function StartProxyForSource(arg1:main.SourceID):Promise<main.ProxyStatus
 export function StopProxy():Promise<main.ProxyStatusPayload>;
 
 export function StopProxyForSource(arg1:main.SourceID):Promise<main.ProxyStatusPayload>;
+
+export function WriteClaudeSettings(arg1:string):Promise<string>;
 
 export function WriteCodexConfigToml():Promise<string>;
 

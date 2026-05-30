@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useUiStore } from '../stores/ui'
-import { getProviderPreset, BILLING_MODE_LABELS } from '../utils/providers'
+import { getProviderPreset } from '../utils/providers'
 import ProfileList from './ProfileList.vue'
 import ModelEditorPanel from './ModelEditorPanel.vue'
 import ProxySettingsPanel from './ProxySettingsPanel.vue'
@@ -250,7 +250,7 @@ async function handleRemoveProxy(id: string) {
           @reorder="store.reorderProfiles"
         >
           <template #actions="{ profile }">
-            <CodexLoginActions :profile-id="profile.id" />
+            <CodexLoginActions v-if="source === 'codex'" :profile-id="profile.id" />
           </template>
           <template #actions-after="{ profile }">
             <n-button size="small" tertiary type="warning" @click="handleRemoveProxy(profile.id)">
@@ -291,7 +291,7 @@ async function handleRemoveProxy(id: string) {
             <span class="card-title">{{ t('dashboard.quickActions') }}</span>
           </div>
           <div class="actions">
-            <n-button tertiary @click="ui.showSettings = true">{{ t('guide.actions.preferences') }}</n-button>
+            <n-button tertiary @click="ui.openSettings(source)">{{ t('guide.actions.preferences') }}</n-button>
             <n-button
               tertiary
               type="primary"
@@ -324,8 +324,8 @@ async function handleRemoveProxy(id: string) {
           </n-form-item>
           <n-form-item v-if="hasTokenPlan" :label="t('models.billingMode')">
             <n-radio-group v-model:value="billingMode">
-              <n-radio value="paygo">{{ BILLING_MODE_LABELS.paygo }}</n-radio>
-              <n-radio value="tokenplan">{{ BILLING_MODE_LABELS.tokenplan }}</n-radio>
+              <n-radio value="paygo">{{ t('models.billingPaygo') }}</n-radio>
+              <n-radio value="tokenplan">{{ t('models.billingTokenplan') }}</n-radio>
             </n-radio-group>
           </n-form-item>
           <n-form-item label="API Key">

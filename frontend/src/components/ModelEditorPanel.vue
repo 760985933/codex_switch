@@ -6,7 +6,7 @@ import { useAppStore } from '../stores/app'
 import type { Profile } from '../types'
 import KeyValueEditor from './KeyValueEditor.vue'
 import { maskSecret } from '../utils/format'
-import { PROVIDER_PRESETS, getProviderPreset, BILLING_MODE_LABELS } from '../utils/providers'
+import { PROVIDER_PRESETS, getProviderPreset } from '../utils/providers'
 import { BrowserOpenURL } from '../../wailsjs/runtime/runtime'
 
 const store = useAppStore()
@@ -149,8 +149,8 @@ async function submitSave() {
         </n-form-item>
         <n-form-item v-if="hasTokenPlan" :label="t('models.billingMode')" class="span-2">
           <n-radio-group v-model:value="billingMode" size="small" @update:value="onBillingModeChange">
-            <n-radio value="paygo">{{ BILLING_MODE_LABELS.paygo }}</n-radio>
-            <n-radio value="tokenplan">{{ BILLING_MODE_LABELS.tokenplan }}</n-radio>
+            <n-radio value="paygo">{{ t('models.billingPaygo') }}</n-radio>
+            <n-radio value="tokenplan">{{ t('models.billingTokenplan') }}</n-radio>
           </n-radio-group>
         </n-form-item>
         <n-form-item label="API 格式" class="span-2">

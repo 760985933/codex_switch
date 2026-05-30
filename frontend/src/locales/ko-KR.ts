@@ -290,6 +290,8 @@ models: {
   editModel: '모델 편집',
   deleteModel: '모델 삭제',
 	  billingMode: '과금 방식',
+  billingPaygo: '종량제',
+  billingTokenplan: '토큰 플랜',
 	  invalidProvider: '유효하지 않은 제공자',
 },
 profile: {

@@ -284,6 +284,8 @@ models: {
   editModel: 'Modell bearbeiten',
   deleteModel: 'Modell löschen',
 	  billingMode: 'Abrechnungsmodus',
+  billingPaygo: 'Pay-as-you-go',
+  billingTokenplan: 'Token Plan',
 	  invalidProvider: 'Ungültiger Anbieter',
 },
 profile: {

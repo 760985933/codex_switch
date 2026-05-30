@@ -50,6 +50,10 @@ export function GetAppVersion() {
   return window['go']['main']['App']['GetAppVersion']();
 }
 
+export function GetClaudeSettingsPath() {
+  return window['go']['main']['App']['GetClaudeSettingsPath']();
+}
+
 export function GetCodexConfigPath() {
   return window['go']['main']['App']['GetCodexConfigPath']();
 }
@@ -134,6 +138,10 @@ export function PluginUnlockLogin() {
   return window['go']['main']['App']['PluginUnlockLogin']();
 }
 
+export function ReadClaudeSettings() {
+  return window['go']['main']['App']['ReadClaudeSettings']();
+}
+
 export function ReadCodexConfigToml() {
   return window['go']['main']['App']['ReadCodexConfigToml']();
 }
@@ -204,6 +212,10 @@ export function StopProxy() {
 
 export function StopProxyForSource(arg1) {
   return window['go']['main']['App']['StopProxyForSource'](arg1);
+}
+
+export function WriteClaudeSettings(arg1) {
+  return window['go']['main']['App']['WriteClaudeSettings'](arg1);
 }
 
 export function WriteCodexConfigToml() {
