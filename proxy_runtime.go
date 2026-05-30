@@ -814,10 +814,9 @@ func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request)
 				"message": msg,
 			},
 		})
-		errMsg := fmt.Sprintf("responses WS 上游错误: %s (HTTP %d)", msg, resp.StatusCode)
+		errMsg := fmt.Sprintf("responses WS 上游错误: %s (HTTP %d) resp_raw=%s", msg, resp.StatusCode, truncateForLog(string(raw), 2048))
 		if b.debugMode.Load() {
 			errMsg += " req_json=" + truncateForLog(string(chatBody), 4096)
-			errMsg += " resp_raw=" + truncateForLog(string(raw), 2048)
 		}
 		b.app.appendLog("error", string(b.source), errMsg, requestID)
 		return
