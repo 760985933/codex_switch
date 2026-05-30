@@ -814,7 +814,12 @@ func (b *ProxyRuntime) handleResponsesWS(w http.ResponseWriter, r *http.Request)
 				"message": msg,
 			},
 		})
-		b.app.appendLog("error", string(b.source), "responses WS 上游错误: "+msg, requestID)
+		errMsg := fmt.Sprintf("responses WS 上游错误: %s (HTTP %d)", msg, resp.StatusCode)
+		if b.debugMode.Load() {
+			errMsg += " req_json=" + truncateForLog(string(chatBody), 4096)
+			errMsg += " resp_raw=" + truncateForLog(string(raw), 2048)
+		}
+		b.app.appendLog("error", string(b.source), errMsg, requestID)
 		return
 	}
 
@@ -1208,6 +1213,7 @@ func (b *ProxyRuntime) logResponsesRequestDebug(body []byte, requestID string) {
 
 	logParts := []string{fmt.Sprintf("[DEBUG] body_keys=%s", strings.Join(keys, ","))}
 	logParts = append(logParts, fmt.Sprintf("input_types=%s", summarizeResponsesInput(inputItems)))
+	logParts = append(logParts, "req_body="+truncateForLog(string(body), 4096))
 	if len(images) > 0 {
 		for _, img := range images {
 			logParts = append(logParts, fmt.Sprintf("IMAGE found at %s url_len=%d url_prefix=%s", img.kind, img.urlLen, img.urlPrefix))
@@ -1264,6 +1270,7 @@ func (b *ProxyRuntime) logChatBodyDebug(chatBody []byte, requestID string) {
 		toolsN = len(tools)
 	}
 	msg := fmt.Sprintf("[DEBUG-CHAT] model=%s stream=%v messages=%d tools=%d image_count=%d", modelVal, stream, len(messages), toolsN, imageCount)
+	msg += " json_body=" + truncateForLog(string(chatBody), 4096)
 	if len(imageDetails) > 0 {
 		for _, d := range imageDetails {
 			msg += " | IMAGE: " + d
